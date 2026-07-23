@@ -399,3 +399,34 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+
+# ----------------------------------------
+# MFC Youth Area Management System
+# ----------------------------------------
+
+# SQLite database files
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.db.bak
+
+# Ignore local application data
+DefaultDatabase/
+
+# Release packages
+Releases/
+Release/
+
+# Keep application icon and assets
+!Assets/*.ico
+
+# Keep README and documentation
+!README.md
+!CHANGELOG.md
+
+# Installer projects
+*.iss
