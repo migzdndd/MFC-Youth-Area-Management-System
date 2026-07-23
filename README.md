@@ -49,10 +49,4 @@ Planned features include:
 
 If you find a bug or have an idea for a new feature, feel free to open an issue.
 
-## License
-
-This project is licensed under the MIT License.
-
----
-
 Thank you so much for supporting this project of mine. It truly means a lot to me. I hope this application helps MFC Youth communities, and I look forward to sharing more features, improvements, and updates in the future. ❤️
