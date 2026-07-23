@@ -77,11 +77,9 @@ namespace MFC_Youth_Database.Update
                     Application.Exit();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Ignore update failures.
-                // The application should continue running normally.
-
+                Debug.WriteLine(ex);
             }
         }
     }
