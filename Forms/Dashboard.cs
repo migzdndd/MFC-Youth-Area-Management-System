@@ -8,10 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using MFC_Youth_Area_Management_System.Forms;
 using MFC_Youth_Database.Database;
 using MFC_Youth_Database.Forms;
-using MFC_Youth_Database.Update;
 
 namespace MFC_Youth_Database
 {
@@ -233,11 +231,9 @@ namespace MFC_Youth_Database
             OpenChildForm(servicesForm, "Services");
         }
 
-        private async void Dashboard_Load(object sender, EventArgs e)
+        private void Dashboard_Load(object sender, EventArgs e)
         {
             ArrangeCards();
-
-            await UpdateService.CheckForUpdatesAsync();
         }
 
         private void btnOpenActivity_Click(object sender, EventArgs e)
