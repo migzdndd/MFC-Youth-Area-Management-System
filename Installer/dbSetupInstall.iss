@@ -44,7 +44,7 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 
 DisableProgramGroupPage=yes
 
-SetupLogging=yes
+SetupLogging=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -54,7 +54,7 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 
 [Files]
 ; Main application
-Source: "..\bin\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,*.xml,*.vshost.exe,*.config.bak,.gitignore"
+Source: "..\bin\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,*.xml,*.vshost.exe,*.config.bak,.gitignore,Thumbs.db,Desktop.ini,*.log"
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
