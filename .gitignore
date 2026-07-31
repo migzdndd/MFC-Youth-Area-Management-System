@@ -427,6 +427,3 @@ Release/
 # Keep README and documentation
 !README.md
 !CHANGELOG.md
-
-# Installer projects
-*.iss
