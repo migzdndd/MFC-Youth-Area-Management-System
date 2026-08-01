@@ -38,8 +38,8 @@
             this.dgvReports = new System.Windows.Forms.DataGridView();
             this.pnlActions = new System.Windows.Forms.Panel();
             this.tblActions = new System.Windows.Forms.TableLayoutPanel();
-            this.btnDelete = new System.Windows.Forms.Button();
             this.btnBack = new System.Windows.Forms.Button();
+            this.btnDelete = new System.Windows.Forms.Button();
             this.btnRefresh = new System.Windows.Forms.Button();
             this.btnAdd = new System.Windows.Forms.Button();
             this.pnlHeader.SuspendLayout();
@@ -149,6 +149,7 @@
             this.dgvReports.TabIndex = 0;
             this.dgvReports.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvReports_CellContentClick);
             this.dgvReports.CellContentDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvReports_CellDoubleClick);
+            this.dgvReports.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvReports_CellDoubleClick);
             // 
             // pnlActions
             // 
@@ -181,22 +182,6 @@
             this.tblActions.Size = new System.Drawing.Size(504, 60);
             this.tblActions.TabIndex = 0;
             // 
-            // btnDelete
-            // 
-            this.btnDelete.BackColor = System.Drawing.Color.Firebrick;
-            this.btnDelete.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnDelete.FlatAppearance.BorderSize = 0;
-            this.btnDelete.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnDelete.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.btnDelete.ForeColor = System.Drawing.Color.White;
-            this.btnDelete.Location = new System.Drawing.Point(129, 3);
-            this.btnDelete.Name = "btnDelete";
-            this.btnDelete.Size = new System.Drawing.Size(120, 38);
-            this.btnDelete.TabIndex = 9;
-            this.btnDelete.Text = "Delete Report";
-            this.btnDelete.UseVisualStyleBackColor = false;
-            this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
-            // 
             // btnBack
             // 
             this.btnBack.BackColor = System.Drawing.Color.DimGray;
@@ -212,6 +197,22 @@
             this.btnBack.Text = "Back";
             this.btnBack.UseVisualStyleBackColor = false;
             this.btnBack.Click += new System.EventHandler(this.btnBack_Click);
+            // 
+            // btnDelete
+            // 
+            this.btnDelete.BackColor = System.Drawing.Color.Firebrick;
+            this.btnDelete.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnDelete.FlatAppearance.BorderSize = 0;
+            this.btnDelete.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnDelete.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.btnDelete.ForeColor = System.Drawing.Color.White;
+            this.btnDelete.Location = new System.Drawing.Point(129, 3);
+            this.btnDelete.Name = "btnDelete";
+            this.btnDelete.Size = new System.Drawing.Size(120, 38);
+            this.btnDelete.TabIndex = 9;
+            this.btnDelete.Text = "Delete Report";
+            this.btnDelete.UseVisualStyleBackColor = false;
+            this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
             // 
             // btnRefresh
             // 
@@ -245,7 +246,7 @@
             this.btnAdd.UseVisualStyleBackColor = false;
             this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
             // 
-            // ReportsForm
+            // ActivityForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -255,7 +256,7 @@
             this.Controls.Add(this.pnlActions);
             this.Controls.Add(this.pnlToolbar);
             this.Controls.Add(this.pnlHeader);
-            this.Name = "ReportsForm";
+            this.Name = "ActivityForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Reports";
             this.Load += new System.EventHandler(this.ReportsForm_Load);

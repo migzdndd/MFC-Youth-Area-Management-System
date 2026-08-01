@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data.SQLite;
 using System.IO;
+using System.Windows.Forms;
 
 namespace MFC_Youth_Database.Database
 {
@@ -34,19 +35,27 @@ namespace MFC_Youth_Database.Database
 
         private static void ExecuteSchema()
         {
-            string sql =
-                File.ReadAllText(SchemaFile);
-
-            using (SQLiteConnection conn =
-                new SQLiteConnection(
-                    $"Data Source={DatabaseFile};Version=3;"))
+            try
             {
-                conn.Open();
+                string sql = File.ReadAllText(SchemaFile);
 
-                SQLiteCommand cmd =
-                    new SQLiteCommand(sql, conn);
+                using (SQLiteConnection conn =
+                    new SQLiteConnection(
+                        $"Data Source={DatabaseFile};Version=3;"))
+                {
+                    conn.Open();
 
-                cmd.ExecuteNonQuery();
+                    SQLiteCommand cmd =
+                        new SQLiteCommand(sql, conn);
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.ToString(),
+                    "Schema Error");
             }
         }
 

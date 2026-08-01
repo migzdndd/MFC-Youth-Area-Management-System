@@ -127,33 +127,48 @@ namespace MFC_Youth_Database.Forms
                     conn.Open();
 
                     string query = @"
-            INSERT INTO Activity
-            (
-                Title,
-                ChapterID,
-                ActivityType,
-                ActivityDate,
-                PreparedBy,
-                Description
-            )
-            VALUES
-            (
-                @Title,
-                @ChapterID,
-                @ActivityType,
-                @ActivityDate,
-                @PreparedBy,
-                @Description
-            );";
+                    INSERT INTO Report
+                    (
+                        Title,
+                        ChapterID,
+                        ReportType,
+                        Activity,
+                        ReportDate,
+                        PreparedBy,
+                        Description
+                    )
+                    VALUES
+                    (
+                        @Title,
+                        @ChapterID,
+                        @ReportType,
+                        @Activity,
+                        @ReportDate,
+                        @PreparedBy,
+                        @Description
+                    );";
 
                     using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@Title", txtTitle.Text.Trim());
+
                         cmd.Parameters.AddWithValue("@ChapterID", cmbChapter.SelectedValue);
-                        cmd.Parameters.AddWithValue("@ActivityType", cmbReportType.Text);
-                        cmd.Parameters.AddWithValue("@ActivityDate", dtpReportDate.Value.ToString("yyyy-MM-dd"));
-                        cmd.Parameters.AddWithValue("@PreparedBy", txtPreparedBy.Text.Trim());
-                        cmd.Parameters.AddWithValue("@Description", rtbDescription.Text.Trim());
+
+                        cmd.Parameters.AddWithValue("@ReportType", cmbReportType.Text.Trim());
+
+                        cmd.Parameters.AddWithValue("@Activity", rtbDescription.Text.Trim());
+
+                        cmd.Parameters.AddWithValue(
+                            "@ReportDate",
+                            dtpReportDate.Value.ToString("yyyy-MM-dd"));
+
+                        cmd.Parameters.AddWithValue(
+                            "@PreparedBy",
+                            txtPreparedBy.Text.Trim());
+
+                        cmd.Parameters.AddWithValue(
+                            "@Description",
+                            rtbDescription.Text.Trim());
 
                         cmd.ExecuteNonQuery();
                     }

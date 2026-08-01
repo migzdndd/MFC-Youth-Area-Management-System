@@ -215,7 +215,7 @@ namespace MFC_Youth_Database.Forms
                 }
 
                 MessageBox.Show(
-                    "Report deleted successfully.",
+                    "Activity deleted successfully.",
                     "Success",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);

@@ -116,13 +116,11 @@ namespace MFC_Youth_Database
                     lblTotalMembers.Text = totalMembers.ToString();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Unable to load the dashboard statistics.",
-                    "Database Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                    ex.ToString(),
+                    "LoadTotalMembers");
             }
         }
 
@@ -188,7 +186,7 @@ namespace MFC_Youth_Database
                 {
                     conn.Open();
 
-                    string query = "SELECT COUNT(*) FROM Activity;";
+                    string query = "SELECT COUNT(*) FROM Report;";
 
                     SQLiteCommand cmd = new SQLiteCommand(query, conn);
 
@@ -197,13 +195,11 @@ namespace MFC_Youth_Database
                     lblTotalActivity.Text = totalActivity.ToString();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Unable to load the dashboard statistics.",
-                    "Database Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                    ex.ToString(),
+                    "LoadTotalActivity");
             }
         }
 
