@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Data.SQLite;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using MFC_Youth_Database.Database;
+using MFC_Youth_Database.Utilities;
 using MFC_Youth_Database.Forms;
 
 namespace MFC_Youth_Database
@@ -74,8 +69,8 @@ namespace MFC_Youth_Database
         private void ArrangeCards()
         {
             int gap = 30;
-            int topMargin = 40;    
-            int verticalGap = 30;  
+            int topMargin = 40;
+            int verticalGap = 30;
 
 
             int totalTopWidth =
@@ -145,7 +140,7 @@ namespace MFC_Youth_Database
             {
                 MessageBox.Show(
                     "Unable to load the dashboard statistics.",
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -172,7 +167,7 @@ namespace MFC_Youth_Database
             {
                 MessageBox.Show(
                     "Unable to load the dashboard statistics.",
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }

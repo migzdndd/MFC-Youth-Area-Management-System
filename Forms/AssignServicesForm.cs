@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Data.SQLite;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using MFC_Youth_Database.Utilities;
 using MFC_Youth_Database.Database;
 
 namespace MFC_Youth_Database.Forms
@@ -74,7 +68,7 @@ WHERE MemberID = @MemberID;";
             {
                 MessageBox.Show(
                     "Unable to load the selected member.",
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -112,7 +106,7 @@ WHERE MemberID = @MemberID;";
             {
                 MessageBox.Show(
                     "Unable to load the available services.",
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -158,7 +152,7 @@ WHERE MemberID = @MemberID;";
             {
                 MessageBox.Show(
                     "Unable to load the assigned services.",
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -248,7 +242,7 @@ WHERE MemberID = @MemberID;";
             {
                 MessageBox.Show(
                     ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }

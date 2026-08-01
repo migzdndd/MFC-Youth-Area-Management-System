@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Data.SQLite;
+using System.Windows.Forms;
+using MFC_Youth_Database.Utilities;
 using MFC_Youth_Database.Database;
 
 namespace MFC_Youth_Database.Forms
@@ -63,7 +58,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     "Unable to load the chapter information.",
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -116,7 +111,7 @@ ORDER BY `Full Name`;";
             {
                 MessageBox.Show(
                     "Unable to load the chapter members.",
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -176,7 +171,7 @@ ORDER BY `Full Name`;";
 
         private void btnClose_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
     }
 }

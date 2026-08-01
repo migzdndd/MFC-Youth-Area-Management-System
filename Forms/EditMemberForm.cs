@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.SQLite;
 using System.Linq;
 using System.Windows.Forms;
+using MFC_Youth_Database.Utilities;
 using MFC_Youth_Database.Database;
 
 namespace MFC_Youth_Database.Forms
@@ -25,8 +26,8 @@ namespace MFC_Youth_Database.Forms
         {
             cmbStatus.Items.Clear();
 
-            cmbStatus.Items.Add("Active");
-            cmbStatus.Items.Add("Inactive");
+            cmbStatus.Items.Add(ApplicationConstants.ActiveStatus);
+            cmbStatus.Items.Add(ApplicationConstants.InactiveStatus);
 
             cmbStatus.SelectedIndex = 0;
         }
@@ -56,7 +57,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -123,7 +124,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -292,7 +293,7 @@ namespace MFC_Youth_Database.Forms
                 {
                     MessageBox.Show(
                         "Unable to update the member.\n\nPlease try again.",
-                        "Database Error",
+                        ApplicationConstants.DatabaseErrorTitle,
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                 }
@@ -317,7 +318,7 @@ namespace MFC_Youth_Database.Forms
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
     }
 }

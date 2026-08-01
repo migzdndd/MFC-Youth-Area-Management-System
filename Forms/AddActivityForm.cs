@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Data.SQLite;
+using System.Windows.Forms;
+using MFC_Youth_Database.Utilities;
 using MFC_Youth_Database.Database;
 
 namespace MFC_Youth_Database.Forms
@@ -49,7 +44,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     "Unable to load chapters.\n\n" + ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -176,7 +171,7 @@ namespace MFC_Youth_Database.Forms
 
                 MessageBox.Show(
                     "Activity saved successfully.",
-                    "Success",
+                    ApplicationConstants.SuccessTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
 
@@ -187,7 +182,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }

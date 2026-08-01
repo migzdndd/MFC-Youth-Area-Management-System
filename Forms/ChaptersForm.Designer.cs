@@ -212,7 +212,6 @@
             this.tblActions.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tblActions.Size = new System.Drawing.Size(252, 60);
             this.tblActions.TabIndex = 11;
-            this.tblActions.Paint += new System.Windows.Forms.PaintEventHandler(this.tblActions_Paint);
             // 
             // ChaptersForm
             // 

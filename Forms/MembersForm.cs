@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Data;
-using System.Windows.Forms;
 using System.Data.SQLite;
+using System.Windows.Forms;
+using MFC_Youth_Database.Utilities;
 using MFC_Youth_Database.Database;
 
 namespace MFC_Youth_Database.Forms
@@ -51,7 +52,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -247,7 +248,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     "Unable to delete the selected member.\n\nPlease try again.",
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -343,10 +344,10 @@ namespace MFC_Youth_Database.Forms
             using (AssignServicesForm assignServicesForm =
                 new AssignServicesForm(memberID))
             {
-    if (assignServicesForm.ShowDialog() == DialogResult.OK)
-    {
-        LoadMembers();
-    }
+                if (assignServicesForm.ShowDialog() == DialogResult.OK)
+                {
+                    LoadMembers();
+                }
             }
         }
 
@@ -356,11 +357,6 @@ namespace MFC_Youth_Database.Forms
             {
                 dashboard.ShowHome();
             }
-        }
-
-        private void dgvMembers_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-
         }
     }
 }

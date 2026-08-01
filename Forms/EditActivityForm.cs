@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Data.SQLite;
+using System.Windows.Forms;
+using MFC_Youth_Database.Utilities;
 using MFC_Youth_Database.Database;
 
 namespace MFC_Youth_Database.Forms
@@ -15,7 +10,7 @@ namespace MFC_Youth_Database.Forms
     public partial class EditActivityForm : Form
     {
 
-        private int reportId;
+        private readonly int reportId;
         public EditActivityForm(int reportId)
         {
             InitializeComponent();
@@ -54,7 +49,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     "Unable to load chapters.\n\n" + ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -108,7 +103,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -213,7 +208,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -221,7 +216,7 @@ namespace MFC_Youth_Database.Forms
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
     }
 }

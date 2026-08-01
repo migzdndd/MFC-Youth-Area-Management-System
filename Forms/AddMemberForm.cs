@@ -4,6 +4,7 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Windows.Forms;
 using MFC_Youth_Database.Database;
+using MFC_Youth_Database.Utilities;
 
 namespace MFC_Youth_Database.Forms
 {
@@ -21,8 +22,8 @@ namespace MFC_Youth_Database.Forms
         {
             cmbStatus.Items.Clear();
 
-            cmbStatus.Items.Add("Active");
-            cmbStatus.Items.Add("Inactive");
+            cmbStatus.Items.Add(ApplicationConstants.ActiveStatus);
+            cmbStatus.Items.Add(ApplicationConstants.InactiveStatus);
 
             cmbStatus.SelectedIndex = 0;
         }
@@ -53,7 +54,7 @@ namespace MFC_Youth_Database.Forms
             {
                 MessageBox.Show(
                     ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -151,7 +152,7 @@ namespace MFC_Youth_Database.Forms
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void txtContactNumber_KeyPress(object sender, KeyPressEventArgs e)
@@ -236,7 +237,7 @@ namespace MFC_Youth_Database.Forms
                     {
                         MessageBox.Show(
                             "Member added successfully.",
-                            "Success",
+                            ApplicationConstants.SuccessTitle,
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Information);
 
@@ -253,15 +254,6 @@ namespace MFC_Youth_Database.Forms
 
                         btnSave.Enabled = true;
                     }
-
-                    MessageBox.Show(
-                        "Member added successfully.",
-                        "Success",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-
-                    DialogResult = DialogResult.OK;
-                    Close();
                 }
             }
             catch (SQLiteException ex)
@@ -280,7 +272,7 @@ namespace MFC_Youth_Database.Forms
                 {
                     MessageBox.Show(
                         "Unable to save the member.\n\nPlease try again.",
-                        "Database Error",
+                        ApplicationConstants.DatabaseErrorTitle,
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
 

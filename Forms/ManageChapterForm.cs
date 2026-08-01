@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Data.SQLite;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using MFC_Youth_Database.Utilities;
 using MFC_Youth_Database.Database;
 
 namespace MFC_Youth_Database.Forms
@@ -27,8 +21,8 @@ namespace MFC_Youth_Database.Forms
             {
                 connection.Open();
 
-string query =
-@"SELECT
+                string query =
+                @"SELECT
     c.ChapterID,
     c.ChapterName,
     COUNT(m.MemberID) AS MemberCount
@@ -133,7 +127,7 @@ ORDER BY c.ChapterName;";
                     {
                         MessageBox.Show(
                             ex.Message,
-                            "Database Error",
+                            ApplicationConstants.DatabaseErrorTitle,
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
                     }
@@ -219,7 +213,7 @@ ORDER BY c.ChapterName;";
             {
                 MessageBox.Show(
                     ex.Message,
-                    "Database Error",
+                    ApplicationConstants.DatabaseErrorTitle,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }

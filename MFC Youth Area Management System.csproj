@@ -204,6 +204,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\ApplicationConstants.cs" />
     <EmbeddedResource Include="Forms\AddMemberForm.resx">
       <DependentUpon>AddMemberForm.cs</DependentUpon>
     </EmbeddedResource>
