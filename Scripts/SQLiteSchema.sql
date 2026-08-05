@@ -7,7 +7,7 @@ DROP VIEW IF EXISTS MembersWithoutService;
 DROP VIEW IF EXISTS ActiveMembers;
 DROP VIEW IF EXISTS MemberDirectory;
 
-
+DROP TABLE IF EXISTS GIGContribution;
 DROP TABLE IF EXISTS MemberService;
 DROP TABLE IF EXISTS Member;
 DROP TABLE IF EXISTS Service;
@@ -93,6 +93,34 @@ CREATE TABLE MemberService
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
+CREATE TABLE GIGContribution
+(
+    ContributionID INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    MemberID INTEGER NOT NULL,
+
+    ContributionDate TEXT NOT NULL,
+
+    Amount REAL NOT NULL
+        CHECK (Amount > 0),
+
+    Remarks TEXT,
+
+    CreatedAt TEXT NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (MemberID)
+        REFERENCES Member(MemberID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE INDEX idx_gig_member
+ON GIGContribution(MemberID);
+
+CREATE INDEX idx_gig_date
+ON GIGContribution(ContributionDate);
 
 INSERT INTO Chapter (ChapterName)
 VALUES

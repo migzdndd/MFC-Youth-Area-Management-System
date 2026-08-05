@@ -87,6 +87,46 @@ namespace MFC_Youth_Database.Database
                 {
                     cmd.ExecuteNonQuery();
                 }
+
+                query = @"
+                CREATE TABLE IF NOT EXISTS GIGContribution
+                (
+                    ContributionID INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                    MemberID INTEGER NOT NULL,
+
+                    ContributionDate TEXT NOT NULL,
+
+                    Amount DECIMAL(10,2) NOT NULL
+                        CHECK (Amount > 0),
+
+                    Remarks TEXT,
+
+                    CreatedAt TEXT NOT NULL
+                        DEFAULT CURRENT_TIMESTAMP,
+
+                    FOREIGN KEY (MemberID)
+                    REFERENCES Member(MemberID)
+                    ON DELETE CASCADE
+                    ON UPDATE CASCADE
+                );";
+
+                using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
+                {
+                    cmd.ExecuteNonQuery();
+                }
+
+                query = @"
+                CREATE INDEX IF NOT EXISTS idx_gig_member
+                ON GIGContribution(MemberID);
+
+                CREATE INDEX IF NOT EXISTS idx_gig_date
+                ON GIGContribution(ContributionDate);";
+
+                using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
+                {
+                    cmd.ExecuteNonQuery();
+                }
             }
         }
     }

@@ -2,8 +2,9 @@
 using System.Data;
 using System.Data.SQLite;
 using System.Windows.Forms;
-using MFC_Youth_Database.Utilities;
+using MFC_Youth_Area_Management_System.Forms;
 using MFC_Youth_Database.Database;
+using MFC_Youth_Database.Utilities;
 
 namespace MFC_Youth_Database.Forms
 {
@@ -356,6 +357,29 @@ namespace MFC_Youth_Database.Forms
             if (this.ParentForm is Dashboard dashboard)
             {
                 dashboard.ShowHome();
+            }
+        }
+
+        private void btnGIGTracker_Click(object sender, EventArgs e)
+        {
+            if (dgvMembers.CurrentRow == null)
+            {
+                MessageBox.Show(
+                    "Please select a member first.",
+                    "No Selection",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+
+                return;
+            }
+
+            int memberID = Convert.ToInt32(
+                dgvMembers.CurrentRow.Cells["MemberID"].Value);
+
+            using (GIGTrackerForm gigTrackerForm =
+                new GIGTrackerForm(memberID))
+            {
+                gigTrackerForm.ShowDialog();
             }
         }
     }

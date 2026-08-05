@@ -3,8 +3,9 @@ using System.Data;
 using System.Data.SQLite;
 using System.Linq;
 using System.Windows.Forms;
-using MFC_Youth_Database.Utilities;
+using MFC_Youth_Area_Management_System.Forms;
 using MFC_Youth_Database.Database;
+using MFC_Youth_Database.Utilities;
 
 namespace MFC_Youth_Database.Forms
 {
@@ -319,6 +320,14 @@ namespace MFC_Youth_Database.Forms
         private void btnCancel_Click(object sender, EventArgs e)
         {
             Close();
+        }
+
+        private void btnGIGTracker_Click(object sender, EventArgs e)
+        {
+            using (GIGTrackerForm gigTrackerForm = new GIGTrackerForm(memberID))
+            {
+                gigTrackerForm.ShowDialog(this);
+            }
         }
     }
 }

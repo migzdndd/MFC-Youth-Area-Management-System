@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(EditMemberForm));
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
             this.cmbStatus = new System.Windows.Forms.ComboBox();
@@ -50,6 +51,7 @@
             this.lblLastName = new System.Windows.Forms.Label();
             this.grpMemberInformation = new System.Windows.Forms.GroupBox();
             this.lblTitle = new System.Windows.Forms.Label();
+            this.btnGIGTracker = new System.Windows.Forms.Button();
             this.grpMemberInformation.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -87,7 +89,7 @@
             this.cmbStatus.FormattingEnabled = true;
             this.cmbStatus.Location = new System.Drawing.Point(131, 246);
             this.cmbStatus.Name = "cmbStatus";
-            this.cmbStatus.Size = new System.Drawing.Size(250, 21);
+            this.cmbStatus.Size = new System.Drawing.Size(250, 23);
             this.cmbStatus.TabIndex = 17;
             // 
             // lblStatus
@@ -106,7 +108,7 @@
             this.cmbChapter.FormattingEnabled = true;
             this.cmbChapter.Location = new System.Drawing.Point(131, 273);
             this.cmbChapter.Name = "cmbChapter";
-            this.cmbChapter.Size = new System.Drawing.Size(250, 21);
+            this.cmbChapter.Size = new System.Drawing.Size(250, 23);
             this.cmbChapter.TabIndex = 15;
             // 
             // lblChapter
@@ -189,7 +191,7 @@
             this.dtpBirthDate.Format = System.Windows.Forms.DateTimePickerFormat.Short;
             this.dtpBirthDate.Location = new System.Drawing.Point(131, 127);
             this.dtpBirthDate.Name = "dtpBirthDate";
-            this.dtpBirthDate.Size = new System.Drawing.Size(250, 20);
+            this.dtpBirthDate.Size = new System.Drawing.Size(250, 23);
             this.dtpBirthDate.TabIndex = 6;
             // 
             // txtMiddleName
@@ -248,6 +250,7 @@
             // 
             // grpMemberInformation
             // 
+            this.grpMemberInformation.Controls.Add(this.btnGIGTracker);
             this.grpMemberInformation.Controls.Add(this.btnCancel);
             this.grpMemberInformation.Controls.Add(this.btnSave);
             this.grpMemberInformation.Controls.Add(this.cmbStatus);
@@ -268,6 +271,8 @@
             this.grpMemberInformation.Controls.Add(this.lblFirstName);
             this.grpMemberInformation.Controls.Add(this.txtLastName);
             this.grpMemberInformation.Controls.Add(this.lblLastName);
+            this.grpMemberInformation.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.grpMemberInformation.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.grpMemberInformation.Location = new System.Drawing.Point(80, 55);
             this.grpMemberInformation.Name = "grpMemberInformation";
             this.grpMemberInformation.Size = new System.Drawing.Size(640, 390);
@@ -285,13 +290,30 @@
             this.lblTitle.TabIndex = 2;
             this.lblTitle.Text = "EDIT MEMBER";
             // 
+            // btnGIGTracker
+            // 
+            this.btnGIGTracker.BackColor = System.Drawing.Color.MediumPurple;
+            this.btnGIGTracker.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnGIGTracker.ForeColor = System.Drawing.Color.White;
+            this.btnGIGTracker.Location = new System.Drawing.Point(462, 246);
+            this.btnGIGTracker.Name = "btnGIGTracker";
+            this.btnGIGTracker.Size = new System.Drawing.Size(120, 55);
+            this.btnGIGTracker.TabIndex = 20;
+            this.btnGIGTracker.Text = "Open G.I.G.Tracker";
+            this.btnGIGTracker.UseVisualStyleBackColor = false;
+            this.btnGIGTracker.Click += new System.EventHandler(this.btnGIGTracker_Click);
+            // 
             // EditMemberForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(784, 461);
             this.Controls.Add(this.grpMemberInformation);
             this.Controls.Add(this.lblTitle);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximizeBox = false;
+            this.MaximumSize = new System.Drawing.Size(800, 500);
+            this.MinimumSize = new System.Drawing.Size(800, 500);
             this.Name = "EditMemberForm";
             this.Text = "Edit Member";
             this.grpMemberInformation.ResumeLayout(false);
@@ -325,5 +347,6 @@
         private System.Windows.Forms.Label lblLastName;
         private System.Windows.Forms.GroupBox grpMemberInformation;
         private System.Windows.Forms.Label lblTitle;
+        private System.Windows.Forms.Button btnGIGTracker;
     }
 }
