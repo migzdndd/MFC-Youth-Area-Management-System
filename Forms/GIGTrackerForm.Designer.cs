@@ -54,7 +54,7 @@
             // 
             // pnlHeader
             // 
-            this.pnlHeader.BackColor = System.Drawing.Color.SteelBlue;
+            this.pnlHeader.BackColor = System.Drawing.Color.Black;
             this.pnlHeader.Controls.Add(this.lblSubtitle);
             this.pnlHeader.Controls.Add(this.lblTitle);
             this.pnlHeader.Dock = System.Windows.Forms.DockStyle.Top;

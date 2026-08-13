@@ -1,6 +1,6 @@
 #define MyAppName "MFC Youth Area Management System"
-#define MyAppVersion "Public Beta v1.0.1"
-#define MyAppFileVersion "1.0.1.0"
+#define MyAppVersion "Public Beta v1.0.2"
+#define MyAppFileVersion "1.0.2"
 #define MyAppPublisher "Miguel Riovaldez - MFC Youth NCR Central"
 #define MyAppExeName "MFC Youth Area Management System.exe"
 
@@ -8,7 +8,7 @@
 AppId={{8F7F5A1C-0C9A-4A5E-8F3A-3DDBF5C8A001}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-AppVerName=MFC Youth Area Management System Public Beta v1.0.1
+AppVerName=MFC Youth Area Management System Public Beta v1.0.2
 InfoBeforeFile=Resources\BetaNotice.txt
 
 AppPublisher={#MyAppPublisher}
@@ -20,7 +20,7 @@ DefaultDirName={localappdata}\Programs\{#MyAppName}
 DefaultGroupName={#MyAppName}
 
 OutputDir=D:\data\Self Projects\MFC Youth Database Management App\Application\Beta Releases
-OutputBaseFilename=MFCYouthSetup_v1.0.1-beta
+OutputBaseFilename=MFCYouthSetup_v1.0.2-beta
 
 Compression=lzma2
 CompressionThreads=auto
