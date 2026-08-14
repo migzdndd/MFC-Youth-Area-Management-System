@@ -1,6 +1,6 @@
 /* =========================================================
-   MEMBERS PAGE — STEP 1
-   Real Supabase member directory and summary data.
+   MEMBERS PAGE — STEP 2
+   Member directory, search, filters, and real Supabase data.
    ========================================================= */
 
 const membersSupabase = window.supabase.createClient(
@@ -13,7 +13,17 @@ const membersState = {
     members: [],
     chapters: [],
     services: [],
-    assignments: []
+    assignments: [],
+    filteredMembers: [],
+
+    filters: {
+        search: "",
+        status: "all",
+        chapter: "all",
+        service: "all"
+    },
+
+    isLoading: false
 };
 
 
@@ -44,6 +54,16 @@ function normalizeStatus(value) {
     return String(value || "")
         .trim()
         .toLowerCase();
+
+}
+
+
+function normalizeSearch(value) {
+
+    return String(value || "")
+        .trim()
+        .toLowerCase();
+
 }
 
 
@@ -55,6 +75,17 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+
+}
+
+
+function formatCount(value, singular, plural) {
+
+    return `${value} ${value === 1
+        ? singular
+        : plural
+        }`;
+
 }
 
 
@@ -62,21 +93,44 @@ function escapeHtml(value) {
    MEMBER HELPERS
    ========================================================= */
 
+function getMemberId(member) {
+
+    return field(
+        member,
+        [
+            "MemberID",
+            "member_id",
+            "id"
+        ]
+    );
+
+}
+
+
 function getMemberName(member) {
 
     const first = field(
         member,
-        ["FirstName", "first_name"]
+        [
+            "FirstName",
+            "first_name"
+        ]
     );
 
     const middle = field(
         member,
-        ["MiddleName", "middle_name"]
+        [
+            "MiddleName",
+            "middle_name"
+        ]
     );
 
     const last = field(
         member,
-        ["LastName", "last_name"]
+        [
+            "LastName",
+            "last_name"
+        ]
     );
 
     return [
@@ -87,30 +141,38 @@ function getMemberName(member) {
         .filter(Boolean)
         .join(" ")
         .trim() || "Unnamed member";
+
 }
 
 
 function getInitials(name) {
 
-    const parts = String(name)
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean);
+    const parts =
+        String(name)
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean);
+
 
     if (!parts.length) {
         return "M";
     }
 
+
     if (parts.length === 1) {
+
         return parts[0]
             .slice(0, 2)
             .toUpperCase();
+
     }
+
 
     return (
         parts[0][0] +
         parts[parts.length - 1][0]
     ).toUpperCase();
+
 }
 
 
@@ -120,19 +182,21 @@ function getInitials(name) {
 
 function getChapterName(chapterId) {
 
-    const chapter = membersState.chapters.find(
-        item =>
-            String(
-                field(
-                    item,
-                    [
-                        "ChapterID",
-                        "chapter_id",
-                        "id"
-                    ]
-                )
-            ) === String(chapterId)
-    );
+    const chapter =
+        membersState.chapters.find(
+            item =>
+                String(
+                    field(
+                        item,
+                        [
+                            "ChapterID",
+                            "chapter_id",
+                            "id"
+                        ]
+                    )
+                ) === String(chapterId)
+        );
+
 
     return field(
         chapter,
@@ -144,6 +208,7 @@ function getChapterName(chapterId) {
         ],
         "Unassigned"
     );
+
 }
 
 
@@ -153,29 +218,31 @@ function getChapterName(chapterId) {
 
 function getMemberServices(memberId) {
 
-    const serviceIds = membersState.assignments
-        .filter(
-            assignment =>
-                String(
+    const serviceIds =
+        membersState.assignments
+            .filter(
+                assignment =>
+                    String(
+                        field(
+                            assignment,
+                            [
+                                "MemberID",
+                                "member_id"
+                            ]
+                        )
+                    ) === String(memberId)
+            )
+            .map(
+                assignment =>
                     field(
                         assignment,
                         [
-                            "MemberID",
-                            "member_id"
+                            "ServiceID",
+                            "service_id"
                         ]
                     )
-                ) === String(memberId)
-        )
-        .map(
-            assignment =>
-                field(
-                    assignment,
-                    [
-                        "ServiceID",
-                        "service_id"
-                    ]
-                )
-        );
+            );
+
 
     return serviceIds
         .map(
@@ -208,6 +275,81 @@ function getMemberServices(memberId) {
                     "Unnamed service"
                 )
         );
+
+}
+
+
+/* =========================================================
+   SEARCH TEXT
+   ========================================================= */
+
+function getMemberSearchText(member) {
+
+    const memberId =
+        getMemberId(member);
+
+
+    const chapterId =
+        field(
+            member,
+            [
+                "ChapterID",
+                "chapter_id"
+            ]
+        );
+
+
+    const searchValues = [
+
+        memberId,
+
+        getMemberName(member),
+
+        field(
+            member,
+            [
+                "EmailAddress",
+                "email_address",
+                "email"
+            ]
+        ),
+
+        field(
+            member,
+            [
+                "ContactNumber",
+                "contact_number",
+                "contact"
+            ]
+        ),
+
+        field(
+            member,
+            [
+                "Address",
+                "address"
+            ]
+        ),
+
+        field(
+            member,
+            [
+                "Status",
+                "status"
+            ]
+        ),
+
+        getChapterName(chapterId),
+
+        ...getMemberServices(memberId)
+
+    ];
+
+
+    return searchValues
+        .map(normalizeSearch)
+        .join(" ");
+
 }
 
 
@@ -220,24 +362,146 @@ function setText(id, value) {
     const element =
         document.getElementById(id);
 
+
     if (element) {
         element.textContent = value;
     }
+
 }
 
 
 function setError(message = "") {
 
     const error =
-        document.getElementById("members-error");
+        document.getElementById(
+            "members-error"
+        );
+
 
     if (!error) {
         return;
     }
 
-    error.textContent = message;
 
-    error.hidden = !message;
+    error.textContent =
+        message;
+
+    error.hidden =
+        !message;
+
+}
+
+/* =========================================================
+   SUCCESS NOTIFICATION
+   ========================================================= */
+
+function setSuccess(
+    message = ""
+) {
+
+    const success =
+        document.getElementById(
+            "members-success"
+        );
+
+
+    if (!success) {
+        return;
+    }
+
+
+    success.textContent =
+        message;
+
+    success.hidden =
+        !message;
+
+}
+
+
+function setLoading(isLoading) {
+
+    membersState.isLoading =
+        isLoading;
+
+
+    const button =
+        document.getElementById(
+            "refresh-members"
+        );
+
+
+    if (!button) {
+        return;
+    }
+
+
+    button.disabled =
+        isLoading;
+
+
+    button.textContent =
+        isLoading
+            ? "Refreshing..."
+            : "Refresh";
+
+}
+
+
+function hasActiveFilters() {
+
+    return Boolean(
+
+        membersState.filters.search ||
+
+        membersState.filters.status !== "all" ||
+
+        membersState.filters.chapter !== "all" ||
+
+        membersState.filters.service !== "all"
+
+    );
+
+}
+
+
+function updateClearControls() {
+
+    const search =
+        document.getElementById(
+            "member-search"
+        );
+
+
+    const clearSearch =
+        document.getElementById(
+            "clear-member-search"
+        );
+
+
+    const clearFilters =
+        document.getElementById(
+            "clear-member-filters"
+        );
+
+
+    if (clearSearch) {
+
+        clearSearch.hidden =
+            !normalizeSearch(
+                search?.value
+            );
+
+    }
+
+
+    if (clearFilters) {
+
+        clearFilters.hidden =
+            !hasActiveFilters();
+
+    }
+
 }
 
 
@@ -283,23 +547,10 @@ function renderSummary() {
 
     const withoutServices =
         members.filter(
-            member => {
-
-                const memberId =
-                    field(
-                        member,
-                        [
-                            "MemberID",
-                            "member_id",
-                            "id"
-                        ]
-                    );
-
-                return (
-                    getMemberServices(memberId)
-                        .length === 0
-                );
-            }
+            member =>
+                getMemberServices(
+                    getMemberId(member)
+                ).length === 0
         );
 
 
@@ -326,19 +577,300 @@ function renderSummary() {
         withoutServices.length
     );
 
-
-    setText(
-        "member-count-label",
-        `${members.length} ${members.length === 1
-            ? "member"
-            : "members"
-        }`
-    );
 }
 
 
 /* =========================================================
-   MEMBER TABLE
+   CHAPTER FILTER
+   ========================================================= */
+
+function populateChapterFilter() {
+
+    const select =
+        document.getElementById(
+            "member-chapter-filter"
+        );
+
+
+    if (!select) {
+        return;
+    }
+
+
+    const currentValue =
+        membersState.filters.chapter;
+
+
+    const chapters =
+        [...membersState.chapters]
+            .sort(
+                (a, b) =>
+                    getChapterName(
+                        field(
+                            a,
+                            [
+                                "ChapterID",
+                                "chapter_id",
+                                "id"
+                            ]
+                        )
+                    ).localeCompare(
+                        getChapterName(
+                            field(
+                                b,
+                                [
+                                    "ChapterID",
+                                    "chapter_id",
+                                    "id"
+                                ]
+                            )
+                        )
+                    )
+            );
+
+
+    select.innerHTML = `
+
+        <option value="all">
+            All chapters
+        </option>
+
+        ${chapters
+            .map(chapter => {
+
+                const id =
+                    field(
+                        chapter,
+                        [
+                            "ChapterID",
+                            "chapter_id",
+                            "id"
+                        ]
+                    );
+
+
+                return `
+                        <option value="${escapeHtml(String(id))}">
+                            ${escapeHtml(
+                    getChapterName(id)
+                )}
+                        </option>
+                    `;
+
+            })
+            .join("")
+        }
+
+    `;
+
+
+    if (
+        [...select.options]
+            .some(
+                option =>
+                    option.value ===
+                    currentValue
+            )
+    ) {
+
+        select.value =
+            currentValue;
+
+    }
+
+}
+
+
+/* =========================================================
+   FILTERING
+   ========================================================= */
+
+function applyMemberFilters() {
+
+    const search =
+        normalizeSearch(
+            membersState.filters.search
+        );
+
+
+    const status =
+        membersState.filters.status;
+
+
+    const chapter =
+        membersState.filters.chapter;
+
+
+    const service =
+        membersState.filters.service;
+
+
+    membersState.filteredMembers =
+        membersState.members.filter(
+            member => {
+
+                /* Search */
+
+                if (
+                    search &&
+                    !getMemberSearchText(member)
+                        .includes(search)
+                ) {
+
+                    return false;
+
+                }
+
+
+                /* Status */
+
+                const memberStatus =
+                    normalizeStatus(
+                        field(
+                            member,
+                            [
+                                "Status",
+                                "status"
+                            ]
+                        )
+                    );
+
+
+                if (
+                    status !== "all" &&
+                    memberStatus !== status
+                ) {
+
+                    return false;
+
+                }
+
+
+                /* Chapter */
+
+                if (
+                    chapter !== "all"
+                ) {
+
+                    const memberChapter =
+                        field(
+                            member,
+                            [
+                                "ChapterID",
+                                "chapter_id"
+                            ]
+                        );
+
+
+                    if (
+                        String(memberChapter) !==
+                        String(chapter)
+                    ) {
+
+                        return false;
+
+                    }
+
+                }
+
+
+                /* Service Assignment */
+
+                const hasServices =
+                    getMemberServices(
+                        getMemberId(member)
+                    ).length > 0;
+
+
+                if (
+                    service === "assigned" &&
+                    !hasServices
+                ) {
+
+                    return false;
+
+                }
+
+
+                if (
+                    service === "unassigned" &&
+                    hasServices
+                ) {
+
+                    return false;
+
+                }
+
+
+                return true;
+
+            }
+        );
+
+
+    renderTable();
+
+    renderFilterSummary();
+
+    updateClearControls();
+
+}
+
+
+/* =========================================================
+   FILTER SUMMARY
+   ========================================================= */
+
+function renderFilterSummary() {
+
+    const total =
+        membersState.members.length;
+
+
+    const visible =
+        membersState.filteredMembers.length;
+
+
+    setText(
+        "member-filter-summary",
+
+        hasActiveFilters()
+
+            ? `Showing ${formatCount(
+                visible,
+                "matching member",
+                "matching members"
+            )} of ${formatCount(
+                total,
+                "member",
+                "members"
+            )}`
+
+            : `Showing all ${formatCount(
+                total,
+                "member",
+                "members"
+            )}`
+
+    );
+
+
+    setText(
+        "member-count-label",
+
+        formatCount(
+            visible,
+            "member",
+            "members"
+        )
+
+    );
+
+}
+
+
+/* =========================================================
+   TABLE
    ========================================================= */
 
 function renderTable() {
@@ -354,12 +886,18 @@ function renderTable() {
     }
 
 
-    /* Empty state */
+    const members =
+        membersState.filteredMembers;
 
-    if (!membersState.members.length) {
+
+    /* No results */
+
+    if (!members.length) {
 
         body.innerHTML = `
+
             <tr>
+
                 <td colspan="5">
 
                     <div class="members-state">
@@ -368,24 +906,68 @@ function renderTable() {
                             class="members-state-icon"
                             aria-hidden="true"
                         >
-                            ◉
+                            ${hasActiveFilters()
+                ? "⌕"
+                : "◉"
+            }
                         </div>
+
 
                         <div class="members-state-title">
-                            No members found
+
+                            ${hasActiveFilters()
+                ? "No matching members"
+                : "No members found"
+            }
+
                         </div>
 
+
                         <p class="members-state-text">
-                            There are currently no
-                            member records available
-                            to your account.
+
+                            ${hasActiveFilters()
+                ? "Try adjusting your search or filters."
+                : "There are currently no member records available to your account."
+            }
+
                         </p>
+
+
+                        ${hasActiveFilters()
+
+                ? `
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-secondary"
+                                        id="empty-state-clear-filters"
+                                    >
+                                        Clear Filters
+                                    </button>
+
+                                `
+
+                : ""
+            }
 
                     </div>
 
                 </td>
+
             </tr>
+
         `;
+
+
+        document
+            .getElementById(
+                "empty-state-clear-filters"
+            )
+            ?.addEventListener(
+                "click",
+                clearMemberFilters
+            );
+
 
         return;
     }
@@ -394,224 +976,227 @@ function renderTable() {
     /* Member rows */
 
     body.innerHTML =
-        membersState.members
-            .map(member => {
+        members
+            .map(
+                member => {
 
-                const memberId =
-                    field(
-                        member,
-                        [
-                            "MemberID",
-                            "member_id",
-                            "id"
-                        ]
-                    );
+                    const memberId =
+                        getMemberId(member);
 
 
-                const name =
-                    getMemberName(member);
+                    const name =
+                        getMemberName(member);
 
 
-                const email =
-                    field(
-                        member,
-                        [
-                            "EmailAddress",
-                            "email_address",
-                            "email"
-                        ]
-                    );
-
-
-                const chapterId =
-                    field(
-                        member,
-                        [
-                            "ChapterID",
-                            "chapter_id"
-                        ]
-                    );
-
-
-                const chapterName =
-                    getChapterName(
-                        chapterId
-                    );
-
-
-                const contact =
-                    field(
-                        member,
-                        [
-                            "ContactNumber",
-                            "contact_number",
-                            "contact"
-                        ],
-                        "—"
-                    );
-
-
-                const status =
-                    normalizeStatus(
+                    const email =
                         field(
                             member,
                             [
-                                "Status",
-                                "status"
+                                "EmailAddress",
+                                "email_address",
+                                "email"
                             ]
-                        )
-                    );
+                        );
 
 
-                const services =
-                    getMemberServices(
-                        memberId
-                    );
-
-
-                /* Service badges */
-
-                const serviceMarkup =
-                    services.length
-
-                        ? services
-                            .map(
-                                service => `
-                                    <span
-                                        class="member-service-badge"
-                                    >
-                                        ${escapeHtml(service)}
-                                    </span>
-                                `
+                    const chapterName =
+                        getChapterName(
+                            field(
+                                member,
+                                [
+                                    "ChapterID",
+                                    "chapter_id"
+                                ]
                             )
-                            .join("")
-
-                        : `
-                            <span
-                                class="member-email"
-                            >
-                                No services
-                            </span>
-                        `;
+                        );
 
 
-                /* Status */
-
-                const statusClass =
-                    status === "active"
-                        ? "active"
-                        : "inactive";
-
-
-                const statusLabel =
-                    status
-                        ? status
-                        : "unknown";
+                    const contact =
+                        field(
+                            member,
+                            [
+                                "ContactNumber",
+                                "contact_number",
+                                "contact"
+                            ],
+                            "—"
+                        );
 
 
-                return `
-                    <tr>
+                    const status =
+                        normalizeStatus(
+                            field(
+                                member,
+                                [
+                                    "Status",
+                                    "status"
+                                ]
+                            )
+                        );
 
-                        <!-- Member -->
 
-                        <td>
+                    const services =
+                        getMemberServices(
+                            memberId
+                        );
 
-                            <div class="member-cell">
+
+                    const serviceMarkup =
+                        services.length
+
+                            ? services
+                                .map(
+                                    service => `
+
+                                        <span
+                                            class="member-service-badge"
+                                        >
+                                            ${escapeHtml(
+                                        service
+                                    )}
+                                        </span>
+
+                                    `
+                                )
+                                .join("")
+
+                            : `
 
                                 <span
-                                    class="member-avatar"
-                                    aria-hidden="true"
+                                    class="member-email"
                                 >
-                                    ${escapeHtml(
-                    getInitials(name)
-                )}
+                                    No services
                                 </span>
 
-
-                                <div>
-
-                                    <div class="member-name">
-                                        ${escapeHtml(name)}
-                                    </div>
+                            `;
 
 
-                                    <div class="member-email">
+                    const statusClass =
+
+                        status === "active"
+
+                            ? "active"
+
+                            : status === "inactive"
+
+                                ? "inactive"
+
+                                : "unknown";
+
+
+                    return `
+
+                        <tr>
+
+                            <td>
+
+                                <div
+                                    class="member-cell"
+                                >
+
+                                    <span
+                                        class="member-avatar"
+                                        aria-hidden="true"
+                                    >
                                         ${escapeHtml(
-                    email ||
-                    "No email address"
-                )}
+                        getInitials(name)
+                    )}
+                                    </span>
+
+
+                                    <div>
+
+                                        <div
+                                            class="member-name"
+                                        >
+                                            ${escapeHtml(
+                        name
+                    )}
+                                        </div>
+
+
+                                        <div
+                                            class="member-email"
+                                        >
+                                            ${escapeHtml(
+                        email ||
+                        "No email address"
+                    )}
+                                        </div>
+
                                     </div>
 
                                 </div>
 
-                            </div>
-
-                        </td>
+                            </td>
 
 
-                        <!-- Chapter -->
-
-                        <td>
-                            ${escapeHtml(
-                    chapterName
-                )}
-                        </td>
-
-
-                        <!-- Contact -->
-
-                        <td>
-                            ${escapeHtml(
-                    contact
-                )}
-                        </td>
-
-
-                        <!-- Services -->
-
-                        <td>
-
-                            <div
-                                class="member-services"
-                            >
-                                ${serviceMarkup}
-                            </div>
-
-                        </td>
-
-
-                        <!-- Status -->
-
-                        <td>
-
-                            <span
-                                class="
-                                    member-status
-                                    ${statusClass}
-                                "
-                            >
+                            <td>
                                 ${escapeHtml(
-                    statusLabel
-                )}
-                            </span>
+                        chapterName
+                    )}
+                            </td>
 
-                        </td>
 
-                    </tr>
-                `;
+                            <td>
+                                ${escapeHtml(
+                        contact
+                    )}
+                            </td>
 
-            })
+
+                            <td>
+
+                                <div
+                                    class="member-services"
+                                >
+                                    ${serviceMarkup}
+                                </div>
+
+                            </td>
+
+
+                            <td>
+
+                                <span
+                                    class="
+                                        member-status
+                                        ${statusClass}
+                                    "
+                                >
+                                    ${escapeHtml(
+                        status ||
+                        "unknown"
+                    )}
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                }
+            )
             .join("");
+
 }
 
 
 /* =========================================================
-   LOAD MEMBERS DATA
+   LOAD DATA
    ========================================================= */
 
 async function loadMembersPage() {
 
+    if (membersState.isLoading) {
+        return;
+    }
+
+
     setError("");
+
+    setLoading(true);
 
 
     const body =
@@ -620,23 +1205,38 @@ async function loadMembersPage() {
         );
 
 
-    /* Loading state */
-
     if (body) {
 
         body.innerHTML = `
-            <tr class="members-loading-row">
+
+            <tr
+                class="members-loading-row"
+            >
 
                 <td colspan="5">
 
                     <div
-                        class="members-skeleton"
-                    ></div>
+                        class="members-loading-state"
+                    >
+
+                        <span
+                            class="members-loading-spinner"
+                            aria-hidden="true"
+                        ></span>
+
+
+                        <span>
+                            Loading members...
+                        </span>
+
+                    </div>
 
                 </td>
 
             </tr>
+
         `;
+
     }
 
 
@@ -651,36 +1251,15 @@ async function loadMembersPage() {
 
             membersSupabase
                 .from("member")
-                .select("*")
-                .order(
-                    "LastName",
-                    {
-                        ascending: true
-                    }
-                ),
-
+                .select("*"),
 
             membersSupabase
                 .from("chapter")
-                .select("*")
-                .order(
-                    "ChapterName",
-                    {
-                        ascending: true
-                    }
-                ),
-
+                .select("*"),
 
             membersSupabase
                 .from("service")
-                .select("*")
-                .order(
-                    "ServiceName",
-                    {
-                        ascending: true
-                    }
-                ),
-
+                .select("*"),
 
             membersSupabase
                 .from("member_service")
@@ -689,27 +1268,20 @@ async function loadMembersPage() {
         ]);
 
 
-        /* Find first database error */
-
-        const firstError = [
-
-            membersResult.error,
-
-            chaptersResult.error,
-
-            servicesResult.error,
-
-            assignmentsResult.error
-
-        ].find(Boolean);
+        const firstError =
+            [
+                membersResult.error,
+                chaptersResult.error,
+                servicesResult.error,
+                assignmentsResult.error
+            ]
+                .find(Boolean);
 
 
         if (firstError) {
             throw firstError;
         }
 
-
-        /* Store database data */
 
         membersState.members =
             membersResult.data || [];
@@ -726,15 +1298,111 @@ async function loadMembersPage() {
         membersState.assignments =
             assignmentsResult.data || [];
 
+        /* =====================================================
+CLIENT-SIDE SORTING
+===================================================== */
 
-        /* Render */
+        membersState.members.sort(
+            (a, b) =>
+                String(
+                    field(
+                        a,
+                        [
+                            "LastName",
+                            "last_name"
+                        ]
+                    )
+                ).localeCompare(
+                    String(
+                        field(
+                            b,
+                            [
+                                "LastName",
+                                "last_name"
+                            ]
+                        )
+                    ),
+                    undefined,
+                    {
+                        sensitivity: "base"
+                    }
+                )
+        );
+
+
+        membersState.chapters.sort(
+            (a, b) =>
+                String(
+                    field(
+                        a,
+                        [
+                            "ChapterName",
+                            "chapter_name",
+                            "Chapter",
+                            "name"
+                        ]
+                    )
+                ).localeCompare(
+                    String(
+                        field(
+                            b,
+                            [
+                                "ChapterName",
+                                "chapter_name",
+                                "Chapter",
+                                "name"
+                            ]
+                        )
+                    ),
+                    undefined,
+                    {
+                        numeric: true,
+                        sensitivity: "base"
+                    }
+                )
+        );
+
+
+        membersState.services.sort(
+            (a, b) =>
+                String(
+                    field(
+                        a,
+                        [
+                            "ServiceName",
+                            "service_name",
+                            "Service",
+                            "name"
+                        ]
+                    )
+                ).localeCompare(
+                    String(
+                        field(
+                            b,
+                            [
+                                "ServiceName",
+                                "service_name",
+                                "Service",
+                                "name"
+                            ]
+                        )
+                    ),
+                    undefined,
+                    {
+                        sensitivity: "base"
+                    }
+                )
+        );
+
+
+        populateChapterFilter();
+
 
         renderSummary();
 
-        renderTable();
 
+        applyMemberFilters();
 
-        /* Debug information */
 
         console.log(
             "Members page data loaded:",
@@ -765,8 +1433,7 @@ async function loadMembersPage() {
 
         setError(
             "Member data could not be loaded. " +
-            "Please check the connected database " +
-            "and try Refresh again."
+            "Please try Refresh again."
         );
 
 
@@ -778,17 +1445,279 @@ async function loadMembersPage() {
 
         membersState.assignments = [];
 
+        membersState.filteredMembers = [];
+
 
         renderSummary();
 
         renderTable();
+
+        renderFilterSummary();
+
     }
+
+    finally {
+
+        setLoading(false);
+
+    }
+
 }
 
 
 /* =========================================================
-   SESSION CHECK
+   CLEAR FILTERS
    ========================================================= */
+
+function clearMemberFilters() {
+
+    membersState.filters = {
+
+        search: "",
+
+        status: "all",
+
+        chapter: "all",
+
+        service: "all"
+
+    };
+
+
+    const search =
+        document.getElementById(
+            "member-search"
+        );
+
+
+    const status =
+        document.getElementById(
+            "member-status-filter"
+        );
+
+
+    const chapter =
+        document.getElementById(
+            "member-chapter-filter"
+        );
+
+
+    const service =
+        document.getElementById(
+            "member-service-filter"
+        );
+
+
+    if (search) {
+        search.value = "";
+    }
+
+
+    if (status) {
+        status.value = "all";
+    }
+
+
+    if (chapter) {
+        chapter.value = "all";
+    }
+
+
+    if (service) {
+        service.value = "all";
+    }
+
+
+    applyMemberFilters();
+
+}
+
+
+/* =========================================================
+   FILTER EVENTS
+   ========================================================= */
+
+function initializeMemberFilters() {
+
+    const search =
+        document.getElementById(
+            "member-search"
+        );
+
+
+    const status =
+        document.getElementById(
+            "member-status-filter"
+        );
+
+
+    const chapter =
+        document.getElementById(
+            "member-chapter-filter"
+        );
+
+
+    const service =
+        document.getElementById(
+            "member-service-filter"
+        );
+
+
+    const clearSearch =
+        document.getElementById(
+            "clear-member-search"
+        );
+
+
+    const clearFilters =
+        document.getElementById(
+            "clear-member-filters"
+        );
+
+
+    search?.addEventListener(
+        "input",
+        () => {
+
+            membersState.filters.search =
+                search.value;
+
+            applyMemberFilters();
+
+        }
+    );
+
+
+    status?.addEventListener(
+        "change",
+        () => {
+
+            membersState.filters.status =
+                status.value;
+
+            applyMemberFilters();
+
+        }
+    );
+
+
+    chapter?.addEventListener(
+        "change",
+        () => {
+
+            membersState.filters.chapter =
+                chapter.value;
+
+            applyMemberFilters();
+
+        }
+    );
+
+
+    service?.addEventListener(
+        "change",
+        () => {
+
+            membersState.filters.service =
+                service.value;
+
+            applyMemberFilters();
+
+        }
+    );
+
+
+    clearSearch?.addEventListener(
+        "click",
+        () => {
+
+            membersState.filters.search =
+                "";
+
+
+            if (search) {
+                search.value = "";
+            }
+
+
+            applyMemberFilters();
+
+
+            search?.focus();
+
+        }
+    );
+
+
+    clearFilters?.addEventListener(
+        "click",
+        clearMemberFilters
+    );
+
+}
+
+
+/* =========================================================
+   SESSION
+   ========================================================= */
+
+/* =========================================================
+SUCCESS MESSAGE
+========================================================= */
+
+function handleMembersSuccessMessage() {
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+
+    const success =
+        params.get(
+            "success"
+        );
+
+
+    if (
+        success ===
+        "member-added"
+    ) {
+
+        setSuccess(
+            "Member successfully added to the directory."
+        );
+
+
+        /*
+         * Remove the success parameter from the URL
+         * after reading it.
+         */
+
+        window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname
+        );
+
+
+        /*
+         * Automatically hide the notification
+         * after a few seconds.
+         */
+
+        setTimeout(
+            () => {
+
+                setSuccess("");
+
+            },
+            5000
+        );
+
+    }
+
+}
 
 async function checkMembersSession() {
 
@@ -808,6 +1737,13 @@ async function checkMembersSession() {
             error
         );
 
+
+        setError(
+            "Your session could not be verified. " +
+            "Please sign in again."
+        );
+
+
         return;
     }
 
@@ -822,18 +1758,42 @@ async function checkMembersSession() {
 
 
     await loadMembersPage();
+
 }
 
 
 /* =========================================================
-   REFRESH
+   EVENTS
    ========================================================= */
 
 document
-    .getElementById("refresh-members")
+    .getElementById(
+        "refresh-members"
+    )
     ?.addEventListener(
         "click",
         loadMembersPage
+    );
+
+
+document
+    .getElementById(
+        "add-member-button"
+    )
+    ?.addEventListener(
+        "click",
+        () => {
+
+            /*
+             * Add Member is intentionally reserved
+             * for Phase 3, Step 3.
+             */
+
+            setError(
+                "Add Member will be enabled in the next step."
+            );
+
+        }
     );
 
 
@@ -841,4 +1801,15 @@ document
    INITIALIZE
    ========================================================= */
 
-checkMembersSession();
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        initializeMemberFilters();
+
+        handleMembersSuccessMessage();
+
+        checkMembersSession();
+
+    }
+);

@@ -1867,3 +1867,468 @@ button {
     }
 
 }
+
+/* =========================================================
+   MEMBERS — STEP 2 SEARCH & FILTERS
+   ========================================================= */
+
+.members-directory-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+
+.members-toolbar {
+    display: grid;
+
+    grid-template-columns:
+        minmax(260px, 1.8fr) repeat(3, minmax(150px, 0.7fr));
+
+    gap: 14px;
+
+    padding: 18px;
+
+    background: var(--surface-muted);
+
+    border: 1px solid var(--border-light);
+
+    border-radius: var(--radius-md);
+}
+
+
+.members-search,
+.members-filter {
+    min-width: 0;
+}
+
+
+.members-control-label {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: var(--text-secondary);
+
+    font-size: 11px;
+
+    font-weight: 650;
+}
+
+/* =========================================================
+   MEMBERS SUCCESS NOTIFICATION
+   ========================================================= */
+
+.members-success {
+
+    margin-bottom: 20px;
+
+    padding: 13px 16px;
+
+    border: 1px solid #bbf7d0;
+
+    border-radius: 10px;
+
+    background: #f0fdf4;
+
+    color: #166534;
+
+    font-size: 14px;
+
+    font-weight: 500;
+
+}
+
+/* =========================================================
+   SEARCH INPUT
+   ========================================================= */
+
+.members-search-input {
+    position: relative;
+}
+
+
+.members-search-input .form-input {
+    width: 100%;
+
+    padding-left: 38px;
+    padding-right: 38px;
+}
+
+
+.members-search-icon {
+    position: absolute;
+
+    left: 13px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: var(--text-muted);
+
+    font-size: 18px;
+
+    pointer-events: none;
+
+    z-index: 1;
+}
+
+
+.members-clear-search {
+    position: absolute;
+
+    right: 9px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 28px;
+    height: 28px;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: var(--text-muted);
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+
+.members-clear-search:hover {
+    background: var(--border-light);
+
+    color: var(--text-primary);
+}
+
+
+.members-clear-search:focus-visible {
+    outline: 2px solid var(--primary);
+
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   FILTER SELECTS
+   ========================================================= */
+
+.members-filter .form-select {
+    width: 100%;
+
+    min-height: 42px;
+}
+
+
+/* =========================================================
+   FILTER SUMMARY
+   ========================================================= */
+
+.members-filter-summary {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    margin-top: 14px;
+
+    margin-bottom: 14px;
+
+    color: var(--text-muted);
+
+    font-size: 12px;
+}
+
+
+.members-clear-filters {
+    padding: 0;
+
+    border: 0;
+
+    background: transparent;
+
+    color: var(--primary);
+
+    font-size: 12px;
+
+    font-weight: 650;
+
+    cursor: pointer;
+}
+
+
+.members-clear-filters:hover {
+    text-decoration: underline;
+}
+
+
+.members-clear-filters:focus-visible {
+    outline: 2px solid var(--primary);
+
+    outline-offset: 3px;
+
+    border-radius: 3px;
+}
+
+
+/* =========================================================
+   LOADING STATE
+   ========================================================= */
+
+.members-loading-state {
+    min-height: 180px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    color: var(--text-muted);
+
+    font-size: 13px;
+}
+
+
+.members-loading-spinner {
+    width: 18px;
+
+    height: 18px;
+
+    border: 2px solid var(--border);
+
+    border-top-color: var(--primary);
+
+    border-radius: 50%;
+
+    animation:
+        members-step2-spin 700ms linear infinite;
+}
+
+
+@keyframes members-step2-spin {
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+/* =========================================================
+   EMPTY / NO RESULTS STATE
+   ========================================================= */
+
+.members-state {
+    min-height: 220px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 32px 20px;
+
+    text-align: center;
+}
+
+
+.members-state .btn {
+    margin-top: 14px;
+}
+
+
+/* =========================================================
+   SCREEN READER ONLY
+   ========================================================= */
+
+.sr-only {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    padding: 0;
+    margin: -1px;
+
+    overflow: hidden;
+
+    clip: rect(0, 0, 0, 0);
+
+    white-space: nowrap;
+
+    border: 0;
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1050px) {
+
+    .members-toolbar {
+
+        grid-template-columns:
+            minmax(220px, 1fr) repeat(2, minmax(150px, 1fr));
+
+    }
+
+
+    .members-search {
+        grid-column: 1 / -1;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .members-card-header {
+        align-items: flex-start;
+    }
+
+
+    .members-directory-meta {
+
+        flex-direction: column;
+
+        align-items: flex-end;
+
+    }
+
+
+    .members-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+
+    .members-search {
+        grid-column: auto;
+    }
+
+
+    .members-filter-summary {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+    }
+
+}
+
+/* =========================================================
+   ADD MEMBER — STEP 3.4 VALIDATION
+   ========================================================= */
+
+.form-input.input-error,
+.form-select.input-error,
+.form-textarea.input-error {
+
+    border-color: var(--danger);
+
+    box-shadow:
+        0 0 0 3px rgba(220,
+            38,
+            38,
+            0.10);
+
+}
+
+
+.form-input.input-error:focus,
+.form-select.input-error:focus,
+.form-textarea.input-error:focus {
+
+    border-color: var(--danger);
+
+    box-shadow:
+        0 0 0 3px rgba(220,
+            38,
+            38,
+            0.12);
+
+}
+
+
+.form-status.error {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 20px;
+
+    padding: 12px 14px;
+
+    border: 1px solid var(--danger);
+
+    border-radius: var(--radius-md);
+
+    background: var(--danger-light);
+
+    color: var(--danger);
+
+    font-size: 14px;
+
+}
+
+
+.form-status.info {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 20px;
+
+    padding: 12px 14px;
+
+    border: 1px solid var(--info);
+
+    border-radius: var(--radius-md);
+
+    background: var(--info-light);
+
+    color: var(--info);
+
+    font-size: 14px;
+
+}
+
+
+.required-mark {
+
+    color: var(--danger);
+
+}

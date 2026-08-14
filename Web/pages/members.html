@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -282,7 +283,9 @@
         }
 
         @keyframes members-pulse {
-            50% { opacity: 0.45; }
+            50% {
+                opacity: 0.45;
+            }
         }
 
         @media (max-width: 1100px) {
@@ -395,13 +398,15 @@
 
             <header class="app-topbar">
                 <div class="topbar-left">
-                    <button type="button" class="topbar-menu-button" id="menu-button" aria-label="Open navigation menu">☰</button>
+                    <button type="button" class="topbar-menu-button" id="menu-button"
+                        aria-label="Open navigation menu">☰</button>
                     <div class="topbar-page-title">Members</div>
                 </div>
 
                 <div class="topbar-right">
                     <div class="user-menu-container">
-                        <button type="button" class="user-menu-button" id="user-menu-button" aria-label="Open user menu">
+                        <button type="button" class="user-menu-button" id="user-menu-button"
+                            aria-label="Open user menu">
                             <span class="user-avatar" id="user-avatar">U</span>
                             <span class="user-menu-name" id="user-menu-name">User</span>
                             <span class="user-menu-arrow" aria-hidden="true">▼</span>
@@ -428,6 +433,8 @@
                     <div class="members-header-actions">
                         <button type="button" class="btn btn-secondary" id="refresh-members">Refresh</button>
                     </div>
+                </div>
+                <div id="members-success" class="members-success" role="status" aria-live="polite" hidden>
                 </div>
 
                 <div id="members-error" class="members-error" role="alert" hidden></div>
@@ -471,17 +478,132 @@
                 </section>
 
                 <section class="members-card" aria-labelledby="member-list-title">
+
                     <div class="members-card-header">
+
                         <div>
-                            <h2 class="members-card-title" id="member-list-title">Member Directory</h2>
-                            <p class="members-card-description">Current members available to your account.</p>
+                            <h2 class="members-card-title" id="member-list-title">
+                                Member Directory
+                            </h2>
+
+                            <p class="members-card-description">
+                                Search and filter member records available to your account.
+                            </p>
                         </div>
-                        <span class="members-card-description" id="member-count-label">Loading...</span>
+
+                        <div class="members-directory-meta">
+
+                            <span class="members-card-description" id="member-count-label" aria-live="polite">
+                                Loading...
+                            </span>
+
+                            <button type="button" class="btn btn-primary" id="add-member-button">
+                                Add Member
+                            </button>
+
+                        </div>
+
                     </div>
 
+
+                    <!-- SEARCH AND FILTERS -->
+
+                    <div class="members-toolbar">
+
+                        <div class="members-search">
+
+                            <label for="member-search" class="members-control-label">
+                                Search members
+                            </label>
+
+                            <div class="members-search-input">
+
+                                <span class="members-search-icon" aria-hidden="true">
+                                    ⌕
+                                </span>
+
+                                <input type="search" id="member-search" class="form-input"
+                                    placeholder="Search by name, email, contact, chapter, address, or status..."
+                                    autocomplete="off">
+
+                                <button type="button" id="clear-member-search" class="members-clear-search"
+                                    aria-label="Clear member search" hidden>
+                                    ×
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="members-filter">
+
+                            <label for="member-status-filter" class="members-control-label">
+                                Status
+                            </label>
+
+                            <select id="member-status-filter" class="form-select">
+                                <option value="all">All statuses</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+
+                        </div>
+
+
+                        <div class="members-filter">
+
+                            <label for="member-chapter-filter" class="members-control-label">
+                                Chapter
+                            </label>
+
+                            <select id="member-chapter-filter" class="form-select">
+                                <option value="all">All chapters</option>
+                            </select>
+
+                        </div>
+
+
+                        <div class="members-filter">
+
+                            <label for="member-service-filter" class="members-control-label">
+                                Services
+                            </label>
+
+                            <select id="member-service-filter" class="form-select">
+                                <option value="all">All members</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="unassigned">No service</option>
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="members-filter-summary">
+
+                        <span id="member-filter-summary" aria-live="polite">
+                            Showing all members
+                        </span>
+
+                        <button type="button" id="clear-member-filters" class="members-clear-filters" hidden>
+                            Clear filters
+                        </button>
+
+                    </div>
+
+
                     <div class="members-table-wrap">
+
                         <table class="members-table">
+
+                            <caption class="sr-only">
+                                MFC Youth member directory
+                            </caption>
+
                             <thead>
+
                                 <tr>
                                     <th scope="col">Member</th>
                                     <th scope="col">Chapter</th>
@@ -489,16 +611,26 @@
                                     <th scope="col">Services</th>
                                     <th scope="col">Status</th>
                                 </tr>
-                            </thead>
-                            <tbody id="members-table-body">
-                                <tr class="members-loading-row">
-                                    <td colspan="5"><div class="members-skeleton"></div></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
 
+                            </thead>
+
+                            <tbody id="members-table-body">
+
+                                <tr class="members-loading-row">
+
+                                    <td colspan="5">
+                                        <div class="members-skeleton"></div>
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
             </section>
         </main>
     </div>
@@ -508,4 +640,5 @@
     <script src="../js/app.js"></script>
     <script src="../js/members.js"></script>
 </body>
+
 </html>
