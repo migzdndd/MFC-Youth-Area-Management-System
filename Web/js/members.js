@@ -1172,6 +1172,24 @@ function renderTable() {
 
                             </td>
 
+                            <td>
+
+    <div class="member-actions">
+
+        <button
+            type="button"
+            class="btn btn-secondary btn-sm member-edit-button"
+            data-member-id="${escapeHtml(
+                        String(memberId)
+                    )}"
+        >
+            Edit
+        </button>
+
+    </div>
+
+</td>
+
                         </tr>
 
                     `;
@@ -1179,9 +1197,74 @@ function renderTable() {
                 }
             )
             .join("");
+    document
+        .querySelectorAll(
+            ".member-edit-button"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const memberId =
+                            button.dataset.memberId;
+
+
+                        openEditMember(
+                            memberId
+                        );
+
+                    }
+                );
+
+            }
+        );
 
 }
 
+/* =========================================================
+   EDIT MEMBER NAVIGATION
+   ========================================================= */
+
+function openEditMember(memberId) {
+
+    const id = String(
+        memberId ?? ""
+    ).trim();
+
+
+    if (!id) {
+
+        console.error(
+            "Cannot edit member: missing MemberID.",
+            memberId
+        );
+
+        return;
+
+    }
+
+
+    const editUrl =
+        `${window.location.origin}/pages/edit-member.html?id=${encodeURIComponent(id)}`;
+
+
+    console.log(
+        "Opening Edit Member:",
+        {
+            memberId: id,
+            url: editUrl
+        }
+    );
+
+
+    window.location.assign(
+        editUrl
+    );
+
+}
 
 /* =========================================================
    LOAD DATA
@@ -1213,7 +1296,7 @@ async function loadMembersPage() {
                 class="members-loading-row"
             >
 
-                <td colspan="5">
+                <td colspan="6">
 
                     <div
                         class="members-loading-state"
