@@ -11,7 +11,5 @@ obj/
 *.db-wal
 Logs/
 
-# Local/public release output
+# Release output
 dist/
-publish/
-*.pdb

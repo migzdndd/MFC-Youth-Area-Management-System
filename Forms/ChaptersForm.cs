@@ -117,7 +117,9 @@ public sealed class ChaptersForm : Form
             CustomDialog.Show(this, "Delete Not Available", $"{chapter.ChapterName} currently has {chapter.MemberCount} Member(s).\n\nMove these Members to another Chapter before deleting this Chapter.");
             return;
         }
-        if (!CustomDialog.Confirm(this, "Delete Chapter?", $"{chapter.ChapterName} will be permanently removed.", "Delete Chapter", true)) return;
+        if (!CustomDialog.Confirm(this, "Delete Chapter?",
+                $"{chapter.ChapterName} will be permanently removed.\n\nHistorical Activity Reports and Event registrations will be kept and will retain this Chapter name.",
+                "Delete Chapter", true)) return;
         try
         {
             _repo.Delete(chapter.ChapterID);

@@ -14,7 +14,7 @@ public sealed class Dashboard : Form
 
     public Dashboard()
     {
-        Text = $"{ApplicationConstants.AppName} v{ApplicationConstants.AppVersion}";
+        Text = ApplicationConstants.AppName;
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(1050, 680);
         Size = new Size(1280, 760);

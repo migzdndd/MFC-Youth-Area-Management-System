@@ -4,7 +4,7 @@ namespace MFCYouthAreaManagementSystem.Database;
 
 public static class DatabaseMigrator
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 4;
 
     public static void Apply(SQLiteConnection connection)
     {
@@ -21,7 +21,19 @@ public static class DatabaseMigrator
         }
 
         if (version < 2)
+        {
             ApplyV2(connection);
+            version = 2;
+        }
+
+        if (version < 3)
+        {
+            ApplyV3(connection);
+            version = 3;
+        }
+
+        if (version < 4)
+            ApplyV4(connection);
     }
 
     private static void ApplyV1(SQLiteConnection connection)
@@ -146,4 +158,126 @@ PRAGMA user_version = 2;";
         command.ExecuteNonQuery();
         tx.Commit();
     }
+    private static void ApplyV3(SQLiteConnection connection)
+    {
+        using var tx = connection.BeginTransaction();
+        using var command = connection.CreateCommand();
+        command.Transaction = tx;
+        command.CommandText = @"
+CREATE TABLE ActivityReport_v3 (
+    ReportID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Title TEXT NOT NULL,
+    ChapterID INTEGER NULL,
+    ChapterNameSnapshot TEXT NOT NULL,
+    ReportType TEXT NOT NULL,
+    Activity TEXT NOT NULL,
+    ReportDate TEXT NOT NULL,
+    PreparedBy TEXT NOT NULL,
+    Description TEXT NOT NULL,
+    CreatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ChapterID) REFERENCES Chapter(ChapterID) ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+INSERT INTO ActivityReport_v3(
+    ReportID, Title, ChapterID, ChapterNameSnapshot, ReportType, Activity, ReportDate, PreparedBy, Description, CreatedAt, UpdatedAt)
+SELECT
+    r.ReportID, r.Title, r.ChapterID, COALESCE(c.ChapterName, 'Deleted Chapter'),
+    r.ReportType, r.Activity, r.ReportDate, r.PreparedBy, r.Description, r.CreatedAt, r.UpdatedAt
+FROM ActivityReport r
+LEFT JOIN Chapter c ON c.ChapterID = r.ChapterID;
+
+DROP TABLE ActivityReport;
+ALTER TABLE ActivityReport_v3 RENAME TO ActivityReport;
+CREATE INDEX IF NOT EXISTS IX_ActivityReport_ChapterID ON ActivityReport(ChapterID);
+PRAGMA user_version = 3;";
+        command.ExecuteNonQuery();
+        tx.Commit();
+    }
+
+    private static void ApplyV4(SQLiteConnection connection)
+    {
+        using var tx = connection.BeginTransaction();
+        using var command = connection.CreateCommand();
+        command.Transaction = tx;
+        command.CommandText = @"
+DROP TABLE IF EXISTS ActivityReport_v4;
+CREATE TABLE ActivityReport_v4 (
+    ReportID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Title TEXT NOT NULL,
+    ChapterID INTEGER NULL,
+    ChapterNameSnapshot TEXT NOT NULL,
+    ReportType TEXT NOT NULL,
+    Activity TEXT NOT NULL,
+    ReportDate TEXT NOT NULL,
+    PreparedBy TEXT NOT NULL,
+    Description TEXT NOT NULL,
+    CreatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ChapterID) REFERENCES Chapter(ChapterID) ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+INSERT INTO ActivityReport_v4(
+    ReportID, Title, ChapterID, ChapterNameSnapshot, ReportType, Activity, ReportDate, PreparedBy, Description, CreatedAt, UpdatedAt)
+SELECT
+    r.ReportID,
+    r.Title,
+    CASE WHEN c.ChapterID IS NULL THEN NULL ELSE r.ChapterID END,
+    COALESCE(NULLIF(TRIM(r.ChapterNameSnapshot), ''), c.ChapterName, 'Deleted Chapter'),
+    r.ReportType, r.Activity, r.ReportDate, r.PreparedBy, r.Description, r.CreatedAt, r.UpdatedAt
+FROM ActivityReport r
+LEFT JOIN Chapter c ON c.ChapterID = r.ChapterID;
+
+DROP TABLE ActivityReport;
+ALTER TABLE ActivityReport_v4 RENAME TO ActivityReport;
+CREATE INDEX IF NOT EXISTS IX_ActivityReport_ChapterID ON ActivityReport(ChapterID);
+
+DROP TABLE IF EXISTS EventParticipant_v4;
+CREATE TABLE EventParticipant_v4 (
+    ParticipantID INTEGER PRIMARY KEY AUTOINCREMENT,
+    EventID INTEGER NOT NULL,
+    FirstName TEXT NOT NULL,
+    LastName TEXT NOT NULL,
+    MiddleInitial TEXT NULL,
+    Age INTEGER NOT NULL CHECK (Age BETWEEN 1 AND 120),
+    ContactNumber TEXT NOT NULL,
+    Address TEXT NOT NULL,
+    ChapterID INTEGER NULL,
+    ChapterNameSnapshot TEXT NOT NULL,
+    ServiceID INTEGER NULL,
+    ServiceNameSnapshot TEXT NOT NULL,
+    ModeOfPayment TEXT NULL,
+    PaymentStatus TEXT NOT NULL CHECK (PaymentStatus IN ('Paid', 'Not Paid')),
+    RegisteredAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (EventID) REFERENCES AreaEvent(EventID) ON DELETE CASCADE,
+    FOREIGN KEY (ChapterID) REFERENCES Chapter(ChapterID) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY (ServiceID) REFERENCES Service(ServiceID) ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+INSERT INTO EventParticipant_v4(
+    ParticipantID, EventID, FirstName, LastName, MiddleInitial, Age, ContactNumber, Address,
+    ChapterID, ChapterNameSnapshot, ServiceID, ServiceNameSnapshot, ModeOfPayment, PaymentStatus, RegisteredAt, UpdatedAt)
+SELECT
+    p.ParticipantID, p.EventID, p.FirstName, p.LastName, p.MiddleInitial, p.Age, p.ContactNumber, p.Address,
+    CASE WHEN c.ChapterID IS NULL THEN NULL ELSE p.ChapterID END,
+    COALESCE(NULLIF(TRIM(p.ChapterNameSnapshot), ''), c.ChapterName, 'Deleted Chapter'),
+    CASE WHEN s.ServiceID IS NULL THEN NULL ELSE p.ServiceID END,
+    COALESCE(NULLIF(TRIM(p.ServiceNameSnapshot), ''), s.ServiceName, 'Deleted Service'),
+    p.ModeOfPayment, p.PaymentStatus, p.RegisteredAt, p.UpdatedAt
+FROM EventParticipant p
+LEFT JOIN Chapter c ON c.ChapterID = p.ChapterID
+LEFT JOIN Service s ON s.ServiceID = p.ServiceID;
+
+DROP TABLE EventParticipant;
+ALTER TABLE EventParticipant_v4 RENAME TO EventParticipant;
+CREATE INDEX IF NOT EXISTS IX_EventParticipant_EventID ON EventParticipant(EventID);
+CREATE INDEX IF NOT EXISTS IX_EventParticipant_ChapterID ON EventParticipant(ChapterID);
+CREATE INDEX IF NOT EXISTS IX_EventParticipant_ServiceID ON EventParticipant(ServiceID);
+
+PRAGMA user_version = 4;";
+        command.ExecuteNonQuery();
+        tx.Commit();
+    }
+
 }

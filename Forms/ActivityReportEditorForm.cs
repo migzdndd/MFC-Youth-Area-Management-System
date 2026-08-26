@@ -121,7 +121,15 @@ public sealed class ActivityReportEditorForm : Form
     {
         var report = _repo.GetById(id) ?? throw new InvalidOperationException("Report not found.");
         _title.TextValue = report.Title;
-        _chapter.SelectedValue = report.ChapterID;
+        if (report.ChapterID.HasValue)
+        {
+            _chapter.SelectedValue = report.ChapterID.Value;
+        }
+        else
+        {
+            _chapter.SelectedIndex = -1;
+            _error.Text = $"The original Chapter ({report.ChapterName}) was deleted. Select a Chapter before saving changes.";
+        }
         if (!_type.Items.Cast<object>().Any(item => string.Equals(Convert.ToString(item), report.ReportType, StringComparison.OrdinalIgnoreCase)))
             _type.Items.Add(report.ReportType);
         _type.SelectedItem = _type.Items.Cast<object>().FirstOrDefault(item => string.Equals(Convert.ToString(item), report.ReportType, StringComparison.OrdinalIgnoreCase));

@@ -12,10 +12,10 @@ public sealed class ActivityReportRepository
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = @"
-SELECT r.ReportID, r.Title, r.ChapterID, c.ChapterName, r.ReportType, r.Activity, r.ReportDate, r.PreparedBy, r.Description
+SELECT r.ReportID, r.Title, r.ChapterID, COALESCE(c.ChapterName, r.ChapterNameSnapshot) AS ChapterName, r.ReportType, r.Activity, r.ReportDate, r.PreparedBy, r.Description
 FROM ActivityReport r
-JOIN Chapter c ON c.ChapterID = r.ChapterID
-WHERE @Search = '' OR r.Title LIKE @Like OR c.ChapterName LIKE @Like OR r.ReportType LIKE @Like OR
+LEFT JOIN Chapter c ON c.ChapterID = r.ChapterID
+WHERE @Search = '' OR r.Title LIKE @Like OR COALESCE(c.ChapterName, r.ChapterNameSnapshot) LIKE @Like OR r.ReportType LIKE @Like OR
       r.Activity LIKE @Like OR r.PreparedBy LIKE @Like OR r.Description LIKE @Like
 ORDER BY r.ReportDate DESC, r.ReportID DESC;";
         command.Parameters.AddWithValue("@Search", cleanSearch);
@@ -31,9 +31,9 @@ ORDER BY r.ReportDate DESC, r.ReportID DESC;";
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = @"
-SELECT r.ReportID, r.Title, r.ChapterID, c.ChapterName, r.ReportType, r.Activity, r.ReportDate, r.PreparedBy, r.Description
+SELECT r.ReportID, r.Title, r.ChapterID, COALESCE(c.ChapterName, r.ChapterNameSnapshot) AS ChapterName, r.ReportType, r.Activity, r.ReportDate, r.PreparedBy, r.Description
 FROM ActivityReport r
-JOIN Chapter c ON c.ChapterID = r.ChapterID
+LEFT JOIN Chapter c ON c.ChapterID = r.ChapterID
 WHERE r.ReportID = @Id;";
         command.Parameters.AddWithValue("@Id", id);
         using var reader = command.ExecuteReader();
@@ -45,8 +45,8 @@ WHERE r.ReportID = @Id;";
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = @"
-INSERT INTO ActivityReport(Title, ChapterID, ReportType, Activity, ReportDate, PreparedBy, Description, CreatedAt, UpdatedAt)
-VALUES(@Title,@ChapterID,@Type,@Activity,@Date,@PreparedBy,@Description,@Now,@Now);
+INSERT INTO ActivityReport(Title, ChapterID, ChapterNameSnapshot, ReportType, Activity, ReportDate, PreparedBy, Description, CreatedAt, UpdatedAt)
+VALUES(@Title,@ChapterID,(SELECT ChapterName FROM Chapter WHERE ChapterID=@ChapterID),@Type,@Activity,@Date,@PreparedBy,@Description,@Now,@Now);
 SELECT last_insert_rowid();";
         AddParams(command, report);
         command.Parameters.AddWithValue("@Now", DateTime.UtcNow.ToString("O"));
@@ -59,7 +59,9 @@ SELECT last_insert_rowid();";
         using var command = connection.CreateCommand();
         command.CommandText = @"
 UPDATE ActivityReport
-SET Title=@Title, ChapterID=@ChapterID, ReportType=@Type, Activity=@Activity, ReportDate=@Date,
+SET Title=@Title, ChapterID=@ChapterID,
+    ChapterNameSnapshot=(SELECT ChapterName FROM Chapter WHERE ChapterID=@ChapterID),
+    ReportType=@Type, Activity=@Activity, ReportDate=@Date,
     PreparedBy=@PreparedBy, Description=@Description, UpdatedAt=@Now
 WHERE ReportID=@Id;";
         AddParams(command, report);
@@ -88,7 +90,7 @@ WHERE ReportID=@Id;";
     private static void AddParams(SQLiteCommand command, ActivityReport report)
     {
         command.Parameters.AddWithValue("@Title", report.Title.Trim());
-        command.Parameters.AddWithValue("@ChapterID", report.ChapterID);
+        command.Parameters.AddWithValue("@ChapterID", report.ChapterID.HasValue ? report.ChapterID.Value : DBNull.Value);
         command.Parameters.AddWithValue("@Type", report.ReportType.Trim());
         command.Parameters.AddWithValue("@Activity", report.Activity.Trim());
         command.Parameters.AddWithValue("@Date", report.ReportDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
@@ -100,7 +102,7 @@ WHERE ReportID=@Id;";
     {
         ReportID = Convert.ToInt64(reader["ReportID"]),
         Title = Convert.ToString(reader["Title"]) ?? string.Empty,
-        ChapterID = Convert.ToInt64(reader["ChapterID"]),
+        ChapterID = reader["ChapterID"] == DBNull.Value ? null : Convert.ToInt64(reader["ChapterID"]),
         ChapterName = Convert.ToString(reader["ChapterName"]) ?? string.Empty,
         ReportType = Convert.ToString(reader["ReportType"]) ?? string.Empty,
         Activity = Convert.ToString(reader["Activity"]) ?? string.Empty,

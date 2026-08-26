@@ -82,6 +82,34 @@ GROUP BY c.ChapterID, c.ChapterName;";
                 throw new InvalidOperationException("This Chapter still has Members assigned. Move them to another Chapter before deleting it.");
         }
 
+        // Historical records must survive Chapter deletion. Explicitly detach them first
+        // instead of relying only on the FK action so upgraded databases are safe as well.
+        using (var detachReports = connection.CreateCommand())
+        {
+            detachReports.Transaction = transaction;
+            detachReports.CommandText = @"
+UPDATE ActivityReport
+SET ChapterNameSnapshot = COALESCE(NULLIF(TRIM(ChapterNameSnapshot), ''),
+        (SELECT ChapterName FROM Chapter WHERE ChapterID=@Id), 'Deleted Chapter'),
+    ChapterID = NULL
+WHERE ChapterID=@Id;";
+            detachReports.Parameters.AddWithValue("@Id", id);
+            detachReports.ExecuteNonQuery();
+        }
+
+        using (var detachParticipants = connection.CreateCommand())
+        {
+            detachParticipants.Transaction = transaction;
+            detachParticipants.CommandText = @"
+UPDATE EventParticipant
+SET ChapterNameSnapshot = COALESCE(NULLIF(TRIM(ChapterNameSnapshot), ''),
+        (SELECT ChapterName FROM Chapter WHERE ChapterID=@Id), 'Deleted Chapter'),
+    ChapterID = NULL
+WHERE ChapterID=@Id;";
+            detachParticipants.Parameters.AddWithValue("@Id", id);
+            detachParticipants.ExecuteNonQuery();
+        }
+
         using (var delete = connection.CreateCommand())
         {
             delete.Transaction = transaction;
