@@ -1,151 +1,142 @@
-﻿using System;
-using System.Data;
-using System.Data.SQLite;
-using System.Windows.Forms;
-using MFC_Youth_Database.Utilities;
-using MFC_Youth_Database.Database;
+using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Repositories;
+using MFCYouthAreaManagementSystem.UI.Controls;
+using MFCYouthAreaManagementSystem.UI.Theme;
+using MFCYouthAreaManagementSystem.Utilities;
 
-namespace MFC_Youth_Database.Forms
+namespace MFCYouthAreaManagementSystem.Forms;
+
+public sealed class ChaptersForm : Form
 {
-    public partial class ChaptersForm : Form
+    private readonly Dashboard _dashboard;
+    private readonly ChapterRepository _repo = new();
+    private readonly DataGridView _grid = UiHelper.CreateGrid();
+    private readonly ModernTextBox _search = new() { Placeholder = "Search Chapters..." };
+    private readonly EmptyStatePanel _empty = new("No Chapters Yet", "Create the first Chapter to begin organizing Members.");
+
+    public ChaptersForm(Dashboard dashboard)
     {
-        public bool IsEmbedded { get; set; } = false;
-        public ChaptersForm()
+        _dashboard = dashboard;
+        BackColor = ThemeColors.Background;
+        Font = ThemeFonts.Body;
+        AutoScaleMode = AutoScaleMode.Dpi;
+
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = Padding.Empty, Padding = Padding.Empty };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.PageHeaderHeight));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.ToolbarSearchHeight + ThemeSizes.ToolbarActionsHeight + 12));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        Controls.Add(root);
+
+        root.Controls.Add(new PageHeader("Chapters", "Organize Members into Chapters and review Chapter membership."), 0, 0);
+
+        var tools = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(0, 6, 0, 6), Margin = Padding.Empty };
+        tools.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        tools.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.ToolbarSearchHeight));
+        tools.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.ToolbarActionsHeight));
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 6, 0, 6), Margin = Padding.Empty, BackColor = ThemeColors.Background };
+        var add = Btn("+ Add Chapter", 125, ModernButtonStyle.Primary);
+        var rename = Btn("Rename", 88, ModernButtonStyle.Secondary);
+        var view = Btn("View Members", 110, ModernButtonStyle.Secondary);
+        var del = Btn("Delete", 82, ModernButtonStyle.Danger);
+        var refresh = Btn("Refresh", 85, ModernButtonStyle.Ghost);
+        add.Click += (_, _) => Add();
+        rename.Click += (_, _) => Rename();
+        view.Click += (_, _) => View();
+        del.Click += (_, _) => Delete();
+        refresh.Click += (_, _) => LoadRows();
+        actions.Controls.AddRange(new Control[] { add, del, view, rename, refresh });
+        _search.Dock = DockStyle.Fill;
+        _search.Margin = new Padding(0, 3, 0, 3);
+        tools.Controls.Add(_search, 0, 0);
+        tools.Controls.Add(actions, 0, 1);
+        _search.TextValueChanged += (_, _) => LoadRows();
+        root.Controls.Add(tools, 0, 1);
+
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Chapter", DataPropertyName = "ChapterName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Members", DataPropertyName = "MemberCount", Width = 120 });
+        _grid.DoubleClick += (_, _) => View();
+
+        var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
+        content.Controls.Add(_grid);
+        content.Controls.Add(_empty);
+        root.Controls.Add(content, 0, 2);
+        Shown += (_, _) => LoadRows();
+    }
+
+    private ModernButton Btn(string text, int width, ModernButtonStyle style) => new() { Text = text, Width = width, ButtonStyle = style, Margin = new Padding(6, 0, 0, 0) };
+    private Chapter? Selected() => _grid.CurrentRow?.DataBoundItem as Chapter;
+
+    private void LoadRows()
+    {
+        try
         {
-            InitializeComponent();
-
-            LoadChapters();
+            var rows = _repo.GetAll(_search.TextValue);
+            _grid.DataSource = rows;
+            _grid.Visible = rows.Count > 0;
+            _empty.Visible = rows.Count == 0;
+            if (_grid.Visible) _grid.BringToFront(); else _empty.BringToFront();
         }
-
-        private void LoadChapters(string keyword = "")
+        catch (Exception ex)
         {
-            try
-            {
-                using (SQLiteConnection conn = DatabaseManager.GetConnection())
-                {
-                    conn.Open();
-
-                    string query = @"
-                SELECT
-                    c.ChapterID,
-                    c.ChapterName AS `Chapter`,
-                    COUNT(m.MemberID) AS `Total Members`
-                FROM Chapter c
-                LEFT JOIN Member m
-                    ON c.ChapterID = m.ChapterID
-                WHERE c.ChapterName LIKE @keyword
-                GROUP BY
-                    c.ChapterID,
-                    c.ChapterName
-                ORDER BY c.ChapterName;";
-
-                    SQLiteDataAdapter adapter = new SQLiteDataAdapter(query, conn);
-
-                    adapter.SelectCommand.Parameters.AddWithValue(
-                        "@keyword",
-                        "%" + keyword + "%");
-
-                    DataTable dt = new DataTable();
-
-                    adapter.Fill(dt);
-
-                    dgvChapters.DataSource = dt;
-
-                    FormatDataGridView();
-                }
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(
-                    "Unable to load the chapter list.\n\nPlease try again.",
-                    ApplicationConstants.DatabaseErrorTitle,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
+            AppLogger.Error("Load Chapters", ex);
+            _dashboard.Notify("Could not load Chapters.", true);
         }
+    }
 
-        private void FormatDataGridView()
+    private void Add()
+    {
+        if (ModalHelper.Show(this, () => new ChapterDialogForm(), "Open Add Chapter") != DialogResult.OK) return;
+        LoadRows();
+        _dashboard.Notify("Chapter created.");
+    }
+
+    private void Rename()
+    {
+        var chapter = Selected();
+        if (chapter == null) return;
+        if (ModalHelper.Show(this, () => new ChapterDialogForm(chapter), "Open Rename Chapter") != DialogResult.OK) return;
+        LoadRows();
+        _dashboard.Notify("Chapter renamed.");
+    }
+
+    private void View()
+    {
+        var chapter = Selected();
+        if (chapter == null) return;
+        ModalHelper.Show(this, () => new ChapterMembersForm(chapter.ChapterID, _dashboard), "Open Chapter Members");
+        LoadRows();
+    }
+
+    private void Delete()
+    {
+        var chapter = Selected();
+        if (chapter == null) return;
+        if (chapter.MemberCount > 0)
         {
-            if (dgvChapters.Columns.Contains("ChapterID"))
-            {
-                dgvChapters.Columns["ChapterID"].Visible = false;
-            }
-
-            dgvChapters.ReadOnly = true;
-            dgvChapters.MultiSelect = false;
-            dgvChapters.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-
-            dgvChapters.AllowUserToAddRows = false;
-            dgvChapters.AllowUserToDeleteRows = false;
-            dgvChapters.AllowUserToResizeRows = false;
-
-            dgvChapters.RowHeadersVisible = false;
-            dgvChapters.AutoSizeColumnsMode =
-                DataGridViewAutoSizeColumnsMode.Fill;
-
-            dgvChapters.Columns["Chapter"].FillWeight = 200;
-            dgvChapters.Columns["Total Members"].FillWeight = 80;
-
-            dgvChapters.Columns["Total Members"].DefaultCellStyle.Alignment =
-                DataGridViewContentAlignment.MiddleCenter;
-
-            dgvChapters.Columns["Total Members"].HeaderCell.Style.Alignment =
-                DataGridViewContentAlignment.MiddleCenter;
+            CustomDialog.Show(this, "Delete Not Available", $"{chapter.ChapterName} currently has {chapter.MemberCount} Member(s).\n\nMove these Members to another Chapter before deleting this Chapter.");
+            return;
         }
-
-        private void dgvChapters_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        if (!CustomDialog.Confirm(this, "Delete Chapter?", $"{chapter.ChapterName} will be permanently removed.", "Delete Chapter", true)) return;
+        try
         {
-            if (e.RowIndex < 0)
-            {
-                return;
-            }
-
-            int chapterID = Convert.ToInt32(
-                dgvChapters.Rows[e.RowIndex].Cells["ChapterID"].Value);
-
-            using (ChapterMembersForm chapterMembersForm =
-                new ChapterMembersForm(chapterID))
-            {
-                chapterMembersForm.ShowDialog();
-            }
+            _repo.Delete(chapter.ChapterID);
+            LoadRows();
+            _dashboard.Notify("Chapter deleted.");
         }
-
-        private void ChaptersForm_Shown(object sender, EventArgs e)
+        catch (Exception ex)
         {
-            if (!IsEmbedded)
-                return;
-
-            panel1.Visible = false;
+            AppLogger.Error("Delete Chapter", ex);
+            CustomDialog.Show(this, "Delete Failed", ex.Message, true);
         }
+    }
 
-        private void txtSearch_TextChanged(object sender, EventArgs e)
-        {
-            LoadChapters(txtSearch.Text.Trim());
-        }
-
-        private void btnRefresh_Click(object sender, EventArgs e)
-        {
-            txtSearch.Clear();
-
-            LoadChapters();
-        }
-
-        private void btnManageChapter_Click(object sender, EventArgs e)
-        {
-            using (ManageChapterForm form = new ManageChapterForm())
-            {
-                form.ShowDialog();
-            }
-
-            LoadChapters();
-        }
-
-        private void btnBack_Click(object sender, EventArgs e)
-        {
-            if (this.ParentForm is Dashboard dashboard)
-            {
-                dashboard.ShowHome();
-            }
-        }
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.F5) { LoadRows(); return true; }
+        if (keyData == (Keys.Control | Keys.N)) { Add(); return true; }
+        if (keyData == Keys.Enter && _grid.Focused) { View(); return true; }
+        if (keyData == Keys.Delete && _grid.Focused) { Delete(); return true; }
+        return base.ProcessCmdKey(ref msg, keyData);
     }
 }

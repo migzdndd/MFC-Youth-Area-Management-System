@@ -1,20 +1,29 @@
-﻿using System;
-using System.Windows.Forms;
-using MFC_Youth_Database.Database;
+using MFCYouthAreaManagementSystem.Database;
+using MFCYouthAreaManagementSystem.Forms;
+using MFCYouthAreaManagementSystem.Utilities;
 
-namespace MFC_Youth_Database
+namespace MFCYouthAreaManagementSystem;
+
+internal static class Program
 {
-    internal static class Program
+    [STAThread]
+    static void Main()
     {
-        [STAThread]
-        static void Main()
+        ApplicationConfiguration.Initialize();
+        try
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-
             DatabaseInitializer.Initialize();
-
             Application.Run(new Dashboard());
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Application startup", ex);
+            MessageBox.Show(
+                "The application could not start because the local database could not be initialized.\n\n" +
+                "Your existing database was not deleted or replaced. Technical details were written to the local log when possible.",
+                "MFC Youth Area Management System",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
         }
     }
 }

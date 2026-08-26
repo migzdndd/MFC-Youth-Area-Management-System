@@ -1,177 +1,90 @@
-﻿using System;
-using System.Data;
-using System.Data.SQLite;
-using System.Windows.Forms;
-using MFC_Youth_Database.Utilities;
-using MFC_Youth_Database.Database;
+using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Repositories;
+using MFCYouthAreaManagementSystem.UI.Controls;
+using MFCYouthAreaManagementSystem.UI.Theme;
+using MFCYouthAreaManagementSystem.Utilities;
 
-namespace MFC_Youth_Database.Forms
+namespace MFCYouthAreaManagementSystem.Forms;
+
+public sealed class ChapterMembersForm : Form
 {
-    public partial class ChapterMembersForm : Form
+    private readonly long _chapterId;
+    private readonly Dashboard _dashboard;
+    private readonly DataGridView _grid = UiHelper.CreateGrid();
+    private readonly ModernTextBox _search = new() { Placeholder = "Search Chapter members..." };
+    private readonly EmptyStatePanel _empty = new("No Members in this Chapter", "Members assigned to this Chapter will appear here.");
+    private readonly PageHeader _header;
+
+    public ChapterMembersForm(long id, Dashboard dashboard)
     {
-        private readonly int chapterID;
-        public ChapterMembersForm(int chapterID)
+        _chapterId = id;
+        _dashboard = dashboard;
+        var chapter = new ChapterRepository().GetById(id) ?? throw new InvalidOperationException("Chapter not found.");
+        Text = chapter.ChapterName;
+        StartPosition = FormStartPosition.CenterParent;
+        Size = new Size(880, 600);
+        MinimumSize = new Size(760, 520);
+        BackColor = ThemeColors.Background;
+        Font = ThemeFonts.Body;
+        Padding = new Padding(24);
+        AutoScaleMode = AutoScaleMode.Dpi;
+
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = Padding.Empty, Padding = Padding.Empty };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.PageHeaderHeight));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.ToolbarSearchHeight + 8));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        Controls.Add(root);
+
+        _header = new PageHeader(chapter.ChapterName, $"{chapter.MemberCount} Member(s) assigned to this Chapter.");
+        root.Controls.Add(_header, 0, 0);
+        _search.Dock = DockStyle.Fill;
+        _search.Margin = new Padding(0, 6, 0, 6);
+        root.Controls.Add(_search, 0, 1);
+        _search.TextValueChanged += (_, _) => LoadRows();
+
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Member", DataPropertyName = "FullName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Status", DataPropertyName = "Status", Width = 90 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Contact", DataPropertyName = "ContactNumber", Width = 130 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Services", DataPropertyName = "Services", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        _grid.DoubleClick += (_, _) => Open();
+
+        var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
+        content.Controls.Add(_grid);
+        content.Controls.Add(_empty);
+        root.Controls.Add(content, 0, 2);
+        Shown += (_, _) => LoadRows();
+    }
+
+    private void LoadRows()
+    {
+        try
         {
-            InitializeComponent();
+            var rows = new MemberRepository().GetByChapter(_chapterId, _search.TextValue);
+            _grid.DataSource = rows;
+            _grid.Visible = rows.Count > 0;
+            _empty.Visible = rows.Count == 0;
+            if (_grid.Visible) _grid.BringToFront(); else _empty.BringToFront();
 
-            this.chapterID = chapterID;
-
-            LoadChapter();
-            LoadMembers();
-        }
-        private void LoadChapter()
-        {
-            try
+            var chapter = new ChapterRepository().GetById(_chapterId);
+            if (chapter != null)
             {
-                using (SQLiteConnection conn = DatabaseManager.GetConnection())
-                {
-                    conn.Open();
-
-                    string query = @"
-                SELECT ChapterName
-                FROM Chapter
-                WHERE ChapterID = @ChapterID;";
-
-                    SQLiteCommand cmd = new SQLiteCommand(query, conn);
-
-                    cmd.Parameters.AddWithValue("@ChapterID", chapterID);
-
-                    object result = cmd.ExecuteScalar();
-
-                    if (result != null)
-                    {
-                        lblChapterName.Text = result.ToString();
-                    }
-                    else
-                    {
-                        MessageBox.Show(
-                            "The selected chapter could not be found.",
-                            "Information",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
-
-                        Close();
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(
-                    "Unable to load the chapter information.",
-                    ApplicationConstants.DatabaseErrorTitle,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-        }
-        private void LoadMembers(string keyword = "")
-        {
-            try
-            {
-                using (SQLiteConnection conn = DatabaseManager.GetConnection())
-                {
-                    conn.Open();
-                    string query = @"
-SELECT *
-FROM MemberDirectory
-WHERE
-    Chapter =
-    (
-        SELECT ChapterName
-        FROM Chapter
-        WHERE ChapterID = @ChapterID
-    )
-    AND
-    (
-        `Full Name` LIKE @keyword
-        OR `Contact Number` LIKE @keyword
-        OR `Email Address` LIKE @keyword
-        OR Address LIKE @keyword
-        OR Status LIKE @keyword
-        OR Services LIKE @keyword
-    )
-ORDER BY `Full Name`;";
-                    SQLiteDataAdapter adapter = new SQLiteDataAdapter(query, conn);
-                    adapter.SelectCommand.Parameters.AddWithValue(
-                        "@ChapterID",
-                        chapterID);
-
-                    adapter.SelectCommand.Parameters.AddWithValue(
-                        "@keyword",
-                        "%" + keyword + "%");
-                    DataTable dt = new DataTable();
-
-                    adapter.Fill(dt);
-
-                    dgvMembers.DataSource = dt;
-
-                    FormatDataGridView();
-                }
-            }
-            catch (SQLiteException)
-            {
-                MessageBox.Show(
-                    "Unable to load the chapter members.",
-                    ApplicationConstants.DatabaseErrorTitle,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(
-                    "An unexpected error occurred.\n\nPlease try again.",
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                _header.TitleText = chapter.ChapterName;
+                _header.DescriptionText = $"{chapter.MemberCount} Member(s) assigned to this Chapter.";
+                Text = chapter.ChapterName;
             }
         }
-
-        private void FormatDataGridView()
+        catch (Exception ex)
         {
-            if (dgvMembers.Columns.Contains("MemberID"))
-            {
-                dgvMembers.Columns["MemberID"].Visible = false;
-            }
-
-            if (dgvMembers.Columns.Contains("Age"))
-            {
-                dgvMembers.Columns["Age"].DefaultCellStyle.Alignment =
-                    DataGridViewContentAlignment.MiddleCenter;
-
-                dgvMembers.Columns["Age"].HeaderCell.Style.Alignment =
-                    DataGridViewContentAlignment.MiddleCenter;
-            }
-
-            if (dgvMembers.Columns.Contains("Status"))
-            {
-                dgvMembers.Columns["Status"].DefaultCellStyle.Alignment =
-                    DataGridViewContentAlignment.MiddleCenter;
-
-                dgvMembers.Columns["Status"].HeaderCell.Style.Alignment =
-                    DataGridViewContentAlignment.MiddleCenter;
-            }
-
-            dgvMembers.ReadOnly = true;
-
-            dgvMembers.MultiSelect = false;
-
-            dgvMembers.SelectionMode =
-                DataGridViewSelectionMode.FullRowSelect;
-
-            dgvMembers.AllowUserToAddRows = false;
-
-            dgvMembers.AllowUserToDeleteRows = false;
-
-            dgvMembers.AllowUserToResizeRows = false;
-
-            dgvMembers.RowHeadersVisible = false;
-
-            dgvMembers.AutoSizeColumnsMode =
-                DataGridViewAutoSizeColumnsMode.Fill;
+            AppLogger.Error("Load Chapter Members", ex);
+            _dashboard.Notify("Could not load Chapter members.", true);
         }
+    }
 
-        private void btnClose_Click(object sender, EventArgs e)
-        {
-            Close();
-        }
+    private void Open()
+    {
+        if (_grid.CurrentRow?.DataBoundItem is not Member member) return;
+        ModalHelper.Show(this, () => new MemberDetailsForm(member.MemberID, _dashboard), "Open Member Details from Chapter");
+        LoadRows();
     }
 }

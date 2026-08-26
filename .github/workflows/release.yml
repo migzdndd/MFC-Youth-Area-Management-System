@@ -1,0 +1,91 @@
+name: Build and Publish Windows Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+          cache: true
+          cache-dependency-path: "MFC Youth Area Management System.csproj"
+
+      - name: Restore
+        shell: pwsh
+        run: dotnet restore ".\MFC Youth Area Management System.csproj" -r win-x64
+
+      - name: Publish Windows x64 self-contained build
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          dotnet publish ".\MFC Youth Area Management System.csproj" `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishProfile=WinX64SelfContained `
+            -p:Version=$version `
+            -o ".\dist\publish-win-x64" `
+            --no-restore
+
+      - name: Verify published executable
+        shell: pwsh
+        run: |
+          $exe = ".\dist\publish-win-x64\MFCYouthAreaManagementSystem.exe"
+          if (-not (Test-Path $exe)) {
+            throw "Published executable was not produced."
+          }
+          $interop = Get-ChildItem ".\dist\publish-win-x64" -Recurse -Filter "SQLite.Interop.dll" -ErrorAction SilentlyContinue
+          if (-not $interop) {
+            Write-Warning "SQLite.Interop.dll was not found by name. Verify the release on Windows before promoting it."
+          }
+
+      - name: Package release
+        id: package
+        shell: pwsh
+        run: |
+          Copy-Item ".\README.md" ".\dist\publish-win-x64\README.txt" -Force
+          Copy-Item ".\CHANGELOG.md" ".\dist\publish-win-x64\CHANGELOG.txt" -Force
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $base = "MFC-Youth-Area-Management-System-$version-win-x64"
+          $zip = ".\dist\$base.zip"
+          $sha = ".\dist\$base.sha256"
+          Compress-Archive -Path ".\dist\publish-win-x64\*" -DestinationPath $zip -CompressionLevel Optimal -Force
+          $hash = (Get-FileHash -Algorithm SHA256 -Path $zip).Hash.ToLowerInvariant()
+          "$hash  $base.zip" | Set-Content -Path $sha -Encoding ascii
+          "zip=$zip" >> $env:GITHUB_OUTPUT
+          "sha=$sha" >> $env:GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $args = @(
+            "release", "create", "${{ github.ref_name }}",
+            "${{ steps.package.outputs.zip }}",
+            "${{ steps.package.outputs.sha }}",
+            "--repo", "${{ github.repository }}",
+            "--title", "MFC Youth Area Management System ${{ github.ref_name }}"
+          )
+          if ("${{ github.ref_name }}" -eq "v2.0.0" -and (Test-Path ".\RELEASE_NOTES_v2.0.0.md")) {
+            $args += @("--notes-file", ".\RELEASE_NOTES_v2.0.0.md")
+          } else {
+            $args += "--generate-notes"
+          }
+          if ("${{ github.ref_name }}" -match "-") {
+            $args += "--prerelease"
+          }
+          gh @args

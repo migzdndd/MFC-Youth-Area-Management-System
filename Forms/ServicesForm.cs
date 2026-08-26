@@ -1,141 +1,80 @@
-﻿using System;
-using System.Data;
-using System.Data.SQLite;
-using System.Windows.Forms;
-using MFC_Youth_Database.Utilities;
-using MFC_Youth_Database.Database;
+using MFCYouthAreaManagementSystem.Repositories;
+using MFCYouthAreaManagementSystem.UI.Controls;
+using MFCYouthAreaManagementSystem.UI.Theme;
+using MFCYouthAreaManagementSystem.Utilities;
 
-namespace MFC_Youth_Database.Forms
+namespace MFCYouthAreaManagementSystem.Forms;
+
+public sealed class ServicesForm : Form
 {
-    public partial class ServicesForm : Form
+    private readonly Dashboard _dashboard;
+    private readonly ServiceRepository _repo = new();
+    private readonly FlowLayoutPanel _cards = new() { Dock = DockStyle.Fill, AutoScroll = true, WrapContents = true, Padding = new Padding(0, 8, 0, 0), Margin = Padding.Empty };
+    private readonly ModernTextBox _search = new() { Placeholder = "Search Services..." };
+
+    public ServicesForm(Dashboard dashboard)
     {
+        _dashboard = dashboard;
+        BackColor = ThemeColors.Background;
+        Font = ThemeFonts.Body;
+        AutoScaleMode = AutoScaleMode.Dpi;
 
-        public bool IsEmbedded { get; set; } = false;
-        public ServicesForm()
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = Padding.Empty, Padding = Padding.Empty };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.PageHeaderHeight));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.ToolbarSearchHeight + 8));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        Controls.Add(root);
+
+        root.Controls.Add(new PageHeader("Services", "Review the seven MFC Youth service assignments and the Members serving in each."), 0, 0);
+        _search.Dock = DockStyle.Fill;
+        _search.Margin = new Padding(0, 6, 0, 6);
+        root.Controls.Add(_search, 0, 1);
+        root.Controls.Add(_cards, 0, 2);
+
+        _search.TextValueChanged += (_, _) => LoadCards();
+        Shown += (_, _) => LoadCards();
+    }
+
+    private void LoadCards()
+    {
+        try
         {
-            InitializeComponent();
-
-            LoadServices();
-
-        }
-
-        private void LoadServices(string keyword = "")
-        {
-            try
+            var services = _repo.GetAll(_search.TextValue);
+            _cards.SuspendLayout();
+            _cards.Controls.Clear();
+            foreach (var service in services)
             {
-                using (SQLiteConnection conn = DatabaseManager.GetConnection())
+                var serviceId = service.ServiceID;
+                var card = new ServiceCard(service);
+                UiHelper.ScaleNewControlForCurrentDpi(card, _cards);
+                card.ViewClicked += (_, _) =>
                 {
-                    conn.Open();
-                    string query = @"
-                                SELECT
-                                ServiceID,
-                                ServiceName AS `Service`,
-                                TotalMembers AS `Total Members`
-                            FROM ServiceStatistics
-                            WHERE
-                                ServiceName LIKE @keyword
-                            ORDER BY ServiceName;";
-
-                    SQLiteDataAdapter adapter = new SQLiteDataAdapter(query, conn);
-                    adapter.SelectCommand.Parameters.AddWithValue(
-                        "@keyword",
-                        "%" + keyword + "%");
-
-                    DataTable dt = new DataTable();
-
-                    adapter.Fill(dt);
-
-                    dgvServices.DataSource = dt;
-                    FormatDataGridView();
-                }
+                    ModalHelper.Show(this, () => new ServiceMembersForm(serviceId, _dashboard), "Open Service Members");
+                    LoadCards();
+                };
+                _cards.Controls.Add(card);
             }
-            catch (Exception)
+            if (services.Count == 0)
             {
-                MessageBox.Show(
-                    "Unable to load the list of services.",
-                    ApplicationConstants.DatabaseErrorTitle,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                _cards.Controls.Add(new Label
+                {
+                    Text = "No Services match your search.",
+                    AutoSize = true,
+                    Font = ThemeFonts.Body,
+                    ForeColor = ThemeColors.TextSecondary,
+                    Margin = new Padding(8, 16, 0, 0)
+                });
             }
         }
-        private void FormatDataGridView()
+        catch (Exception ex)
         {
-            if (dgvServices.Columns.Contains("ServiceID"))
-            {
-                dgvServices.Columns["ServiceID"].Visible = false;
-            }
-            dgvServices.Columns["Total Members"].DefaultCellStyle.Alignment =
-    DataGridViewContentAlignment.MiddleCenter;
-
-            dgvServices.Columns["Total Members"].HeaderCell.Style.Alignment =
-                DataGridViewContentAlignment.MiddleCenter;
-            dgvServices.ReadOnly = true;
-
-            dgvServices.MultiSelect = false;
-
-            dgvServices.SelectionMode =
-                DataGridViewSelectionMode.FullRowSelect;
-
-            dgvServices.AllowUserToAddRows = false;
-
-            dgvServices.AllowUserToDeleteRows = false;
-
-            dgvServices.AllowUserToResizeRows = false;
-
-            dgvServices.RowHeadersVisible = false;
-
-            dgvServices.AutoSizeColumnsMode =
-                DataGridViewAutoSizeColumnsMode.Fill;
-
-            dgvServices.Columns["Service"].FillWeight = 220;
-            dgvServices.Columns["Total Members"].FillWeight = 80;
+            AppLogger.Error("Load Services", ex);
+            _dashboard.Notify("Could not load Services.", true);
         }
-
-        private void txtSearch_TextChanged(object sender, EventArgs e)
+        finally
         {
-            LoadServices(txtSearch.Text.Trim());
-        }
-
-        private void btnRefresh_Click(object sender, EventArgs e)
-        {
-            txtSearch.Clear();
-
-            LoadServices();
-        }
-
-        private void dgvServices_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex < 0)
-            {
-                return;
-            }
-
-            int serviceID = Convert.ToInt32(
-                dgvServices.Rows[e.RowIndex].Cells["ServiceID"].Value);
-
-            using (ServiceMembersForm serviceMembersForm =
-                new ServiceMembersForm(serviceID))
-            {
-                serviceMembersForm.ShowDialog();
-            }
-
-
-        }
-
-        private void btnBack_Click(object sender, EventArgs e)
-        {
-            if (this.ParentForm is Dashboard dashboard)
-            {
-                dashboard.ShowHome();
-            }
-        }
-
-        private void ServicesForm_Shown(object sender, EventArgs e)
-        {
-            if (!IsEmbedded)
-                return;
-
-            pnlHeader.Visible = false;
+            _cards.ResumeLayout();
         }
     }
 }

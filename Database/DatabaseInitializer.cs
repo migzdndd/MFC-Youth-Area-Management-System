@@ -1,133 +1,35 @@
-﻿using System;
 using System.Data.SQLite;
-using System.IO;
-using System.Windows.Forms;
+using MFCYouthAreaManagementSystem.Utilities;
 
-namespace MFC_Youth_Database.Database
+namespace MFCYouthAreaManagementSystem.Database;
+
+public static class DatabaseInitializer
 {
-    public static class DatabaseInitializer
+    public static void Initialize()
     {
-        private static readonly string AppFolder =
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "MFC Youth Database");
+        Directory.CreateDirectory(DatabaseConfiguration.AppDataDirectory);
+        Directory.CreateDirectory(DatabaseConfiguration.LogDirectory);
+        using var connection = DatabaseManager.OpenConnection();
+        DatabaseMigrator.Apply(connection);
+        SeedServices(connection);
+    }
 
-        private static readonly string DatabaseFile =
-            Path.Combine(AppFolder, "MFCYouth.db");
-
-        private const string SchemaFile =
-            "Scripts\\SQLiteSchema.sql";
-
-        public static void Initialize()
+    private static void SeedServices(SQLiteConnection connection)
+    {
+        using var tx = connection.BeginTransaction();
+        for (var i = 0; i < ApplicationConstants.DefaultServices.Length; i++)
         {
-            Directory.CreateDirectory(AppFolder);
-
-            bool newDatabase = !File.Exists(DatabaseFile);
-
-            if (newDatabase)
-            {
-                SQLiteConnection.CreateFile(DatabaseFile);
-                ExecuteSchema();
-            }
-
-            UpdateDatabase();
+            using var command = connection.CreateCommand();
+            command.Transaction = tx;
+            command.CommandText = @"
+INSERT INTO Service(ServiceName, DisplayOrder)
+SELECT @Name, @Order
+WHERE NOT EXISTS (SELECT 1 FROM Service WHERE ServiceName = @Name COLLATE NOCASE);
+UPDATE Service SET DisplayOrder = @Order WHERE ServiceName = @Name COLLATE NOCASE;";
+            command.Parameters.AddWithValue("@Name", ApplicationConstants.DefaultServices[i]);
+            command.Parameters.AddWithValue("@Order", i + 1);
+            command.ExecuteNonQuery();
         }
-
-        private static void ExecuteSchema()
-        {
-            try
-            {
-                string sql = File.ReadAllText(SchemaFile);
-
-                using (SQLiteConnection conn =
-                    new SQLiteConnection(
-                        $"Data Source={DatabaseFile};Version=3;"))
-                {
-                    conn.Open();
-
-                    SQLiteCommand cmd =
-                        new SQLiteCommand(sql, conn);
-
-                    cmd.ExecuteNonQuery();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    ex.ToString(),
-                    "Schema Error");
-            }
-        }
-
-        private static void UpdateDatabase()
-        {
-            using (SQLiteConnection conn = DatabaseManager.GetConnection())
-            {
-                conn.Open();
-
-                string query = @"
-            CREATE TABLE IF NOT EXISTS Report
-            (
-                ReportID INTEGER PRIMARY KEY AUTOINCREMENT,
-
-                Title TEXT NOT NULL,
-                ChapterID INTEGER NOT NULL,
-                ReportType TEXT NOT NULL,
-                Activity TEXT,
-                ReportDate TEXT NOT NULL,
-                PreparedBy TEXT,
-                Description TEXT NOT NULL,
-                CreatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
-
-                FOREIGN KEY (ChapterID)
-                    REFERENCES Chapter(ChapterID)
-            );";
-
-                using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-
-                query = @"
-                CREATE TABLE IF NOT EXISTS GIGContribution
-                (
-                    ContributionID INTEGER PRIMARY KEY AUTOINCREMENT,
-
-                    MemberID INTEGER NOT NULL,
-
-                    ContributionDate TEXT NOT NULL,
-
-                    Amount DECIMAL(10,2) NOT NULL
-                        CHECK (Amount > 0),
-
-                    Remarks TEXT,
-
-                    CreatedAt TEXT NOT NULL
-                        DEFAULT CURRENT_TIMESTAMP,
-
-                    FOREIGN KEY (MemberID)
-                    REFERENCES Member(MemberID)
-                    ON DELETE CASCADE
-                    ON UPDATE CASCADE
-                );";
-
-                using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-
-                query = @"
-                CREATE INDEX IF NOT EXISTS idx_gig_member
-                ON GIGContribution(MemberID);
-
-                CREATE INDEX IF NOT EXISTS idx_gig_date
-                ON GIGContribution(ContributionDate);";
-
-                using (SQLiteCommand cmd = new SQLiteCommand(query, conn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
+        tx.Commit();
     }
 }

@@ -1,147 +1,92 @@
-﻿using System;
-using System.Data;
-using System.Data.SQLite;
-using System.Windows.Forms;
-using MFC_Youth_Database.Utilities;
-using MFC_Youth_Database.Database;
+using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Repositories;
+using MFCYouthAreaManagementSystem.UI.Controls;
+using MFCYouthAreaManagementSystem.UI.Theme;
+using MFCYouthAreaManagementSystem.Utilities;
 
-namespace MFC_Youth_Database.Forms
+namespace MFCYouthAreaManagementSystem.Forms;
+
+public sealed class ServiceMembersForm : Form
 {
-    public partial class ServiceMembersForm : Form
+    private readonly long _serviceId;
+    private readonly Dashboard _dashboard;
+    private readonly DataGridView _grid = UiHelper.CreateGrid();
+    private readonly ModernTextBox _search = new() { Placeholder = "Search assigned Members..." };
+    private readonly EmptyStatePanel _empty = new("No Members Assigned", "Members assigned to this Service will appear here.");
+    private readonly PageHeader _header;
+
+    public ServiceMembersForm(long serviceId, Dashboard dashboard)
     {
-        private readonly int serviceID;
-        public ServiceMembersForm(int serviceID)
+        _serviceId = serviceId;
+        _dashboard = dashboard;
+        var service = new ServiceRepository().GetById(serviceId)
+                      ?? throw new InvalidOperationException("Service not found.");
+        Text = service.ServiceName;
+        StartPosition = FormStartPosition.CenterParent;
+        Size = new Size(900, 600);
+        MinimumSize = new Size(780, 520);
+        BackColor = ThemeColors.Background;
+        Font = ThemeFonts.Body;
+        Padding = new Padding(24);
+        AutoScaleMode = AutoScaleMode.Dpi;
+
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = Padding.Empty, Padding = Padding.Empty };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.PageHeaderHeight));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.ToolbarSearchHeight + 8));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        Controls.Add(root);
+
+        _header = new PageHeader(service.ServiceName, $"{service.MemberCount} Member(s) currently assigned.");
+        root.Controls.Add(_header, 0, 0);
+        _search.Dock = DockStyle.Fill;
+        _search.Margin = new Padding(0, 6, 0, 6);
+        root.Controls.Add(_search, 0, 1);
+        _search.TextValueChanged += (_, _) => LoadRows();
+
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Member", DataPropertyName = "FullName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Chapter", DataPropertyName = "ChapterName", Width = 160 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Status", DataPropertyName = "Status", Width = 90 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Contact", DataPropertyName = "ContactNumber", Width = 130 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Email", DataPropertyName = "EmailAddress", Width = 180 });
+        _grid.DoubleClick += (_, _) => Open();
+
+        var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
+        content.Controls.Add(_grid);
+        content.Controls.Add(_empty);
+        root.Controls.Add(content, 0, 2);
+        Shown += (_, _) => LoadRows();
+    }
+
+    private void LoadRows()
+    {
+        try
         {
-            InitializeComponent();
+            var rows = new MemberRepository().GetByService(_serviceId, _search.TextValue);
+            _grid.DataSource = rows;
+            _grid.Visible = rows.Count > 0;
+            _empty.Visible = rows.Count == 0;
+            if (_grid.Visible) _grid.BringToFront(); else _empty.BringToFront();
 
-            this.serviceID = serviceID;
-
-            LoadService();
-            LoadMembers();
-            FormatDataGridView();
-
-        }
-        private void LoadService()
-        {
-            try
+            var service = new ServiceRepository().GetById(_serviceId);
+            if (service != null)
             {
-                using (SQLiteConnection conn = DatabaseManager.GetConnection())
-                {
-                    conn.Open();
-
-                    string query = @"
-                        SELECT ServiceName
-                        FROM Service
-                        WHERE ServiceID = @ServiceID;";
-
-                    SQLiteCommand cmd = new SQLiteCommand(query, conn);
-
-                    cmd.Parameters.AddWithValue(
-                        "@ServiceID",
-                        serviceID);
-
-                    object result = cmd.ExecuteScalar();
-
-                    if (result != null)
-                    {
-                        lblService.Text = result.ToString();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    ex.Message,
-                    ApplicationConstants.DatabaseErrorTitle,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-        }
-
-        private void LoadMembers(string keyword = "")
-        {
-            try
-            {
-                using (SQLiteConnection conn = DatabaseManager.GetConnection())
-                {
-                    conn.Open();
-                    string query = @"
-SELECT
-    md.*
-FROM MemberDirectory md
-INNER JOIN MemberService ms
-    ON md.MemberID = ms.MemberID
-WHERE
-    ms.ServiceID = @ServiceID
-    AND
-    (
-        `Full Name` LIKE @keyword
-        OR Chapter LIKE @keyword
-        OR `Contact Number` LIKE @keyword
-        OR `Email Address` LIKE @keyword
-        OR Address LIKE @keyword
-        OR Status LIKE @keyword
-    )
-ORDER BY `Full Name`;";
-
-                    SQLiteDataAdapter adapter = new SQLiteDataAdapter(query, conn);
-
-                    adapter.SelectCommand.Parameters.AddWithValue(
-                        "@ServiceID",
-                        serviceID);
-
-                    adapter.SelectCommand.Parameters.AddWithValue(
-                        "@keyword",
-                        "%" + keyword + "%");
-
-                    DataTable dt = new DataTable();
-
-                    adapter.Fill(dt);
-
-                    dgvMembers.DataSource = dt;
-
-
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    ex.Message,
-                    ApplicationConstants.DatabaseErrorTitle,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                _header.TitleText = service.ServiceName;
+                _header.DescriptionText = $"{service.MemberCount} Member(s) currently assigned.";
+                Text = service.ServiceName;
             }
         }
-
-        private void FormatDataGridView()
+        catch (Exception ex)
         {
-            dgvMembers.ReadOnly = true;
-
-            dgvMembers.MultiSelect = false;
-
-            dgvMembers.SelectionMode =
-                DataGridViewSelectionMode.FullRowSelect;
-
-            dgvMembers.AllowUserToAddRows = false;
-
-            dgvMembers.AllowUserToDeleteRows = false;
-
-            dgvMembers.AllowUserToResizeRows = false;
-
-            dgvMembers.RowHeadersVisible = false;
-
-            dgvMembers.AutoSizeColumnsMode =
-                DataGridViewAutoSizeColumnsMode.Fill;
+            AppLogger.Error("Load Service Members", ex);
+            _dashboard.Notify("Could not load Service members.", true);
         }
+    }
 
-        private void txtSearch_TextChanged(object sender, EventArgs e)
-        {
-            LoadMembers(txtSearch.Text.Trim());
-        }
-
-        private void btnClose_Click(object sender, EventArgs e)
-        {
-            Close();
-        }
+    private void Open()
+    {
+        if (_grid.CurrentRow?.DataBoundItem is not Member member) return;
+        ModalHelper.Show(this, () => new MemberDetailsForm(member.MemberID, _dashboard), "Open Member Details from Service");
+        LoadRows();
     }
 }

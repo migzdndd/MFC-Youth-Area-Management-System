@@ -1,23 +1,18 @@
-﻿using System;
 using System.Data.SQLite;
-using System.IO;
 
-namespace MFC_Youth_Database.Database
+namespace MFCYouthAreaManagementSystem.Database;
+
+public static class DatabaseManager
 {
-    public static class DatabaseManager
+    public static SQLiteConnection OpenConnection()
     {
-        private static readonly string DatabasePath =
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "MFC Youth Database",
-                "MFCYouth.db");
-
-        private static readonly string ConnectionString =
-            $"Data Source={DatabasePath};Version=3;";
-
-        public static SQLiteConnection GetConnection()
-        {
-            return new SQLiteConnection(ConnectionString);
-        }
+        Directory.CreateDirectory(DatabaseConfiguration.AppDataDirectory);
+        var cs = $"Data Source={DatabaseConfiguration.DatabasePath};Version=3;";
+        var connection = new SQLiteConnection(cs);
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;";
+        command.ExecuteNonQuery();
+        return connection;
     }
 }

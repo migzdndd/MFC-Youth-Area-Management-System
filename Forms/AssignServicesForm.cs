@@ -1,309 +1,118 @@
-﻿using System;
-using System.Data.SQLite;
-using System.Windows.Forms;
-using MFC_Youth_Database.Utilities;
-using MFC_Youth_Database.Database;
+using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Repositories;
+using MFCYouthAreaManagementSystem.UI.Controls;
+using MFCYouthAreaManagementSystem.UI.Theme;
+using MFCYouthAreaManagementSystem.Utilities;
 
-namespace MFC_Youth_Database.Forms
+namespace MFCYouthAreaManagementSystem.Forms;
+
+public sealed class AssignServicesForm : Form
 {
-    public partial class AssignServicesForm : Form
+    private readonly long _memberId;
+    private readonly ServiceRepository _repo = new();
+    private readonly CheckedListBox _list = new()
     {
-        private readonly int memberID;
-        private bool hasChanges = false;
-        public AssignServicesForm(int memberID)
+        Dock = DockStyle.Fill,
+        CheckOnClick = true,
+        BorderStyle = BorderStyle.None,
+        Font = ThemeFonts.Body,
+        BackColor = ThemeColors.Surface,
+        ForeColor = ThemeColors.TextPrimary,
+        IntegralHeight = false
+    };
+
+    public AssignServicesForm(long memberId)
+    {
+        _memberId = memberId;
+        var member = new MemberRepository().GetById(memberId) ?? throw new InvalidOperationException("Member not found.");
+        Text = "Assign Services";
+        StartPosition = FormStartPosition.CenterParent;
+        Size = new Size(540, 540);
+        BackColor = ThemeColors.Background;
+        Font = ThemeFonts.Body;
+        Padding = new Padding(24);
+        FormBorderStyle = FormBorderStyle.FixedDialog;
+        MaximizeBox = false;
+        MinimizeBox = false;
+        AutoScaleMode = AutoScaleMode.Dpi;
+
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = Padding.Empty, Padding = Padding.Empty };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.DialogActionsHeight));
+        Controls.Add(root);
+
+        var header = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty, Padding = Padding.Empty };
+        header.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        header.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        header.Controls.Add(new Label
         {
-            InitializeComponent();
+            Text = member.FullName,
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.SectionTitle,
+            ForeColor = ThemeColors.Primary,
+            TextAlign = ContentAlignment.MiddleLeft,
+            AutoEllipsis = true,
+            Margin = Padding.Empty
+        }, 0, 0);
+        header.Controls.Add(new Label
+        {
+            Text = "Select the Services currently assigned to this Member. Zero selections are allowed.",
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.Body,
+            ForeColor = ThemeColors.TextSecondary,
+            TextAlign = ContentAlignment.TopLeft,
+            AutoEllipsis = true,
+            Margin = Padding.Empty,
+            Padding = new Padding(0, 4, 0, 0)
+        }, 0, 1);
+        root.Controls.Add(header, 0, 0);
 
-            this.memberID = memberID;
+        var listHost = new Panel { Dock = DockStyle.Fill, BackColor = ThemeColors.Surface, Padding = new Padding(14), Margin = new Padding(0, 0, 0, 8) };
+        listHost.Controls.Add(_list);
+        root.Controls.Add(listHost, 0, 1);
 
-            LoadMember();
-            LoadServices();
-            LoadAssignedServices();
-            hasChanges = false;
+        var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 10, 0, 0), Margin = Padding.Empty };
+        var save = new ModernButton { Text = "Save Changes", Width = 125 };
+        var cancel = new ModernButton { Text = "Cancel", Width = 90, ButtonStyle = ModernButtonStyle.Secondary };
+        save.Click += (_, _) => Save(save);
+        cancel.Click += (_, _) => Close();
+        actions.Controls.AddRange(new Control[] { save, cancel });
+        root.Controls.Add(actions, 0, 2);
+        AcceptButton = save;
+
+        LoadServices();
+    }
+
+    private void LoadServices()
+    {
+        _list.DisplayMember = nameof(Service.ServiceName);
+        var selected = _repo.GetServicesForMember(_memberId);
+        foreach (var service in _repo.GetAll())
+        {
+            var index = _list.Items.Add(service);
+            _list.SetItemChecked(index, selected.Contains(service.ServiceID));
         }
+    }
 
-        private void LoadMember()
+    private void Save(Control button)
+    {
+        button.Enabled = false;
+        try
         {
-            try
-            {
-                using (SQLiteConnection conn = DatabaseManager.GetConnection())
-                {
-                    conn.Open();
-
-                    string query = @"
-SELECT
-    LastName || ', ' ||
-    FirstName ||
-    CASE
-        WHEN MiddleName IS NULL OR MiddleName = ''
-        THEN ''
-        ELSE ' ' || MiddleName
-    END AS FullName
-FROM Member
-WHERE MemberID = @MemberID;";
-
-                    SQLiteCommand cmd = new SQLiteCommand(query, conn);
-
-                    cmd.Parameters.AddWithValue("@MemberID", memberID);
-
-                    object result = cmd.ExecuteScalar();
-
-                    if (result != null)
-                    {
-                        txtMemberName.Text = result.ToString();
-                    }
-                    else
-                    {
-                        MessageBox.Show(
-                            "The selected member could not be found.",
-                            "Information",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
-
-                        Close();
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(
-                    "Unable to load the selected member.",
-                    ApplicationConstants.DatabaseErrorTitle,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-        }
-
-        private void LoadServices()
-        {
-            try
-            {
-                using (SQLiteConnection conn = DatabaseManager.GetConnection())
-                {
-                    conn.Open();
-
-                    string query = @"
-                SELECT ServiceID, ServiceName
-                FROM Service
-                ORDER BY ServiceName;";
-
-                    SQLiteCommand cmd = new SQLiteCommand(query, conn);
-
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        clbServices.Items.Clear();
-
-                        while (reader.Read())
-                        {
-                            clbServices.Items.Add(new ServiceItem(
-                                Convert.ToInt32(reader["ServiceID"]),
-                                reader["ServiceName"].ToString()));
-                        }
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(
-                    "Unable to load the available services.",
-                    ApplicationConstants.DatabaseErrorTitle,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-        }
-
-        private void LoadAssignedServices()
-        {
-            try
-            {
-                using (SQLiteConnection conn = DatabaseManager.GetConnection())
-                {
-                    conn.Open();
-
-                    string query = @"
-SELECT ServiceID
-FROM MemberService
-WHERE MemberID = @MemberID;";
-
-                    SQLiteCommand cmd = new SQLiteCommand(query, conn);
-                    cmd.Parameters.AddWithValue("@MemberID", memberID);
-
-                    using (SQLiteDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            int serviceID = Convert.ToInt32(reader["ServiceID"]);
-
-                            for (int i = 0; i < clbServices.Items.Count; i++)
-                            {
-                                ServiceItem item = (ServiceItem)clbServices.Items[i];
-
-                                if (item.ServiceID == serviceID)
-                                {
-                                    clbServices.SetItemChecked(i, true);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(
-                    "Unable to load the assigned services.",
-                    ApplicationConstants.DatabaseErrorTitle,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-        }
-
-
-        private void btnSave_Click(object sender, EventArgs e)
-        {
-            if (!hasChanges)
-            {
-                Close();
-                return;
-            }
-
-            if (clbServices.CheckedItems.Count == 0)
-            {
-                MessageBox.Show(
-                    "Please select at least one service.",
-                    "Validation",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-
-                clbServices.Focus();
-                return;
-            }
-            try
-            {
-                using (SQLiteConnection conn = DatabaseManager.GetConnection())
-                {
-                    conn.Open();
-
-                    SQLiteTransaction transaction =
-                        conn.BeginTransaction();
-
-                    try
-                    {
-
-                        string deleteQuery = @"
-                    DELETE FROM MemberService
-                    WHERE MemberID = @MemberID;";
-
-                        SQLiteCommand deleteCmd =
-                            new SQLiteCommand(deleteQuery, conn, transaction);
-
-                        deleteCmd.Parameters.AddWithValue("@MemberID", memberID);
-
-                        deleteCmd.ExecuteNonQuery();
-
-                        // Insert checked services
-                        string insertQuery = @"
-                    INSERT INTO MemberService
-                    (MemberID, ServiceID)
-                    VALUES
-                    (@MemberID, @ServiceID);";
-
-                        foreach (ServiceItem item in clbServices.CheckedItems)
-                        {
-                            SQLiteCommand insertCmd =
-                                new SQLiteCommand(insertQuery, conn, transaction);
-
-                            insertCmd.Parameters.AddWithValue("@MemberID", memberID);
-                            insertCmd.Parameters.AddWithValue("@ServiceID", item.ServiceID);
-
-                            insertCmd.ExecuteNonQuery();
-                        }
-
-                        transaction.Commit();
-
-                        MessageBox.Show(
-                            $"Services for\n\n{txtMemberName.Text}\n\nhave been updated successfully.",
-                            "Success",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
-
-                        hasChanges = false;
-                        DialogResult = DialogResult.OK;
-                        Close();
-                    }
-                    catch
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    ex.Message,
-                    ApplicationConstants.DatabaseErrorTitle,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-        }
-
-        private void btnCancel_Click(object sender, EventArgs e)
-        {
-            if (hasChanges)
-            {
-                DialogResult result = MessageBox.Show(
-                    "You have unsaved changes.\n\nClose without saving?",
-                    "Unsaved Changes",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning);
-
-                if (result == DialogResult.No)
-                {
-                    return;
-                }
-            }
-
+            var ids = new List<long>();
+            foreach (var item in _list.CheckedItems)
+                if (item is Service service) ids.Add(service.ServiceID);
+            _repo.UpdateMemberServices(_memberId, ids);
+            DialogResult = DialogResult.OK;
             Close();
         }
-
-        private void AssignServicesForm_KeyDown(object sender, KeyEventArgs e)
+        catch (Exception ex)
         {
-            // Enter = Save
-            if (e.KeyCode == Keys.Enter)
-            {
-                btnSave.PerformClick();
-                e.SuppressKeyPress = true;
-            }
-
-            // Escape = Cancel
-            else if (e.KeyCode == Keys.Escape)
-            {
-                btnCancel.PerformClick();
-                e.SuppressKeyPress = true;
-            }
+            AppLogger.Error("Update Member Services", ex);
+            CustomDialog.Show(this, "Services Not Saved", ex.Message, true);
+            button.Enabled = true;
         }
-
-        private void clbServices_ItemCheck(object sender, ItemCheckEventArgs e)
-        {
-            hasChanges = true;
-        }
-    }
-}
-class ServiceItem
-{
-    public int ServiceID { get; set; }
-
-    public string ServiceName { get; set; }
-
-    public ServiceItem(int serviceID, string serviceName)
-    {
-        ServiceID = serviceID;
-        ServiceName = serviceName;
-    }
-
-    public override string ToString()
-    {
-        return ServiceName;
     }
 }
