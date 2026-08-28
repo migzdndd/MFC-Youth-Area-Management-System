@@ -19,7 +19,7 @@ public sealed class Dashboard : Form
         MinimumSize = new Size(1050, 680);
         Size = new Size(1280, 760);
         FormBorderStyle = FormBorderStyle.None;
-        BackColor = ThemeColors.PrimaryDark;
+        BackColor = ThemeColors.Primary;
         Padding = new Padding(7);
         AutoScaleMode = AutoScaleMode.Dpi;
         KeyPreview = true;
@@ -136,13 +136,14 @@ public sealed class Dashboard : Form
             Dock = DockStyle.Fill,
             BackColor = ThemeColors.Primary,
             ColumnCount = 1,
-            RowCount = 2,
+            RowCount = 3,
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
         sidebar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         sidebar.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.SidebarBrandHeight));
         sidebar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        sidebar.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.SidebarArtworkHeight));
 
         var sideBrand = new TableLayoutPanel
         {
@@ -178,7 +179,13 @@ public sealed class Dashboard : Form
         }, 0, 1);
         sidebar.Controls.Add(sideBrand, 0, 0);
 
-        var navHost = new Panel { Dock = DockStyle.Fill, Padding = new Padding(10, 6, 10, 12), Margin = Padding.Empty };
+        var navHost = new Panel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(10, 6, 10, 12),
+            Margin = Padding.Empty,
+            BackColor = ThemeColors.Primary
+        };
         sidebar.Controls.Add(navHost, 0, 1);
 
         // DockStyle.Top stacks in reverse z-order, so add bottom-to-top.
@@ -188,6 +195,11 @@ public sealed class Dashboard : Form
         AddNav(navHost, "Chapters", "chapters", () => new ChaptersForm(this));
         AddNav(navHost, "Members", "members", () => new MembersForm(this));
         AddNav(navHost, "Dashboard", "dashboard", () => new DashboardHomeForm());
+
+        // This row always remains at the bottom of the sidebar. Its height is
+        // fixed in logical pixels and automatically follows Windows DPI scaling.
+        // The artwork control itself preserves the aspect ratio of a custom PNG.
+        sidebar.Controls.Add(new SidebarArtworkPanel(), 0, 2);
 
         return sidebar;
     }
@@ -202,7 +214,7 @@ public sealed class Dashboard : Form
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = danger ? ThemeColors.Danger : ThemeColors.TextSecondary,
-            Font = new Font("Segoe UI", 12, FontStyle.Bold),
+            Font = new Font("Segoe UI", 15, FontStyle.Bold),
             Cursor = Cursors.Hand,
             Margin = Padding.Empty,
             TabStop = false

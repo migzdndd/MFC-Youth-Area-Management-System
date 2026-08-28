@@ -17,7 +17,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
-    <ApplicationIcon>installer\MFCYouth.ico</ApplicationIcon>
+    <ApplicationIcon>installer\MFCYouth-Main.ico</ApplicationIcon>
     <AssemblyName>MFCYouthAreaManagementSystem</AssemblyName>
     <RootNamespace>MFCYouthAreaManagementSystem</RootNamespace>
     <Version>2.0.1-beta-fixed</Version>

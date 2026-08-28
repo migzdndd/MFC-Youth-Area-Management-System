@@ -58,7 +58,7 @@ DefaultDirName={localappdata}\Programs\{#MyAppName}
 DefaultGroupName={#MyAppName}
 
 OutputDir=..\dist\installer
-OutputBaseFilename=MFCYouthSetup_v2.0.1-beta-fixed-FINAL
+OutputBaseFilename=MFCYouthSetup_v2.0.1-beta-fixed
 
 Compression=lzma2
 SolidCompression=yes

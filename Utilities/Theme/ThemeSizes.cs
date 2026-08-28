@@ -5,6 +5,7 @@ public static class ThemeSizes
     public const int SidebarWidth = 230;
     public const int TitleBarHeight = 56;
     public const int SidebarBrandHeight = 104;
+    public const int SidebarArtworkHeight = 190;
     public const int PageHeaderHeight = 92;
     public const int ToolbarSearchHeight = 54;
     public const int ToolbarActionsHeight = 58;
