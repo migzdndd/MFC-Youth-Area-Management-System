@@ -6,6 +6,7 @@ The following versions are currently supported with security updates and bug fix
 
 | Version | Supported |
 | ------- | --------- |
+| v2.0.2 | ✅ |
 | v2.0.1-fixed | ✅ |
 | v2.0.0 | ✅ |
 | v1.0.2 Public Beta | ❌ |
