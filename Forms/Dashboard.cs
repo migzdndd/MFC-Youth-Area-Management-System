@@ -214,7 +214,7 @@ public sealed class Dashboard : Form
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = danger ? ThemeColors.Danger : ThemeColors.TextSecondary,
-            Font = new Font("Segoe UI", 15, FontStyle.Bold),
+            Font = new Font("Segoe UI", 12, FontStyle.Bold),
             Cursor = Cursors.Hand,
             Margin = Padding.Empty,
             TabStop = false
