@@ -6,6 +6,7 @@ The following versions are currently supported with security updates and bug fix
 
 | Version | Supported |
 | ------- | --------- |
+| v2.0.1-fixed | ✅ |
 | v2.0.0 | ✅ |
 | v1.0.2 Public Beta | ❌ |
 | v1.0.1 Public Beta | ❌ |
@@ -29,6 +30,7 @@ Please create a private report by contacting the maintainer through one of the f
 
 - Open a GitHub Security Advisory, if available.
 - Email: **miguel7riovaldez@gmail.com**
+- Facebook: **Miguel Riovaldez**
 
 Please avoid opening a public GitHub Issue for vulnerabilities that may expose sensitive information or create a security risk for users.
 
