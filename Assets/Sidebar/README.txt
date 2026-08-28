@@ -1,0 +1,11 @@
+## MFC Youth Sidebar Artwork Notes
+- File name: SidebarDecoration.png
+- Location: Assets/Sidebar/
+- Suggested size: 230 x 190
+- A bigger version like 460 x 380 can be used for better quality
+- PNG format is preferred
+- Transparent background can be used
+- The design stays at the bottom of the sidebar
+- The design keeps its shape when the window is resized
+- The sidebar stays the same width
+- If the image is missing, the app shows the yellow chevron design instead
