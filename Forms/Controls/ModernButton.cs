@@ -4,7 +4,7 @@ using MFCYouthAreaManagementSystem.Utilities;
 
 namespace MFCYouthAreaManagementSystem.UI.Controls;
 
-public enum ModernButtonStyle { Primary, Secondary, Danger, Ghost }
+public enum ModernButtonStyle { Primary, Secondary, Danger, Ghost, Blue }
 
 public class ModernButton : Button
 {
@@ -154,7 +154,7 @@ public class ModernButton : Button
             e.Graphics.DrawPath(border, path);
         }
 
-        var foreColor = ButtonStyle is ModernButtonStyle.Primary or ModernButtonStyle.Danger
+        var foreColor = ButtonStyle is ModernButtonStyle.Primary or ModernButtonStyle.Danger or ModernButtonStyle.Blue
             ? Color.White
             : ThemeColors.TextPrimary;
 
@@ -193,6 +193,7 @@ public class ModernButton : Button
             ModernButtonStyle.Primary => ThemeColors.Primary,
             ModernButtonStyle.Danger => ThemeColors.Danger,
             ModernButtonStyle.Secondary => ThemeColors.PrimarySoft,
+            ModernButtonStyle.Blue => ThemeColors.ActionBlue,
             _ => GetEffectiveParentBackColor()
         };
 

@@ -58,7 +58,7 @@ public sealed class ServiceCard : Panel
         {
             Text = "View Members",
             Dock = DockStyle.Fill,
-            ButtonStyle = ModernButtonStyle.Ghost,
+            ButtonStyle = ModernButtonStyle.Blue,
             Margin = Padding.Empty
         };
         view.Click += (_, e) => ViewClicked?.Invoke(this, e);

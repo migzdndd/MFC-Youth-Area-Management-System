@@ -7,6 +7,7 @@ public static class ThemeColors
     public static readonly Color PrimarySoft = Color.FromArgb(231, 238, 247);
     public static readonly Color Secondary = Color.FromArgb(27, 58, 99);
     public static readonly Color Accent = Color.FromArgb(243, 182, 31);
+    public static readonly Color ActionBlue = Color.FromArgb(37, 99, 235);
     public static readonly Color Background = Color.FromArgb(245, 247, 250);
     public static readonly Color Surface = Color.White;
     public static readonly Color TextPrimary = Color.FromArgb(24, 32, 42);
