@@ -6,20 +6,25 @@ $ErrorActionPreference = 'Stop'
 
 $Root = Split-Path -Parent $PSScriptRoot
 $Project = Join-Path $Root 'MFC Youth Area Management System.csproj'
+$ReleaseVersion = '2.0.3'
 $PublishDir = Join-Path $Root 'dist\publish-win-x64'
 $InstallerDir = Join-Path $Root 'dist\installer'
-$InstallerScript = Join-Path $Root 'installer\MFCYouthSetup_v2.0.1-beta-fixed.iss'
-$InstallerExe = Join-Path $InstallerDir 'MFCYouthSetup_v2.0.1-beta-fixed.exe'
-$ExpectedProductVersion = '2.0.1-beta-fixed'
-$ExpectedFileVersion = '2.0.1.0'
+$InstallerScript = Join-Path $Root ("Installer\MFCYouthSetup_v{0}.iss" -f $ReleaseVersion)
+$InstallerExe = Join-Path $InstallerDir ("MFCYouthSetup_v{0}.exe" -f $ReleaseVersion)
+$ExpectedProductVersion = $ReleaseVersion
+$ExpectedFileVersion = "$ReleaseVersion.0"
 $ExpectedWizardImageSha256 = '386868F2B8CB81FE472AB5C7BE1AF393244865E14008B307C5F242AADE13262E'
 $ExpectedWizardSmallImageSha256 = 'ED7CE7DAFF211408049B4E53BDE90B58B2AE5AF4BCA17B9BDFDE13883515CD3E'
 
-Write-Host '=== MFC Youth Area Management System v2.0.1-beta-fixed ===' -ForegroundColor Cyan
+Write-Host ("=== MFC Youth Area Management System v{0} ===" -f $ReleaseVersion) -ForegroundColor Cyan
 Write-Host 'Building a self-contained Windows x64 release...' -ForegroundColor Cyan
 
 $WizardImage = Join-Path $Root 'installer\Resources\WizardImage.png'
 $WizardSmallImage = Join-Path $Root 'installer\Resources\WizardSmallImage.png'
+
+if (-not (Test-Path $InstallerScript)) {
+    throw "Installer script is missing: $InstallerScript"
+}
 
 foreach ($ImagePath in @($WizardImage, $WizardSmallImage)) {
     if (-not (Test-Path $ImagePath)) {
@@ -100,18 +105,36 @@ try {
     Write-Host "SQLite native runtime: $($SQLiteInterop.FullName)" -ForegroundColor Green
 
     if (-not $SkipInstaller) {
+        # Search common Inno Setup locations, including the user's D: installation.
         $IsccCandidates = @(
-            "$env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe",
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
             "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
-        ) | Where-Object { $_ -and (Test-Path $_) }
+            "D:\Program Files\Inno Setup 6\ISCC.exe"
+        )
 
-        if ($IsccCandidates.Count -gt 0) {
-            $Iscc = $IsccCandidates[0]
+        # Select the first complete path that actually exists.
+        # Select-Object avoids the single-string [0] bug that returned only "D".
+        $Iscc = $IsccCandidates |
+            Where-Object { $_ -and (Test-Path -LiteralPath $_) } |
+            Select-Object -First 1
+
+        if (-not $Iscc) {
+            # Also allow ISCC.exe to be discovered through PATH if available.
+            $IsccCommand = Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue
+            if ($IsccCommand) {
+                $Iscc = $IsccCommand.Source
+            }
+        }
+
+        if ($Iscc) {
             Write-Host "Compiling installer with: $Iscc" -ForegroundColor Cyan
-            & $Iscc $InstallerScript
-            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compilation failed.' }
 
-            if (-not (Test-Path $InstallerExe)) {
+            & $Iscc $InstallerScript
+            if ($LASTEXITCODE -ne 0) {
+                throw 'Inno Setup compilation failed.'
+            }
+
+            if (-not (Test-Path -LiteralPath $InstallerExe)) {
                 throw "Installer compilation completed but the expected installer was not found: $InstallerExe"
             }
 

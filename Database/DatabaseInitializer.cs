@@ -10,8 +10,29 @@ public static class DatabaseInitializer
         Directory.CreateDirectory(DatabaseConfiguration.AppDataDirectory);
         Directory.CreateDirectory(DatabaseConfiguration.LogDirectory);
         using var connection = DatabaseManager.OpenConnection();
+        VerifyIntegrity(connection);
         DatabaseMigrator.Apply(connection);
         SeedServices(connection);
+    }
+
+    private static void VerifyIntegrity(SQLiteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA quick_check;";
+        using var reader = command.ExecuteReader();
+        var errors = new List<string>();
+        while (reader.Read())
+        {
+            var result = Convert.ToString(reader[0]) ?? string.Empty;
+            if (string.Equals(result, "ok", StringComparison.OrdinalIgnoreCase)) continue;
+            if (result.Length > 0) errors.Add(result);
+            if (errors.Count >= 5) break;
+        }
+
+        if (errors.Count > 0)
+            throw new InvalidOperationException(
+                "The local database failed an integrity check. No migration was attempted. " +
+                "Restore a known-good backup before continuing. Details: " + string.Join(" | ", errors));
     }
 
     private static void SeedServices(SQLiteConnection connection)

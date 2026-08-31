@@ -253,29 +253,46 @@ public sealed class Dashboard : Form
     public void ShowPage(string name, Form form)
     {
         var previous = _current;
-        _current = null;
-        if (previous != null)
-        {
-            _content.Controls.Remove(previous);
-            previous.Close();
-            previous.Dispose();
-        }
-
-        _current = form;
-        _pageLabel.Text = name;
-        foreach (var navButton in _nav.Values)
-            navButton.Active = Equals(navButton.Tag, name);
 
         form.TopLevel = false;
         form.FormBorderStyle = FormBorderStyle.None;
         form.Dock = DockStyle.Fill;
+
         _content.SuspendLayout();
         try
         {
             _content.Controls.Add(form);
             form.Show();
+            form.BringToFront();
             form.PerformLayout();
             form.Invalidate(true);
+
+            _current = form;
+            _pageLabel.Text = name;
+            foreach (var navButton in _nav.Values)
+                navButton.Active = Equals(navButton.Tag, name);
+
+            if (previous != null && !ReferenceEquals(previous, form))
+            {
+                try
+                {
+                    _content.Controls.Remove(previous);
+                    previous.Close();
+                    previous.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Error("Dispose previous dashboard page", ex);
+                }
+            }
+        }
+        catch
+        {
+            _content.Controls.Remove(form);
+            form.Dispose();
+            _current = previous;
+            if (previous != null && !previous.IsDisposed) previous.BringToFront();
+            throw;
         }
         finally
         {

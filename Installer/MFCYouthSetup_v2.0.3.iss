@@ -1,7 +1,7 @@
 ﻿#define MyAppName "MFC Youth Area Management System"
-#define MyAppVersion "2.0.1-beta-fixed"
-#define MyAppDisplayVersion "Public Beta v2.0.1-fixed"
-#define MyAppFileVersion "2.0.1.0"
+#define MyAppVersion "2.0.3"
+#define MyAppDisplayVersion "Public Beta v2.0.3"
+#define MyAppFileVersion "2.0.3.0"
 #define MyAppPublisher "Miguel Riovaldez - MFC Youth NCR Central"
 #define MyAppExeName "MFCYouthAreaManagementSystem.exe"
 #define MyAppURL "https://github.com/migzdndd/MFC-Youth-Area-Management-System"
@@ -9,7 +9,7 @@
 [Setup]
 ; ===========================================================================
 ; MFC Youth Area Management System
-; Public Beta v2.0.1-fixed
+; Public Beta v2.0.3
 ; RELEASE-READY SELF-CONTAINED INSTALLER
 ;
 ; IMPORTANT:
@@ -58,7 +58,7 @@ DefaultDirName={localappdata}\Programs\{#MyAppName}
 DefaultGroupName={#MyAppName}
 
 OutputDir=..\dist\installer
-OutputBaseFilename=MFCYouthSetup_v2.0.1-beta-fixed
+OutputBaseFilename=MFCYouthSetup_v2.0.3
 
 Compression=lzma2
 SolidCompression=yes
@@ -81,6 +81,7 @@ WizardImageStretch=yes
 
 DisableWelcomePage=no
 DisableReadyPage=yes
+DisableFinishedPage=no
 DisableProgramGroupPage=yes
 AllowNoIcons=yes
 UsePreviousTasks=no
@@ -179,10 +180,10 @@ begin
     'Welcome to MFC Youth Area Management System';
 
   WizardForm.WelcomeLabel2.Caption :=
-    'Install Public Beta v2.0.1-fixed on this computer.' +
+    'Install Public Beta v2.0.3 on this computer.' +
     Chr(13) + Chr(10) + Chr(13) + Chr(10) +
-    'This maintenance release includes fixes for Chapter deletion and ' +
-    'database relationship handling.' +
+    'This maintenance release focuses on stability, validation, error ' +
+    'reporting, and release consistency.' +
     Chr(13) + Chr(10) + Chr(13) + Chr(10) +
     'The required .NET runtime is bundled with this installer. Users do not ' +
     'need to download or install .NET separately.' +
@@ -196,19 +197,19 @@ begin
     'Close other applications before continuing.';
 
   WizardForm.FinishedHeadingLabel.Caption :=
-    'Public Beta v2.0.1-fixed is ready';
+    'Public Beta v2.0.3 is ready';
 
   WizardForm.FinishedLabel.Caption :=
     'Installation completed successfully.' +
     Chr(13) + Chr(10) + Chr(13) + Chr(10) +
     'VERSION' +
     Chr(13) + Chr(10) +
-    'MFC Youth Area Management System Public Beta v2.0.1-fixed' +
+    'MFC Youth Area Management System Public Beta v2.0.3' +
     Chr(13) + Chr(10) + Chr(13) + Chr(10) +
     'FIXES INCLUDED' +
     Chr(13) + Chr(10) +
-    'This maintenance release improves Chapter deletion and related ' +
-    'database foreign-key handling while preserving historical data.' +
+    'This maintenance release improves startup database safety, runtime ' +
+    'error handling, validation, logging, and version consistency.' +
     Chr(13) + Chr(10) + Chr(13) + Chr(10) +
     'The required .NET runtime is bundled with this release.' +
     Chr(13) + Chr(10) + Chr(13) + Chr(10) +
@@ -236,11 +237,54 @@ end;
 procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = wpSelectTasks then
-    WizardForm.NextButton.Caption := SetupMessage(msgButtonInstall)
+  begin
+    WizardForm.NextButton.Caption := SetupMessage(msgButtonInstall);
+  end
   else if CurPageID = wpFinished then
-    WizardForm.NextButton.Caption := SetupMessage(msgButtonFinish)
+  begin
+    WizardForm.NextButton.Caption := SetupMessage(msgButtonFinish);
+
+    WizardForm.FinishedHeadingLabel.Caption :=
+      'Public Beta v2.0.3 is ready';
+
+    WizardForm.FinishedLabel.Caption :=
+      'Installation completed successfully.' +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      'VERSION' +
+      Chr(13) + Chr(10) +
+      'MFC Youth Area Management System Public Beta v2.0.3' +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      'FIXES INCLUDED' +
+      Chr(13) + Chr(10) +
+      'This maintenance release improves startup database safety, runtime ' +
+      'error handling, validation, logging, and version consistency.' +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      'The required .NET runtime is bundled with this release.' +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      'BETA NOTICE' +
+      Chr(13) + Chr(10) +
+      'This remains a public testing release. Bugs or unexpected behavior may ' +
+      'still be present. Feedback and bug reports are appreciated.' +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      'IMPORTANT FOR EXISTING USERS' +
+      Chr(13) + Chr(10) +
+      'Your MFC Youth database is stored separately from the installed ' +
+      'application files and is not removed by this update.' +
+      Chr(13) + Chr(10) +
+      'Setup creates a timestamped safety backup before installation.' +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      'Thank you for installing and supporting this project.' +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      '#MFCYouth  #LifeLikeNoOther' +
+      Chr(13) + Chr(10) +
+      'Miguel Riovaldez' +
+      Chr(13) + Chr(10) +
+      'Area LIT Servant - NCR Central';
+  end
   else
+  begin
     WizardForm.NextButton.Caption := SetupMessage(msgButtonNext);
+  end;
 end;
 
 function BackupDatabaseIfPresent(
@@ -324,7 +368,7 @@ begin
 
   Result := BackupDatabaseIfPresent(
     OldV1Database,
-    'MFCYouth-v1-before-v2.0.1-fixed'
+    'MFCYouth-v1-before-v2.0.3'
   );
 
   if Result <> '' then
@@ -332,7 +376,7 @@ begin
 
   Result := BackupDatabaseIfPresent(
     CurrentV2Database,
-    'mfcyouth-v2-before-v2.0.1-fixed'
+    'mfcyouth-v2-before-v2.0.3'
   );
 
   if Result <> '' then

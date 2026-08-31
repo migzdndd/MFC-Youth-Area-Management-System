@@ -4,16 +4,26 @@ namespace MFCYouthAreaManagementSystem.Utilities;
 
 public static class AppLogger
 {
+    private static readonly object Sync = new();
+
     public static void Error(string operation, Exception ex)
     {
         try
         {
             Directory.CreateDirectory(DatabaseConfiguration.LogDirectory);
             var path = Path.Combine(DatabaseConfiguration.LogDirectory, $"{DateTime.Now:yyyy-MM-dd}.log");
-            File.AppendAllText(path,
+            var entry =
                 $"[{DateTimeOffset.Now:O}] {operation}{Environment.NewLine}" +
-                $"{ex.GetType().FullName}: {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}{Environment.NewLine}");
+                $"{ex}{Environment.NewLine}{Environment.NewLine}";
+
+            lock (Sync)
+            {
+                File.AppendAllText(path, entry);
+            }
         }
-        catch { }
+        catch
+        {
+            // Logging must never cause a second application failure.
+        }
     }
 }

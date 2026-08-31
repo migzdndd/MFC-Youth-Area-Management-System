@@ -213,9 +213,9 @@ public sealed class EventParticipantEditorForm : Form
             return;
         }
 
-        if (middle.Length > 3)
+        if (!ValidationHelper.IsValidMiddleInitial(middle))
         {
-            _error.Text = "Middle Initial should be a single initial such as M or M.";
+            _error.Text = "Middle Initial must be one letter, with an optional period (for example M or M.).";
             return;
         }
 

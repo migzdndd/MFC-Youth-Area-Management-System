@@ -1,6 +1,14 @@
 # MFC Youth Area Management System
 
-**Current release:** `v2.0.1-beta-fixed`
+**Current release:** `v2.0.3`
+
+### v2.0.3 maintenance focus
+
+- Adds a SQLite integrity check before schema migration.
+- Separates database-startup failures from unexpected runtime/UI errors.
+- Improves exception logging, including inner-exception details.
+- Synchronizes application, installer, manifest, and release-build version metadata.
+- Tightens Event participant Middle Initial validation.
 
 A custom-designed, fully offline Windows desktop management application for organizing MFC Youth Area records.
 
@@ -76,7 +84,7 @@ The script:
 1. Clears stale `bin`, `obj`, and release publish output.
 2. Restores packages for `win-x64`.
 3. Publishes a self-contained Windows x64 application.
-4. Verifies the executable reports `2.0.1-beta-fixed` and file version `2.0.1.0`.
+4. Verifies the executable reports `2.0.3` and file version `2.0.3.0`.
 5. Verifies the .NET runtime is actually present in the publish folder.
 6. Compiles the Inno Setup installer automatically when Inno Setup 6 is installed.
 
@@ -95,7 +103,7 @@ dotnet publish ".\MFC Youth Area Management System.csproj" `
 Expected installer output:
 
 ```text
-dist\installer\MFCYouthSetup_v2.0.1-beta-fixed.exe
+dist\installer\MFCYouthSetup_v2.0.3.exe
 ```
 
 ## Local Database
@@ -240,8 +248,8 @@ No runtime web service, cloud database, external API, account sign-in, or intern
 
 ## Current Scope and Limitations
 
-- No authentication or role-permission system in Version 1
-- No database encryption in Version 1
+- No authentication or role-permission system yet
+- No database encryption yet
 - No Member photos
 - No Excel/PDF import/export yet
 - No backup/restore UI yet
@@ -251,13 +259,13 @@ No runtime web service, cloud database, external API, account sign-in, or intern
 The current data/repository structure can be extended later for attendance history, Chapter transfer history, Service history, photos, accounts, permissions, backup/restore, spreadsheet import/export, PDF/printable reports, and contribution reporting.
 
 
-## v8 Chapter deletion fix
+## v2.0.2 Chapter deletion fix
 
-This package includes database schema migration v3. Activity Reports now preserve a Chapter name snapshot and use `ON DELETE SET NULL`, so an empty Chapter can be deleted even when historical Activity Reports or Event Participants reference it. Members must still be moved before deleting a Chapter.
+This package includes the v3/v4 Chapter-reference migrations. Activity Reports now preserve a Chapter name snapshot and use `ON DELETE SET NULL`, so an empty Chapter can be deleted even when historical Activity Reports or Event Participants reference it. Members must still be moved before deleting a Chapter.
 
-### v8 Chapter Delete Repair
+### v2.0.2 Chapter Delete Repair
 
-Release `v2.0.1-beta-fixed` includes the hardened Chapter deletion repair for upgraded databases. Historical Activity Reports and Event participants keep their Chapter-name snapshots while their Chapter foreign keys are detached before a Chapter is removed. Database schema version 4 rebuilds the affected relationships with `ON DELETE SET NULL`.
+Release `v2.0.2` includes the hardened Chapter deletion repair for upgraded databases. Historical Activity Reports and Event participants keep their Chapter-name snapshots while their Chapter foreign keys are detached before a Chapter is removed. Database schema version 4 rebuilds the affected relationships with `ON DELETE SET NULL`.
 
 This package also fixes application version metadata and changes the Windows x64 release to a self-contained deployment so end users do not receive a separate .NET runtime installation prompt.
 

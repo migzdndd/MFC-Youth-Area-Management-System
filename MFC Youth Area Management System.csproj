@@ -20,10 +20,10 @@
     <ApplicationIcon>installer\MFCYouth-Main.ico</ApplicationIcon>
     <AssemblyName>MFCYouthAreaManagementSystem</AssemblyName>
     <RootNamespace>MFCYouthAreaManagementSystem</RootNamespace>
-    <Version>2.0.1-beta-fixed</Version>
-    <AssemblyVersion>2.0.1.0</AssemblyVersion>
-    <FileVersion>2.0.1.0</FileVersion>
-    <InformationalVersion>2.0.1-beta-fixed</InformationalVersion>
+    <Version>2.0.3</Version>
+    <AssemblyVersion>2.0.3.0</AssemblyVersion>
+    <FileVersion>2.0.3.0</FileVersion>
+    <InformationalVersion>2.0.3</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Product>MFC Youth Area Management System</Product>
     <Company>Miguel Riovaldez - MFC Youth NCR Central</Company>
