@@ -9,6 +9,7 @@ public sealed class Dashboard : Form
 {
     private readonly Panel _content;
     private Label _pageLabel = null!;
+    private Label _versionLabel = null!;
     private readonly Dictionary<string, NavigationButton> _nav = new();
     private Form? _current;
 
@@ -58,6 +59,23 @@ public sealed class Dashboard : Form
         var sidebar = BuildSidebar();
         body.Controls.Add(sidebar, 0, 0);
 
+        // The right side of the shell has a permanent content row and a small
+        // footer row. The footer belongs to the shell itself, so embedded child
+        // forms can never cover the application version label.
+        var contentHost = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            BackColor = ThemeColors.Background
+        };
+        contentHost.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        contentHost.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        contentHost.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+        body.Controls.Add(contentHost, 1, 0);
+
         _content = new Panel
         {
             Dock = DockStyle.Fill,
@@ -65,7 +83,29 @@ public sealed class Dashboard : Form
             Padding = new Padding(ThemeSizes.PagePadding),
             Margin = Padding.Empty
         };
-        body.Controls.Add(_content, 1, 0);
+        contentHost.Controls.Add(_content, 0, 0);
+
+        var versionFooter = new Panel
+        {
+            Dock = DockStyle.Fill,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            BackColor = ThemeColors.Background
+        };
+        contentHost.Controls.Add(versionFooter, 0, 1);
+
+        _versionLabel = new Label
+        {
+            Text = ApplicationConstants.AppVersion,
+            Dock = DockStyle.Fill,
+            BackColor = ThemeColors.Background,
+            ForeColor = ThemeColors.TextSecondary,
+            Font = ThemeFonts.SmallBold,
+            Padding = new Padding(0, 0, 14, 4),
+            TextAlign = ContentAlignment.BottomRight,
+            Margin = Padding.Empty
+        };
+        versionFooter.Controls.Add(_versionLabel);
 
         ShowPage("Dashboard", new DashboardHomeForm());
     }

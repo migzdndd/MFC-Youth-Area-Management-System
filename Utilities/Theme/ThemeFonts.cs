@@ -10,6 +10,7 @@ public static class ThemeFonts
     public static readonly Font Body = new(PreferredFamily, 10.5f, FontStyle.Regular);
     public static readonly Font BodyBold = new(PreferredFamily, 10.5f, FontStyle.Bold);
     public static readonly Font Small = new(PreferredFamily, 9, FontStyle.Regular);
+    public static readonly Font SmallBold = new(PreferredFamily, 9, FontStyle.Bold);
     public static readonly Font Stat = new(PreferredFamily, 24, FontStyle.Bold);
 
     private static string ResolvePreferredFamily()

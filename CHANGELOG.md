@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.0.3 - Stability, Bug Fixes & Polish
+## v2.0.3-beta - Stability, Bug Fixes & Dashboard Trends
 
 ### Stability
 
@@ -14,16 +14,23 @@
 
 - Corrected Event participant Middle Initial validation to accept one letter with an optional period.
 
+### Dashboard
+
+- Added month-over-month trend indicators to the Dashboard Summary for Members, Chapters, Services, Activity Reports, and Events.
+- Positive net changes display a green upward indicator; negative net changes display a red downward indicator.
+- Unchanged totals and the initial tracking month use a neutral state rather than fabricated historical data.
+
 ### Release Engineering
 
-- Synchronized application, assembly, manifest, installer, and build-script versions to `2.0.3`.
-- Updated the release build script and installer paths for Public Beta v2.0.3.
+- Synchronized application, assembly, manifest, installer, and build-script versions to `2.0.3-beta` for the public release identity while retaining numeric file version `2.0.3.0`.
+- Updated the release build script and installer paths for Public Beta v2.0.3-beta.
 - Updated release documentation and supported-version guidance.
 
 ### Data
 
-- No schema change is required for v2.0.3. Database schema version remains 4.
-- Existing local databases are preserved and continue to migrate through the existing versioned migration path.
+- Dashboard trend history is stored in a small local support file and does not change the SQLite schema.
+- Database schema remains version 4; existing Member, Chapter, Service, Activity Report, GIG, Event, and Event participant records are untouched.
+- If the earlier dashboard-trend test build marked a database as schema 5, startup repairs it only after confirming that it exactly matches that temporary dashboard-only schema; otherwise the database is left untouched and treated as newer.
 
 ## v2.0.2 - Maintenance Update
 

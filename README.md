@@ -1,14 +1,17 @@
 # MFC Youth Area Management System
 
-**Current release:** `v2.0.3`
+**Current release:** `v2.0.3-beta`
 
-### v2.0.3 maintenance focus
+### v2.0.3-beta maintenance focus
 
 - Adds a SQLite integrity check before schema migration.
 - Separates database-startup failures from unexpected runtime/UI errors.
 - Improves exception logging, including inner-exception details.
 - Synchronizes application, installer, manifest, and release-build version metadata.
 - Tightens Event participant Middle Initial validation.
+- Adds month-over-month green/red Dashboard Summary trend indicators.
+- Displays `v2.0.3-beta` in the permanent bottom-right application footer.
+- Keeps dashboard trend history outside the core SQLite database.
 
 A custom-designed, fully offline Windows desktop management application for organizing MFC Youth Area records.
 
@@ -19,7 +22,7 @@ A custom-designed, fully offline Windows desktop management application for orga
 - Seven system-defined MFC Youth Service roles with many-to-many Member assignments
 - Activity Reports with separate Activity and Description fields
 - GIG contribution tracking per Member with Philippine peso totals
-- Dashboard statistics for Members, Chapters, Services, and Activity Reports
+- Dashboard statistics and monthly trend indicators for Members, Chapters, Services, Activity Reports, and Events
 - Event management with participant registration, attendance counts, payment status, and registration-fee summaries
 - Local SQLite persistence under the signed-in Windows user's application-data folder
 - Custom navy/gold WinForms UI, reusable controls, custom dialogs, toast feedback, and styled DataGridViews
@@ -84,7 +87,7 @@ The script:
 1. Clears stale `bin`, `obj`, and release publish output.
 2. Restores packages for `win-x64`.
 3. Publishes a self-contained Windows x64 application.
-4. Verifies the executable reports `2.0.3` and file version `2.0.3.0`.
+4. Verifies the executable reports `2.0.3-beta` and file version `2.0.3.0`.
 5. Verifies the .NET runtime is actually present in the publish folder.
 6. Compiles the Inno Setup installer automatically when Inno Setup 6 is installed.
 
@@ -103,7 +106,7 @@ dotnet publish ".\MFC Youth Area Management System.csproj" `
 Expected installer output:
 
 ```text
-dist\installer\MFCYouthSetup_v2.0.3.exe
+dist\installer\MFCYouthSetup_v2.0.3-beta.exe
 ```
 
 ## Local Database

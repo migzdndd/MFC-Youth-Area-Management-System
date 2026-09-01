@@ -22,6 +22,13 @@ public sealed class ServiceMembersForm : Form
         var service = new ServiceRepository().GetById(serviceId)
                       ?? throw new InvalidOperationException("Service not found.");
         Text = service.ServiceName;
+
+        // Use the same icon embedded in the main application executable.
+        // This prevents child windows from displaying the generic WinForms icon.
+        var appIcon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        if (appIcon != null)
+            Icon = appIcon;
+
         StartPosition = FormStartPosition.CenterParent;
         Size = new Size(900, 600);
         MinimumSize = new Size(780, 520);

@@ -1,6 +1,6 @@
-﻿#define MyAppName "MFC Youth Area Management System"
-#define MyAppVersion "2.0.3"
-#define MyAppDisplayVersion "Public Beta v2.0.3"
+#define MyAppName "MFC Youth Area Management System"
+#define MyAppVersion "2.0.3-beta"
+#define MyAppDisplayVersion "Public Beta v2.0.3-beta"
 #define MyAppFileVersion "2.0.3.0"
 #define MyAppPublisher "Miguel Riovaldez - MFC Youth NCR Central"
 #define MyAppExeName "MFCYouthAreaManagementSystem.exe"
@@ -9,7 +9,7 @@
 [Setup]
 ; ===========================================================================
 ; MFC Youth Area Management System
-; Public Beta v2.0.3
+; Public Beta v2.0.3-beta
 ; RELEASE-READY SELF-CONTAINED INSTALLER
 ;
 ; IMPORTANT:
@@ -58,7 +58,7 @@ DefaultDirName={localappdata}\Programs\{#MyAppName}
 DefaultGroupName={#MyAppName}
 
 OutputDir=..\dist\installer
-OutputBaseFilename=MFCYouthSetup_v2.0.3
+OutputBaseFilename=MFCYouthSetup_v2.0.3-beta
 
 Compression=lzma2
 SolidCompression=yes
@@ -104,7 +104,7 @@ VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppFileVersion}
 VersionInfoCopyright=© 2026 Miguel Riovaldez
 
-UninstallDisplayName={#MyAppName}
+UninstallDisplayName={#MyAppName} {#MyAppDisplayVersion}
 UninstallDisplayIcon={app}\MFCYouth-Main.ico
 
 CloseApplications=yes
@@ -174,13 +174,13 @@ const
 procedure InitializeWizard;
 begin
   WizardForm.Caption :=
-    'MFC Youth Area Management System - Public Beta Setup';
+    '{#MyAppName} - {#MyAppDisplayVersion} Setup';
 
   WizardForm.WelcomeLabel1.Caption :=
     'Welcome to MFC Youth Area Management System';
 
   WizardForm.WelcomeLabel2.Caption :=
-    'Install Public Beta v2.0.3 on this computer.' +
+    'Install {#MyAppDisplayVersion} on this computer.' +
     Chr(13) + Chr(10) + Chr(13) + Chr(10) +
     'This maintenance release focuses on stability, validation, error ' +
     'reporting, and release consistency.' +
@@ -197,14 +197,14 @@ begin
     'Close other applications before continuing.';
 
   WizardForm.FinishedHeadingLabel.Caption :=
-    'Public Beta v2.0.3 is ready';
+    '{#MyAppDisplayVersion} is ready';
 
   WizardForm.FinishedLabel.Caption :=
     'Installation completed successfully.' +
     Chr(13) + Chr(10) + Chr(13) + Chr(10) +
     'VERSION' +
     Chr(13) + Chr(10) +
-    'MFC Youth Area Management System Public Beta v2.0.3' +
+    '{#MyAppName} {#MyAppDisplayVersion}' +
     Chr(13) + Chr(10) + Chr(13) + Chr(10) +
     'FIXES INCLUDED' +
     Chr(13) + Chr(10) +
@@ -245,14 +245,14 @@ begin
     WizardForm.NextButton.Caption := SetupMessage(msgButtonFinish);
 
     WizardForm.FinishedHeadingLabel.Caption :=
-      'Public Beta v2.0.3 is ready';
+      '{#MyAppDisplayVersion} is ready';
 
     WizardForm.FinishedLabel.Caption :=
       'Installation completed successfully.' +
       Chr(13) + Chr(10) + Chr(13) + Chr(10) +
       'VERSION' +
       Chr(13) + Chr(10) +
-      'MFC Youth Area Management System Public Beta v2.0.3' +
+      '{#MyAppName} {#MyAppDisplayVersion}' +
       Chr(13) + Chr(10) + Chr(13) + Chr(10) +
       'FIXES INCLUDED' +
       Chr(13) + Chr(10) +
@@ -368,7 +368,7 @@ begin
 
   Result := BackupDatabaseIfPresent(
     OldV1Database,
-    'MFCYouth-v1-before-v2.0.3'
+    'MFCYouth-v1-before-v2.0.3-beta'
   );
 
   if Result <> '' then
@@ -376,7 +376,7 @@ begin
 
   Result := BackupDatabaseIfPresent(
     CurrentV2Database,
-    'mfcyouth-v2-before-v2.0.3'
+    'mfcyouth-v2-before-v2.0.3-beta'
   );
 
   if Result <> '' then

@@ -11,6 +11,17 @@ public static class DatabaseMigrator
         using var versionCommand = connection.CreateCommand();
         versionCommand.CommandText = "PRAGMA user_version;";
         var version = Convert.ToInt32(versionCommand.ExecuteScalar());
+
+        // A short-lived dashboard-trend build used schema version 5 only to
+        // create DashboardMonthlySnapshot. That UI-only table is no longer
+        // needed. Repair it back to the stable v4 schema automatically so a
+        // user who launched that build is not locked out of the application.
+        if (version == 5 && IsTemporaryDashboardTrendV5(connection))
+        {
+            RepairDashboardTrendV5(connection);
+            version = 4;
+        }
+
         if (version > CurrentVersion)
             throw new InvalidOperationException($"Database schema version {version} is newer than this application supports ({CurrentVersion}).");
 
@@ -275,6 +286,60 @@ CREATE INDEX IF NOT EXISTS IX_EventParticipant_EventID ON EventParticipant(Event
 CREATE INDEX IF NOT EXISTS IX_EventParticipant_ChapterID ON EventParticipant(ChapterID);
 CREATE INDEX IF NOT EXISTS IX_EventParticipant_ServiceID ON EventParticipant(ServiceID);
 
+PRAGMA user_version = 4;";
+        command.ExecuteNonQuery();
+        tx.Commit();
+    }
+
+    private static bool IsTemporaryDashboardTrendV5(SQLiteConnection connection)
+    {
+        // Only repair the exact short-lived dashboard-only v5 schema. A future
+        // legitimate schema version 5 must be treated as newer and left untouched.
+        var expectedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Chapter", "Member", "Service", "MemberService", "ActivityReport",
+            "GIGContribution", "AreaEvent", "EventParticipant", "DashboardMonthlySnapshot"
+        };
+
+        using (var tableCommand = connection.CreateCommand())
+        {
+            tableCommand.CommandText = @"
+SELECT name
+FROM sqlite_master
+WHERE type = 'table' AND name NOT LIKE 'sqlite_%';";
+
+            using var reader = tableCommand.ExecuteReader();
+            var actualTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            while (reader.Read())
+                actualTables.Add(Convert.ToString(reader[0]) ?? string.Empty);
+
+            if (!actualTables.SetEquals(expectedTables))
+                return false;
+        }
+
+        var expectedColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "SnapshotMonth", "Members", "Chapters", "Services",
+            "ActivityReports", "Events", "CapturedAt"
+        };
+
+        using var columnCommand = connection.CreateCommand();
+        columnCommand.CommandText = "PRAGMA table_info(DashboardMonthlySnapshot);";
+        using var columnReader = columnCommand.ExecuteReader();
+        var actualColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        while (columnReader.Read())
+            actualColumns.Add(Convert.ToString(columnReader["name"]) ?? string.Empty);
+
+        return actualColumns.SetEquals(expectedColumns);
+    }
+
+    private static void RepairDashboardTrendV5(SQLiteConnection connection)
+    {
+        using var tx = connection.BeginTransaction();
+        using var command = connection.CreateCommand();
+        command.Transaction = tx;
+        command.CommandText = @"
+DROP TABLE IF EXISTS DashboardMonthlySnapshot;
 PRAGMA user_version = 4;";
         command.ExecuteNonQuery();
         tx.Commit();

@@ -135,16 +135,58 @@ public sealed class DashboardHomeForm : Form
     {
         try
         {
-            _members.Value = new MemberRepository().GetTotalCount().ToString();
-            _chapters.Value = new ChapterRepository().GetTotalCount().ToString();
-            _services.Value = new ServiceRepository().GetTotalCount().ToString();
-            _reports.Value = new ActivityReportRepository().GetTotalCount().ToString();
-            _events.Value = new EventRepository().GetTotalCount().ToString();
+            var members = new MemberRepository().GetTotalCount();
+            var chapters = new ChapterRepository().GetTotalCount();
+            var services = new ServiceRepository().GetTotalCount();
+            var reports = new ActivityReportRepository().GetTotalCount();
+            var events = new EventRepository().GetTotalCount();
+
+            _members.Value = members.ToString();
+            _chapters.Value = chapters.ToString();
+            _services.Value = services.ToString();
+            _reports.Value = reports.ToString();
+            _events.Value = events.ToString();
+
+            try
+            {
+                var now = DateTime.Now;
+                var currentMonth = now.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+                var previousMonth = now.AddMonths(-1).ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+
+                var previous = DashboardTrendStore.GetForMonth(previousMonth);
+                var current = new DashboardTrendSnapshot(currentMonth, members, chapters, services, reports, events);
+
+                // Trend history is intentionally stored outside SQLite. Dashboard
+                // presentation data must never make the core database fail startup.
+                DashboardTrendStore.Upsert(current);
+
+                _members.SetTrend(members, previous?.Members);
+                _chapters.SetTrend(chapters, previous?.Chapters);
+                _services.SetTrend(services, previous?.Services);
+                _reports.SetTrend(reports, previous?.ActivityReports);
+                _events.SetTrend(events, previous?.Events);
+            }
+            catch (Exception ex)
+            {
+                // The totals remain usable even when the optional trend-history
+                // support file cannot be read or written.
+                AppLogger.Error("Dashboard trend tracking", ex);
+                _members.ClearTrend();
+                _chapters.ClearTrend();
+                _services.ClearTrend();
+                _reports.ClearTrend();
+                _events.ClearTrend();
+            }
         }
         catch (Exception ex)
         {
             AppLogger.Error("Refresh Dashboard", ex);
             _members.Value = _chapters.Value = _services.Value = _reports.Value = _events.Value = "—";
+            _members.ClearTrend();
+            _chapters.ClearTrend();
+            _services.ClearTrend();
+            _reports.ClearTrend();
+            _events.ClearTrend();
         }
     }
 
@@ -189,6 +231,7 @@ public sealed class DashboardHomeForm : Form
     private sealed class DashboardMetricCell : Panel
     {
         private readonly Label _value;
+        private readonly Label _trend;
         private readonly Color _accentColor;
 
         public bool ShowDivider { get; set; }
@@ -197,6 +240,39 @@ public sealed class DashboardHomeForm : Form
         {
             get => _value.Text;
             set => _value.Text = value;
+        }
+
+        public void SetTrend(int currentValue, int? previousValue)
+        {
+            if (!previousValue.HasValue)
+            {
+                _trend.Text = "• Monthly tracking started";
+                _trend.ForeColor = ThemeColors.TextSecondary;
+                return;
+            }
+
+            var difference = currentValue - previousValue.Value;
+            if (difference > 0)
+            {
+                _trend.Text = $"▲ +{difference:N0} vs last month";
+                _trend.ForeColor = ThemeColors.Success;
+            }
+            else if (difference < 0)
+            {
+                _trend.Text = $"▼ {difference:N0} vs last month";
+                _trend.ForeColor = ThemeColors.Danger;
+            }
+            else
+            {
+                _trend.Text = "• No change vs last month";
+                _trend.ForeColor = ThemeColors.TextSecondary;
+            }
+        }
+
+        public void ClearTrend()
+        {
+            _trend.Text = "• Trend unavailable";
+            _trend.ForeColor = ThemeColors.TextSecondary;
         }
 
         public DashboardMetricCell(string title, string caption, Color accentColor)
@@ -212,7 +288,7 @@ public sealed class DashboardHomeForm : Form
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 4,
+                RowCount = 5,
                 Margin = Padding.Empty,
                 Padding = Padding.Empty,
                 BackColor = Color.Transparent
@@ -221,7 +297,8 @@ public sealed class DashboardHomeForm : Form
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 8));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
 
             layout.Controls.Add(new Label
             {
@@ -266,6 +343,18 @@ public sealed class DashboardHomeForm : Form
                 AutoEllipsis = true,
                 Margin = Padding.Empty
             }, 0, 3);
+
+            _trend = new Label
+            {
+                Text = "• Monthly tracking started",
+                Dock = DockStyle.Fill,
+                Font = ThemeFonts.SmallBold,
+                ForeColor = ThemeColors.TextSecondary,
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoEllipsis = true,
+                Margin = Padding.Empty
+            };
+            layout.Controls.Add(_trend, 0, 4);
 
             Controls.Add(layout);
         }

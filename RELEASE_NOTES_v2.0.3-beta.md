@@ -1,6 +1,6 @@
-# MFC Youth Area Management System Public Beta v2.0.3
+# MFC Youth Area Management System Public Beta v2.0.3-beta
 
-v2.0.3 is a maintenance and dashboard-improvement release focused on stability, safer startup behavior, clearer error reporting, validation consistency, monthly summary trends, and reliable release packaging.
+v2.0.3-beta is a maintenance and dashboard-improvement release focused on stability, safer startup behavior, clearer error reporting, validation consistency, monthly summary trends, and reliable release packaging.
 
 ## Improvements
 
@@ -16,7 +16,7 @@ v2.0.3 is a maintenance and dashboard-improvement release focused on stability, 
 
 - No database schema change is introduced. Schema version remains 4.
 - Dashboard trend history is stored separately from the core SQLite database so an optional UI feature cannot block database startup.
-- Databases touched by the earlier dashboard-trend test build are automatically repaired back to schema version 4 without changing core records.
+- Databases touched by the earlier dashboard-trend test build are repaired back to schema version 4 only when the exact temporary dashboard-only schema is recognized; core records are not changed by that repair.
 - Existing Member, Chapter, Service, Activity Report, GIG, Event, and Event participant data is preserved.
 - The installer continues to create a timestamped safety backup when an existing database is found.
 

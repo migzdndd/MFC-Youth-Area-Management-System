@@ -26,7 +26,7 @@ public sealed class ServicesForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
 
-        root.Controls.Add(new PageHeader("Services", "Review the MFC Youth service assignments and the Members serving in each."), 0, 0);
+        root.Controls.Add(new PageHeader("Services", "Review the seven MFC Youth service assignments and the Members serving in each."), 0, 0);
         _search.Dock = DockStyle.Fill;
         _search.Margin = new Padding(0, 6, 0, 6);
         root.Controls.Add(_search, 0, 1);
