@@ -35,3 +35,18 @@ No new application features were added in this pass. The existing v2.0.3-beta fu
 - Disposed replaced dynamic WinForms controls instead of only detaching them.
 - Cleared Mode of Payment when a participant is saved as Not Paid, preventing contradictory payment records.
 - Removed dead dashboard/theme code, stale generated build output, the obsolete installer script, and the duplicate publish profile from the source package.
+
+### Installer path correction
+- Restored the canonical per-user installation directory to `%LOCALAPPDATA%\Programs\MFCYouthAreaManagementSystem`.
+- Prevented Inno Setup from reusing the incorrect remembered folder `%LOCALAPPDATA%\Programs\MFC Youth Area Management System`.
+- The database location remains `%LOCALAPPDATA%\MFCYouthAreaManagementSystem\mfcyouth.db` and is not stored inside the program installation directory.
+- Added release validation so future installer builds fail if the canonical install folder drifts again.
+
+## Installer data-location correction
+
+- Restored the installer behavior using the v2.0.1 final-release script as the compatibility reference.
+- Program files now use the fixed `MFCYouthAreaManagementSystem` installation folder instead of deriving the folder name from the display title.
+- The database remains at `%LOCALAPPDATA%\MFCYouthAreaManagementSystem\mfcyouth.db`.
+- Before updating, Setup backs up both the legacy v1 and current v2 database locations.
+- If the current v2 database is missing but the legacy v1 database still exists, Setup copies the legacy database into the canonical v2 location instead of allowing a new empty database to be created.
+- Existing current databases are never overwritten by this recovery step.

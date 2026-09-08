@@ -20,7 +20,7 @@ A custom-designed, fully offline Windows desktop management application for orga
 - Member management with Birth Date, contact information, address, status, Chapter, and multiple Services
 - Chapter management with case-insensitive duplicate protection and safe delete rules
 - Seven system-defined MFC Youth Service roles with many-to-many Member assignments
-- Activity Reports with separate Activity and Description fields
+- Activity Reports with separate Activity and Description fields, combined filters, summary metrics, visual analytics, and professional filtered PDF export
 - GIG contribution tracking per Member with Philippine peso totals
 - Dashboard statistics and monthly trend indicators for Members, Chapters, Services, Activity Reports, and Events
 - Event management with participant registration, attendance counts, payment status, and registration-fee summaries
@@ -44,6 +44,7 @@ A custom-designed, fully offline Windows desktop management application for orga
 - Windows 10 64-bit or Windows 11 64-bit
 - No separate .NET installation is required for the release installer
 - No internet connection is required after the installer has been downloaded
+- The Activity Reports **Export PDF** feature uses the Windows built-in **Microsoft Print to PDF** optional feature
 
 The `win-x64` release is published **self-contained**, so the required .NET 8 runtime is bundled with the application.
 
@@ -226,6 +227,8 @@ Where applicable:
 - `F5` refreshes the current list
 - `Enter` opens/edits the selected record
 - `Delete` begins delete confirmation
+- `Ctrl+Shift+F` clears Activity Report filters
+- `Ctrl+Shift+E` exports the currently filtered Activity Reports to PDF
 
 ## Project Structure
 
@@ -247,19 +250,19 @@ This application stores personal information locally on the Windows computer. Th
 
 ## Offline Behavior
 
-No runtime web service, cloud database, external API, account sign-in, or internet connection is required. Core CRUD, search, reporting data, Service assignment, GIG tracking, Events, participant registration, attendance counts, and payment summaries operate against the local SQLite database.
+No runtime web service, cloud database, external API, account sign-in, or internet connection is required. Core CRUD, search, reporting data, Activity Report PDF export, Service assignment, GIG tracking, Events, participant registration, attendance counts, and payment summaries operate locally without a web service or cloud dependency.
 
 ## Current Scope and Limitations
 
 - No authentication or role-permission system yet
 - No database encryption yet
 - No Member photos
-- No Excel/PDF import/export yet
+- No Excel import/export yet; Activity Reports support filtered PDF export
 - No backup/restore UI yet
 
 ## Future Expansion
 
-The current data/repository structure can be extended later for attendance history, Chapter transfer history, Service history, photos, accounts, permissions, backup/restore, spreadsheet import/export, PDF/printable reports, and contribution reporting.
+The current data/repository structure can be extended later for attendance history, Chapter transfer history, Service history, photos, accounts, permissions, backup/restore, spreadsheet import/export, printable/PDF exports for additional modules, and contribution reporting.
 
 
 ## v2.0.2 Chapter deletion fix

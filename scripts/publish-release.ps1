@@ -73,6 +73,20 @@ if ($ConstantsText -notmatch [regex]::Escape($ExpectedAppVersionNumberLine) -or
     throw "ApplicationConstants.cs does not identify the expected $ReleaseDisplayVersion release."
 }
 
+$DatabaseConfigurationPath = Join-Path $Root 'Database\DatabaseConfiguration.cs'
+$DatabaseConfigurationText = Get-Content -LiteralPath $DatabaseConfigurationPath -Raw
+if ($DatabaseConfigurationText -notmatch [regex]::Escape('"MFCYouthAreaManagementSystem"') -or
+    $DatabaseConfigurationText -notmatch [regex]::Escape('"mfcyouth.db"')) {
+    throw 'Application database location is not the canonical MFCYouthAreaManagementSystem\mfcyouth.db path.'
+}
+
+$DatabaseInitializerPath = Join-Path $Root 'Database\DatabaseInitializer.cs'
+$DatabaseInitializerText = Get-Content -LiteralPath $DatabaseInitializerPath -Raw
+if ($DatabaseInitializerText -notmatch [regex]::Escape('MigrateLegacyDatabaseIfNeeded();') -or
+    $DatabaseInitializerText -notmatch [regex]::Escape('"MFC Youth Database", "MFCYouth.db"')) {
+    throw 'Legacy database preservation check is missing from application startup.'
+}
+
 $InstallerText = Get-Content -LiteralPath $InstallerScript -Raw
 $ExpectedInstallerVersionLine = '#define MyAppVersion "{0}"' -f $ReleaseVersion
 $ExpectedInstallerFileVersionLine = '#define MyAppFileVersion "{0}"' -f $ExpectedFileVersion
@@ -87,6 +101,35 @@ if ($InstallerText -notmatch [regex]::Escape('OutputBaseFilename=MFCYouthSetup_v
 }
 if ($InstallerText -notmatch [regex]::Escape('VersionInfoProductTextVersion={#MyAppVersion}')) {
     throw 'Installer textual product version is not derived from MyAppVersion.'
+}
+
+$ExpectedInstallFolderDefine = '#define MyAppInstallFolder "MFCYouthAreaManagementSystem"'
+$ExpectedInstallDirectoryLine = 'DefaultDirName={localappdata}\Programs\{#MyAppInstallFolder}'
+if ($InstallerText -notmatch [regex]::Escape($ExpectedInstallFolderDefine)) {
+    throw 'Installer canonical application folder is not MFCYouthAreaManagementSystem.'
+}
+if ($InstallerText -notmatch [regex]::Escape($ExpectedInstallDirectoryLine)) {
+    throw 'Installer DefaultDirName does not target the canonical MFCYouthAreaManagementSystem folder.'
+}
+if ($InstallerText -notmatch [regex]::Escape('UsePreviousAppDir=no')) {
+    throw 'Installer must ignore previously remembered incorrect install directories for this corrective release.'
+}
+if ($InstallerText -notmatch [regex]::Escape('DisableDirPage=yes')) {
+    throw 'Installer destination page must remain disabled so the canonical application directory cannot drift.'
+}
+
+$ExpectedLegacyDatabasePath = "'MFC Youth Database\MFCYouth.db'"
+$ExpectedCurrentDatabasePath = "'MFCYouthAreaManagementSystem\mfcyouth.db'"
+$ExpectedBackupDirectory = "'MFCYouthAreaManagementSystem\Backups'"
+foreach ($ExpectedInstallerDataText in @(
+    $ExpectedLegacyDatabasePath,
+    $ExpectedCurrentDatabasePath,
+    $ExpectedBackupDirectory,
+    'EnsureCanonicalDatabaseLocation('
+)) {
+    if ($InstallerText -notmatch [regex]::Escape($ExpectedInstallerDataText)) {
+        throw "Installer database preservation logic is incomplete: $ExpectedInstallerDataText"
+    }
 }
 
 $WizardImage = Join-Path $Root 'Installer\Resources\WizardImage.png'

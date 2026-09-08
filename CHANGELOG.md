@@ -1,5 +1,30 @@
 # Changelog
 
+## In Development - Reports & Analytics Improvements
+
+### Reports & Analytics Phase 1
+
+- Added combined Search, Chapter, Report Type, and Period filtering for Activity Reports.
+- Added live summary cards for matching reports, current-month reports, represented chapters, and represented report types.
+- Kept report filtering compatible with historical/custom report types already stored in SQLite.
+
+### Reports & Analytics Phase 2
+
+- Added a six-month Activity Report volume chart that follows the active filters.
+- Added Report Type distribution analytics for the most common report categories in the selected results.
+- Added Chapter activity comparison analytics for the most active Chapters in the selected results.
+- Implemented the analytics charts with lightweight custom WinForms drawing and no new third-party dependency.
+- Kept database schema version 4 unchanged; the analytics are calculated from existing Activity Report records.
+
+### Reports & Analytics Phase 3
+
+- Added **Export PDF** to Activity Reports, exporting the exact records matched by the active Search, Chapter, Report Type, and Period filters.
+- Added a professional multi-page PDF layout with MFC Youth branding, export scope, live summary metrics, a six-month analytics snapshot, top Report Types, and top Chapters.
+- Included every exported report's Date, Title, Chapter, Report Type, Prepared By, Activity, and Description with automatic text wrapping and pagination.
+- Added `Ctrl+Shift+E` as the Activity Reports PDF-export shortcut.
+- Kept PDF generation fully offline by using the Windows built-in **Microsoft Print to PDF** printer instead of adding another NuGet/runtime dependency.
+- Kept database schema version 4 unchanged; PDF export is read-only and does not modify stored records.
+
 ## v2.0.3-beta.1 - Stability Revision & Release Label Repair
 
 ### Release Engineering
@@ -96,3 +121,9 @@
 ## v1.0.0-beta
 
 - Initial public beta release.
+
+### Installer path correction
+- Restored the canonical per-user installation directory to `%LOCALAPPDATA%\Programs\MFCYouthAreaManagementSystem`.
+- Prevented Inno Setup from reusing the incorrect remembered folder `%LOCALAPPDATA%\Programs\MFC Youth Area Management System`.
+- The database location remains `%LOCALAPPDATA%\MFCYouthAreaManagementSystem\mfcyouth.db` and is not stored inside the program installation directory.
+- Added release validation so future installer builds fail if the canonical install folder drifts again.

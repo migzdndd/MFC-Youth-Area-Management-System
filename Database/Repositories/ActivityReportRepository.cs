@@ -7,20 +7,34 @@ namespace MFCYouthAreaManagementSystem.Repositories;
 
 public sealed class ActivityReportRepository
 {
-    public List<ActivityReport> GetAll(string search = "")
+    public List<ActivityReport> GetAll(string search = "") =>
+        GetAll(new ActivityReportFilter { Search = search });
+
+    public List<ActivityReport> GetAll(ActivityReportFilter filter)
     {
-        var cleanSearch = search.Trim();
+        ArgumentNullException.ThrowIfNull(filter);
+
+        var cleanSearch = filter.Search.Trim();
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = @"
 SELECT r.ReportID, r.Title, r.ChapterID, COALESCE(c.ChapterName, r.ChapterNameSnapshot) AS ChapterName, r.ReportType, r.Activity, r.ReportDate, r.PreparedBy, r.Description
 FROM ActivityReport r
 LEFT JOIN Chapter c ON c.ChapterID = r.ChapterID
-WHERE @Search = '' OR r.Title LIKE @Like ESCAPE '\' OR COALESCE(c.ChapterName, r.ChapterNameSnapshot) LIKE @Like ESCAPE '\' OR r.ReportType LIKE @Like ESCAPE '\' OR
-      r.Activity LIKE @Like ESCAPE '\' OR r.PreparedBy LIKE @Like ESCAPE '\' OR r.Description LIKE @Like ESCAPE '\'
+WHERE (@Search = '' OR r.Title LIKE @Like ESCAPE '\' OR COALESCE(c.ChapterName, r.ChapterNameSnapshot) LIKE @Like ESCAPE '\' OR r.ReportType LIKE @Like ESCAPE '\' OR
+       r.Activity LIKE @Like ESCAPE '\' OR r.PreparedBy LIKE @Like ESCAPE '\' OR r.Description LIKE @Like ESCAPE '\')
+  AND (@ChapterID IS NULL OR r.ChapterID = @ChapterID)
+  AND (@ReportType = '' OR r.ReportType = @ReportType COLLATE NOCASE)
+  AND (@DateFrom = '' OR r.ReportDate >= @DateFrom)
+  AND (@DateTo = '' OR r.ReportDate <= @DateTo)
 ORDER BY r.ReportDate DESC, r.ReportID DESC;";
         command.Parameters.AddWithValue("@Search", cleanSearch);
         command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
+        command.Parameters.AddWithValue("@ChapterID", filter.ChapterID.HasValue ? filter.ChapterID.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@ReportType", filter.ReportType?.Trim() ?? string.Empty);
+        command.Parameters.AddWithValue("@DateFrom", FormatOptionalDate(filter.DateFrom));
+        command.Parameters.AddWithValue("@DateTo", FormatOptionalDate(filter.DateTo));
+
         using var reader = command.ExecuteReader();
         var list = new List<ActivityReport>();
         while (reader.Read()) list.Add(Map(reader));
@@ -101,6 +115,11 @@ WHERE ReportID=@Id;";
         command.Parameters.AddWithValue("@PreparedBy", report.PreparedBy.Trim());
         command.Parameters.AddWithValue("@Description", report.Description.Trim());
     }
+
+    private static string FormatOptionalDate(DateTime? date) =>
+        date.HasValue
+            ? date.Value.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)
+            : string.Empty;
 
     private static ActivityReport Map(SQLiteDataReader reader) => new()
     {

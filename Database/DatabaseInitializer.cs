@@ -7,6 +7,7 @@ public static class DatabaseInitializer
 {
     public static void Initialize()
     {
+        MigrateLegacyDatabaseIfNeeded();
         Directory.CreateDirectory(DatabaseConfiguration.AppDataDirectory);
         Directory.CreateDirectory(DatabaseConfiguration.LogDirectory);
         using var connection = DatabaseManager.OpenConnection();
@@ -14,6 +15,24 @@ public static class DatabaseInitializer
         DatabaseMigrator.Apply(connection);
         VerifyForeignKeys(connection);
         SeedServices(connection);
+    }
+
+
+    private static void MigrateLegacyDatabaseIfNeeded()
+    {
+        // Preserve the v1 database location used by early public-beta builds.
+        // Never replace an existing current database.
+        if (File.Exists(DatabaseConfiguration.DatabasePath))
+            return;
+
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var legacyDatabasePath = Path.Combine(localAppData, "MFC Youth Database", "MFCYouth.db");
+
+        if (!File.Exists(legacyDatabasePath))
+            return;
+
+        Directory.CreateDirectory(DatabaseConfiguration.AppDataDirectory);
+        File.Copy(legacyDatabasePath, DatabaseConfiguration.DatabasePath, overwrite: false);
     }
 
     private static void VerifyIntegrity(SQLiteConnection connection)

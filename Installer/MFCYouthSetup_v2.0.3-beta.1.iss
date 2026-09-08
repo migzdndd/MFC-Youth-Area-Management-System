@@ -4,6 +4,7 @@
 #define MyAppFileVersion "2.0.3.1"
 #define MyAppPublisher "Miguel Riovaldez - MFC Youth NCR Central"
 #define MyAppExeName "MFCYouthAreaManagementSystem.exe"
+#define MyAppInstallFolder "MFCYouthAreaManagementSystem"
 #define MyAppURL "https://github.com/migzdndd/MFC-Youth-Area-Management-System"
 
 [Setup]
@@ -54,8 +55,11 @@ AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}/issues
 AppUpdatesURL={#MyAppURL}/releases
 
-DefaultDirName={localappdata}\Programs\{#MyAppName}
+; Program files use a fixed folder name. The database remains in %LOCALAPPDATA%\MFCYouthAreaManagementSystem.
+DefaultDirName={localappdata}\Programs\{#MyAppInstallFolder}
 DefaultGroupName={#MyAppName}
+UsePreviousAppDir=no
+DisableDirPage=yes
 
 OutputDir=..\dist\installer
 OutputBaseFilename=MFCYouthSetup_v{#MyAppVersion}
@@ -165,6 +169,9 @@ Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; WorkingDi
 const
   OldV1DatabaseRelativePath =
     'MFC Youth Database\MFCYouth.db';
+
+  CanonicalDataRelativeDirectory =
+    'MFCYouthAreaManagementSystem';
 
   CurrentV2DatabaseRelativePath =
     'MFCYouthAreaManagementSystem\mfcyouth.db';
@@ -350,6 +357,68 @@ begin
   Log('Database backup completed successfully: "' + BackupFile + '".');
 end;
 
+function EnsureCanonicalDatabaseLocation(
+  const OldV1Database: String;
+  const CurrentV2Database: String
+): String;
+var
+  CanonicalDataDirectory: String;
+begin
+  Result := '';
+
+  { Never overwrite an existing current database. }
+  if FileExists(CurrentV2Database) then
+  begin
+    Log('Current database already exists at "' + CurrentV2Database + '". No legacy copy required.');
+    Exit;
+  end;
+
+  { Only migrate the legacy v1 database when the canonical v2 database is absent. }
+  if not FileExists(OldV1Database) then
+  begin
+    Log('No legacy database is available for migration.');
+    Exit;
+  end;
+
+  CanonicalDataDirectory :=
+    AddBackslash(ExpandConstant('{localappdata}')) +
+    CanonicalDataRelativeDirectory;
+
+  if not ForceDirectories(CanonicalDataDirectory) then
+  begin
+    Result :=
+      'Setup found your previous MFC Youth database but could not create the ' +
+      'current data folder:' +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      CanonicalDataDirectory +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      'Installation has been stopped to protect your data.';
+    Exit;
+  end;
+
+  Log(
+    'Current database is missing. Copying legacy database from "' +
+    OldV1Database +
+    '" to "' +
+    CurrentV2Database +
+    '".'
+  );
+
+  if not CopyFile(OldV1Database, CurrentV2Database, True) then
+  begin
+    Result :=
+      'Setup found your previous MFC Youth database but could not copy it to ' +
+      'the current data location:' +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      CurrentV2Database +
+      Chr(13) + Chr(10) + Chr(13) + Chr(10) +
+      'Installation has been stopped to avoid starting with a new empty database.';
+    Exit;
+  end;
+
+  Log('Legacy database copied successfully to the canonical data location.');
+end;
+
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   OldV1Database: String;
@@ -383,5 +452,13 @@ begin
   if Result <> '' then
     Exit;
 
-  Log('Database backup checks completed. Setup may continue.');
+  Result := EnsureCanonicalDatabaseLocation(
+    OldV1Database,
+    CurrentV2Database
+  );
+
+  if Result <> '' then
+    Exit;
+
+  Log('Database backup and location checks completed. Setup may continue.');
 end;
