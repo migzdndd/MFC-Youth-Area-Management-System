@@ -34,7 +34,7 @@ Database schema version remains **4**. v2.0.3 does not introduce a schema migrat
 - No TODO/FIXME/NotImplementedException markers found in active C#, PowerShell, or current installer source.
 - `git diff --check` reports no whitespace errors in the working changes.
 - Installer artwork SHA-256 values match the hashes expected by the release build script.
-- Current release metadata is consistently set to `2.0.3` / `2.0.3.0` in active release files.
+- At the time of this historical audit, release metadata was set to `2.0.3` / `2.0.3.0`.
 
 ## Build validation limitation
 

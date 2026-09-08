@@ -25,7 +25,7 @@ if not defined PSEXE (
     echo   dotnet publish "MFC Youth Area Management System.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:PublishTrimmed=false -o ".\dist\publish-win-x64"
     echo.
     echo Then compile:
-    echo   Installer\MFCYouthSetup_v2.0.3-beta.iss
+    echo   Installer\MFCYouthSetup_v2.0.3-beta.1.iss
     pause
     exit /b 1
 )

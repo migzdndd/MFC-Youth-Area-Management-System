@@ -7,14 +7,16 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 $Project = Join-Path $Root 'MFC Youth Area Management System.csproj'
 $ReleaseBaseVersion = '2.0.3'
-$ReleaseVersion = '2.0.3-beta'
-$ReleaseDisplayVersion = 'v2.0.3-beta'
+$ReleaseChannel = 'beta.1'
+$ReleaseRevision = '1'
+$ReleaseVersion = "$ReleaseBaseVersion-$ReleaseChannel"
+$ReleaseDisplayVersion = "v$ReleaseVersion"
 $PublishDir = Join-Path $Root 'dist\publish-win-x64'
 $InstallerDir = Join-Path $Root 'dist\installer'
-$InstallerScript = Join-Path $Root 'Installer\MFCYouthSetup_v2.0.3-beta.iss'
-$InstallerExe = Join-Path $InstallerDir 'MFCYouthSetup_v2.0.3-beta.exe'
+$InstallerScript = Join-Path $Root ("Installer\MFCYouthSetup_v{0}.iss" -f $ReleaseVersion)
+$InstallerExe = Join-Path $InstallerDir ("MFCYouthSetup_v{0}.exe" -f $ReleaseVersion)
 $ExpectedProductVersion = $ReleaseVersion
-$ExpectedFileVersion = "$ReleaseBaseVersion.0"
+$ExpectedFileVersion = "$ReleaseBaseVersion.$ReleaseRevision"
 $ExpectedWizardImageSha256 = '386868F2B8CB81FE472AB5C7BE1AF393244865E14008B307C5F242AADE13262E'
 $ExpectedWizardSmallImageSha256 = 'ED7CE7DAFF211408049B4E53BDE90B58B2AE5AF4BCA17B9BDFDE13883515CD3E'
 
@@ -40,24 +42,51 @@ if (-not (Test-Path -LiteralPath $InstallerScript)) {
 # does not match the intended beta release.
 [xml]$ProjectXml = Get-Content -LiteralPath $Project -Raw
 $ProjectVersion = [string]$ProjectXml.Project.PropertyGroup.Version
+$ProjectAssemblyVersion = [string]$ProjectXml.Project.PropertyGroup.AssemblyVersion
 $ProjectFileVersion = [string]$ProjectXml.Project.PropertyGroup.FileVersion
+$ProjectInformationalVersion = [string]$ProjectXml.Project.PropertyGroup.InformationalVersion
 if ($ProjectVersion -ne $ReleaseVersion) {
     throw "Project Version mismatch. Expected '$ReleaseVersion' but found '$ProjectVersion'."
+}
+if ($ProjectAssemblyVersion -ne $ExpectedFileVersion) {
+    throw "Project AssemblyVersion mismatch. Expected '$ExpectedFileVersion' but found '$ProjectAssemblyVersion'."
 }
 if ($ProjectFileVersion -ne $ExpectedFileVersion) {
     throw "Project FileVersion mismatch. Expected '$ExpectedFileVersion' but found '$ProjectFileVersion'."
 }
+if ($ProjectInformationalVersion -ne $ReleaseVersion) {
+    throw "Project InformationalVersion mismatch. Expected '$ReleaseVersion' but found '$ProjectInformationalVersion'."
+}
+
+$ManifestPath = Join-Path $Root 'Properties\app.manifest'
+$ManifestText = Get-Content -LiteralPath $ManifestPath -Raw
+if ($ManifestText -notmatch [regex]::Escape("assemblyIdentity version=`"$ExpectedFileVersion`"")) {
+    throw "Application manifest version does not match $ExpectedFileVersion."
+}
 
 $ConstantsPath = Join-Path $Root 'Utilities\ApplicationConstants.cs'
 $ConstantsText = Get-Content -LiteralPath $ConstantsPath -Raw
-if ($ConstantsText -notmatch [regex]::Escape('public const string AppVersionNumber = "2.0.3";') -or
-    $ConstantsText -notmatch [regex]::Escape('public const string ReleaseChannel = "beta";')) {
-    throw 'ApplicationConstants.cs does not identify the expected v2.0.3-beta release.'
+$ExpectedAppVersionNumberLine = 'public const string AppVersionNumber = "{0}";' -f $ReleaseBaseVersion
+$ExpectedReleaseChannelLine = 'public const string ReleaseChannel = "{0}";' -f $ReleaseChannel
+if ($ConstantsText -notmatch [regex]::Escape($ExpectedAppVersionNumberLine) -or
+    $ConstantsText -notmatch [regex]::Escape($ExpectedReleaseChannelLine)) {
+    throw "ApplicationConstants.cs does not identify the expected $ReleaseDisplayVersion release."
 }
 
 $InstallerText = Get-Content -LiteralPath $InstallerScript -Raw
-if ($InstallerText -notmatch [regex]::Escape('#define MyAppVersion "2.0.3-beta"')) {
-    throw 'Installer script version does not match 2.0.3-beta.'
+$ExpectedInstallerVersionLine = '#define MyAppVersion "{0}"' -f $ReleaseVersion
+$ExpectedInstallerFileVersionLine = '#define MyAppFileVersion "{0}"' -f $ExpectedFileVersion
+if ($InstallerText -notmatch [regex]::Escape($ExpectedInstallerVersionLine)) {
+    throw "Installer script version does not match $ReleaseVersion."
+}
+if ($InstallerText -notmatch [regex]::Escape($ExpectedInstallerFileVersionLine)) {
+    throw "Installer numeric file version does not match $ExpectedFileVersion."
+}
+if ($InstallerText -notmatch [regex]::Escape('OutputBaseFilename=MFCYouthSetup_v{#MyAppVersion}')) {
+    throw 'Installer output filename is not derived from MyAppVersion.'
+}
+if ($InstallerText -notmatch [regex]::Escape('VersionInfoProductTextVersion={#MyAppVersion}')) {
+    throw 'Installer textual product version is not derived from MyAppVersion.'
 }
 
 $WizardImage = Join-Path $Root 'Installer\Resources\WizardImage.png'
@@ -182,6 +211,13 @@ try {
             if ($InstallerInfo.LastWriteTime -lt (Get-Date).AddMinutes(-10)) {
                 throw 'Installer timestamp is unexpectedly old. Refusing to treat it as the newly built release.'
             }
+
+            $InstallerVersionInfo = $InstallerInfo.VersionInfo
+            if ($InstallerVersionInfo.FileVersion -ne $ExpectedFileVersion) {
+                throw "Installer FileVersion mismatch. Expected '$ExpectedFileVersion' but got '$($InstallerVersionInfo.FileVersion)'."
+            }
+
+            Write-Host "Installer FileVersion: $($InstallerVersionInfo.FileVersion)"
             Write-Host "Installer ready: $InstallerExe" -ForegroundColor Green
         }
         else {

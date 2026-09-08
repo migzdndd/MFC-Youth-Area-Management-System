@@ -4,7 +4,7 @@ public static class ApplicationConstants
 {
     public const string AppName = "MFC Youth Area Management System";
     public const string AppVersionNumber = "2.0.3";
-    public const string ReleaseChannel = "beta";
+    public const string ReleaseChannel = "beta.1";
     public const string AppVersion = "v" + AppVersionNumber + "-" + ReleaseChannel;
     public static readonly string[] MemberStatuses = { "Active", "Inactive" };
     public static readonly string[] ReportTypes = { "Household", "Chapter Assembly", "Youth Camp", "Area Event" };

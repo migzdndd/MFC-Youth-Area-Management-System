@@ -1,8 +1,8 @@
 # MFC Youth Area Management System
 
-**Current release:** `v2.0.3-beta`
+**Current release:** `v2.0.3-beta.1`
 
-### v2.0.3-beta maintenance focus
+### v2.0.3-beta.1 maintenance focus
 
 - Adds a SQLite integrity check before schema migration.
 - Separates database-startup failures from unexpected runtime/UI errors.
@@ -10,7 +10,7 @@
 - Synchronizes application, installer, manifest, and release-build version metadata.
 - Tightens Event participant Middle Initial validation.
 - Adds month-over-month green/red Dashboard Summary trend indicators.
-- Displays `v2.0.3-beta` in the permanent bottom-right application footer.
+- Displays `v2.0.3-beta.1` in the permanent bottom-right application footer.
 - Keeps dashboard trend history outside the core SQLite database.
 
 A custom-designed, fully offline Windows desktop management application for organizing MFC Youth Area records.
@@ -87,7 +87,7 @@ The script:
 1. Clears stale `bin`, `obj`, and release publish output.
 2. Restores packages for `win-x64`.
 3. Publishes a self-contained Windows x64 application.
-4. Verifies the executable reports `2.0.3-beta` and file version `2.0.3.0`.
+4. Verifies the executable reports `2.0.3-beta.1` and file version `2.0.3.1`.
 5. Verifies the .NET runtime is actually present in the publish folder.
 6. Compiles the Inno Setup installer automatically when Inno Setup 6 is installed.
 
@@ -106,7 +106,7 @@ dotnet publish ".\MFC Youth Area Management System.csproj" `
 Expected installer output:
 
 ```text
-dist\installer\MFCYouthSetup_v2.0.3-beta.exe
+dist\installer\MFCYouthSetup_v2.0.3-beta.1.exe
 ```
 
 ## Local Database

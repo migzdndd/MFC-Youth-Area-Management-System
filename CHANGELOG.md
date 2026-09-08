@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.0.3-beta.1 - Stability Revision & Release Label Repair
+
+### Release Engineering
+
+- Standardized the public application version as `v2.0.3-beta.1`.
+- Updated Windows assembly/file version metadata to `2.0.3.1`.
+- Synchronized the application footer, manifest, release build script, installer script, installer filename, and installer backup labels.
+- Removed stale generated build output and obsolete release configuration files from the source package.
+- Kept database schema version 4 unchanged and added no new application features.
+
+### Source Audit
+
+- Revalidated the existing v2.0.3 stability fixes, historical Chapter preservation, search escaping/debouncing, dashboard trend storage, and database relationship checks.
+- Removed the unused `DashboardSnapshotRepository` that referenced the retired `DashboardMonthlySnapshot` table.
+
 ## v2.0.3-beta - Stability, Bug Fixes & Dashboard Trends
 
 ### Stability
