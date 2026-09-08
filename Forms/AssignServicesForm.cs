@@ -81,6 +81,7 @@ public sealed class AssignServicesForm : Form
         actions.Controls.AddRange(new Control[] { save, cancel });
         root.Controls.Add(actions, 0, 2);
         AcceptButton = save;
+        CancelButton = cancel;
 
         LoadServices();
     }

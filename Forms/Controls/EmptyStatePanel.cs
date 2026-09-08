@@ -4,8 +4,16 @@ namespace MFCYouthAreaManagementSystem.UI.Controls;
 
 public class EmptyStatePanel : Panel
 {
+    private readonly string _defaultTitle;
+    private readonly string _defaultText;
+    private readonly Label _titleLabel;
+    private readonly Label _textLabel;
+
     public EmptyStatePanel(string title, string text)
     {
+        _defaultTitle = title;
+        _defaultText = text;
+
         Dock = DockStyle.Fill;
         BackColor = ThemeColors.Surface;
         Padding = new Padding(24);
@@ -38,7 +46,7 @@ public class EmptyStatePanel : Panel
         inner.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         inner.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        inner.Controls.Add(new Label
+        _titleLabel = new Label
         {
             Text = title,
             AutoSize = true,
@@ -48,9 +56,10 @@ public class EmptyStatePanel : Panel
             Margin = new Padding(0, 0, 0, 8),
             TextAlign = ContentAlignment.MiddleCenter,
             Anchor = AnchorStyles.None
-        }, 0, 0);
+        };
+        inner.Controls.Add(_titleLabel, 0, 0);
 
-        inner.Controls.Add(new Label
+        _textLabel = new Label
         {
             Text = text,
             AutoSize = true,
@@ -60,9 +69,22 @@ public class EmptyStatePanel : Panel
             TextAlign = ContentAlignment.MiddleCenter,
             Margin = Padding.Empty,
             Anchor = AnchorStyles.None
-        }, 0, 1);
+        };
+        inner.Controls.Add(_textLabel, 0, 1);
 
         outer.Controls.Add(inner, 0, 1);
         Controls.Add(outer);
+    }
+
+    public void ResetMessage()
+    {
+        _titleLabel.Text = _defaultTitle;
+        _textLabel.Text = _defaultText;
+    }
+
+    public void ShowMessage(string title, string text)
+    {
+        _titleLabel.Text = title;
+        _textLabel.Text = text;
     }
 }

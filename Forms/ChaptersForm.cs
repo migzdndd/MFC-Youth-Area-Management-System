@@ -50,7 +50,7 @@ public sealed class ChaptersForm : Form
         _search.Margin = new Padding(0, 3, 0, 3);
         tools.Controls.Add(_search, 0, 0);
         tools.Controls.Add(actions, 0, 1);
-        _search.TextValueChanged += (_, _) => LoadRows();
+        UiSearchDebouncer.Bind(this, _search, LoadRows);
         root.Controls.Add(tools, 0, 1);
 
         _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Chapter", DataPropertyName = "ChapterName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
@@ -72,6 +72,7 @@ public sealed class ChaptersForm : Form
         try
         {
             var rows = _repo.GetAll(_search.TextValue);
+            _empty.ResetMessage();
             _grid.DataSource = rows;
             _grid.Visible = rows.Count > 0;
             _empty.Visible = rows.Count == 0;
@@ -80,6 +81,11 @@ public sealed class ChaptersForm : Form
         catch (Exception ex)
         {
             AppLogger.Error("Load Chapters", ex);
+            _grid.DataSource = null;
+            _grid.Visible = false;
+            _empty.ShowMessage("Chapters Could Not Load", "The Chapter list is temporarily unavailable. Try refreshing again.");
+            _empty.Visible = true;
+            _empty.BringToFront();
             _dashboard.Notify("Could not load Chapters.", true);
         }
     }
@@ -88,6 +94,7 @@ public sealed class ChaptersForm : Form
     {
         if (ModalHelper.Show(this, () => new ChapterDialogForm(), "Open Add Chapter") != DialogResult.OK) return;
         LoadRows();
+        DashboardTrendStore.CaptureCurrentTotals();
         _dashboard.Notify("Chapter created.");
     }
 
@@ -124,6 +131,7 @@ public sealed class ChaptersForm : Form
         {
             _repo.Delete(chapter.ChapterID);
             LoadRows();
+            DashboardTrendStore.CaptureCurrentTotals();
             _dashboard.Notify("Chapter deleted.");
         }
         catch (Exception ex)

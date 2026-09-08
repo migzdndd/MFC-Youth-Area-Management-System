@@ -1,6 +1,6 @@
 # v2.0.3-beta Stability Audit
 
-Baseline: Public Beta v2.0.2 source package uploaded on 2026-08-29.
+Baseline for this pass: `Source-Code-2.0.3-beta.zip`, inspected and corrected on 2026-09-08.
 
 ## Changes applied
 
@@ -13,6 +13,13 @@ Baseline: Public Beta v2.0.2 source package uploaded on 2026-08-29.
 - Corrected Event participant Middle Initial validation to one letter with an optional period.
 - Updated installer, README, changelog, security guidance, and release notes for Public Beta v2.0.3-beta.
 - Removed obsolete installer-script ignore rules so current installer source can be tracked normally.
+- Fixed Chapter rename/delete snapshot consistency for historical Activity Reports and Event participants.
+- Allowed preserved historical records to be edited without forcing reassignment after their original Chapter or Service is gone.
+- Added foreign-key relationship validation after migration.
+- Debounced live searches, escaped literal search wildcards, and prevented stale list data from remaining visible after failed refreshes.
+- Improved monthly trend capture after total-changing operations and added stale trend-history detection when the database file is replaced.
+- Tightened GIG deletion ownership checks, payment-state consistency, dialog Cancel behavior, and dynamic-control disposal.
+- Removed obsolete dashboard/theme code and stale source-package/release-profile artifacts.
 
 ## Database validation performed
 

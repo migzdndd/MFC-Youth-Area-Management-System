@@ -1,6 +1,7 @@
 using System.Data.SQLite;
 using MFCYouthAreaManagementSystem.Database;
 using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Utilities;
 
 namespace MFCYouthAreaManagementSystem.Repositories;
 
@@ -21,15 +22,15 @@ FROM EventParticipant p
 LEFT JOIN Chapter c ON c.ChapterID = p.ChapterID
 LEFT JOIN Service s ON s.ServiceID = p.ServiceID
 WHERE p.EventID=@EventID AND
-      (@Search='' OR p.FirstName LIKE @Like OR p.LastName LIKE @Like OR p.MiddleInitial LIKE @Like OR
-       p.ContactNumber LIKE @Like OR p.Address LIKE @Like OR (p.FirstName || ' ' || p.LastName) LIKE @Like OR
-       COALESCE(c.ChapterName, p.ChapterNameSnapshot) LIKE @Like OR
-       COALESCE(s.ServiceName, p.ServiceNameSnapshot) LIKE @Like OR
-       p.ModeOfPayment LIKE @Like OR p.PaymentStatus LIKE @Like)
+      (@Search='' OR p.FirstName LIKE @Like ESCAPE '\' OR p.LastName LIKE @Like ESCAPE '\' OR p.MiddleInitial LIKE @Like ESCAPE '\' OR
+       p.ContactNumber LIKE @Like ESCAPE '\' OR p.Address LIKE @Like ESCAPE '\' OR (p.FirstName || ' ' || p.LastName) LIKE @Like ESCAPE '\' OR
+       COALESCE(c.ChapterName, p.ChapterNameSnapshot) LIKE @Like ESCAPE '\' OR
+       COALESCE(s.ServiceName, p.ServiceNameSnapshot) LIKE @Like ESCAPE '\' OR
+       p.ModeOfPayment LIKE @Like ESCAPE '\' OR p.PaymentStatus LIKE @Like ESCAPE '\')
 ORDER BY p.LastName COLLATE NOCASE, p.FirstName COLLATE NOCASE, p.ParticipantID;";
         command.Parameters.AddWithValue("@EventID", eventId);
         command.Parameters.AddWithValue("@Search", cleanSearch);
-        command.Parameters.AddWithValue("@Like", $"%{cleanSearch}%");
+        command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
         using var reader = command.ExecuteReader();
         var result = new List<EventParticipant>();
         while (reader.Read()) result.Add(Map(reader));
@@ -81,8 +82,13 @@ SELECT last_insert_rowid();";
     {
         using var connection = DatabaseManager.OpenConnection();
         using var transaction = connection.BeginTransaction();
-        var chapterName = ResolveChapterName(connection, transaction, participant.ChapterID);
-        var serviceName = ResolveServiceName(connection, transaction, participant.ServiceID);
+        var existingNames = GetExistingSnapshots(connection, transaction, participant.ParticipantID, participant.EventID);
+        var chapterName = participant.ChapterID.HasValue
+            ? ResolveChapterName(connection, transaction, participant.ChapterID)
+            : existingNames.ChapterName;
+        var serviceName = participant.ServiceID.HasValue
+            ? ResolveServiceName(connection, transaction, participant.ServiceID)
+            : existingNames.ServiceName;
         EnsureEventExists(connection, transaction, participant.EventID);
 
         using var command = connection.CreateCommand();
@@ -128,6 +134,28 @@ WHERE ParticipantID=@ParticipantID AND EventID=@EventID;";
         var mode = string.IsNullOrWhiteSpace(participant.ModeOfPayment) ? null : participant.ModeOfPayment.Trim();
         command.Parameters.AddWithValue("@Mode", mode == null ? DBNull.Value : mode);
         command.Parameters.AddWithValue("@Status", participant.PaymentStatus.Trim());
+    }
+
+
+    private static (string ChapterName, string ServiceName) GetExistingSnapshots(
+        SQLiteConnection connection, SQLiteTransaction transaction, long participantId, long eventId)
+    {
+        using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = @"
+SELECT ChapterNameSnapshot, ServiceNameSnapshot
+FROM EventParticipant
+WHERE ParticipantID=@ParticipantID AND EventID=@EventID;";
+        command.Parameters.AddWithValue("@ParticipantID", participantId);
+        command.Parameters.AddWithValue("@EventID", eventId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read()) throw new InvalidOperationException("Event participant was not found.");
+
+        var chapterName = Convert.ToString(reader["ChapterNameSnapshot"]);
+        var serviceName = Convert.ToString(reader["ServiceNameSnapshot"]);
+        if (string.IsNullOrWhiteSpace(chapterName)) chapterName = "Deleted Chapter";
+        if (string.IsNullOrWhiteSpace(serviceName)) serviceName = "Deleted Service";
+        return (chapterName!, serviceName!);
     }
 
     private static void EnsureEventExists(SQLiteConnection connection, SQLiteTransaction transaction, long eventId)

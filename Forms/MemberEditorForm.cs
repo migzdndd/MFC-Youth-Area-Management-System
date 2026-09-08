@@ -73,6 +73,7 @@ public sealed class MemberEditorForm : Form
         root.Controls.Add(actions, 0, 6);
         root.SetColumnSpan(actions, 2);
         AcceptButton = save;
+        CancelButton = cancel;
 
         _status.Items.AddRange(ApplicationConstants.MemberStatuses.Cast<object>().ToArray());
         _status.SelectedIndex = 0;

@@ -1,5 +1,6 @@
 using MFCYouthAreaManagementSystem.Database;
 using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Utilities;
 
 namespace MFCYouthAreaManagementSystem.Repositories;
 
@@ -13,10 +14,10 @@ public sealed class ServiceRepository
         command.CommandText = @"
 SELECT ServiceID, ServiceName, DisplayOrder, TotalMembers
 FROM ServiceStatistics
-WHERE @Search = '' OR ServiceName LIKE @Like
+WHERE @Search = '' OR ServiceName LIKE @Like ESCAPE '\'
 ORDER BY DisplayOrder, ServiceName COLLATE NOCASE;";
         command.Parameters.AddWithValue("@Search", cleanSearch);
-        command.Parameters.AddWithValue("@Like", $"%{cleanSearch}%");
+        command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
         using var reader = command.ExecuteReader();
         var result = new List<Service>();
         while (reader.Read())

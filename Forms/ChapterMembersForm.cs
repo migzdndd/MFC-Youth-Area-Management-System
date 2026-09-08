@@ -41,7 +41,7 @@ public sealed class ChapterMembersForm : Form
         _search.Dock = DockStyle.Fill;
         _search.Margin = new Padding(0, 6, 0, 6);
         root.Controls.Add(_search, 0, 1);
-        _search.TextValueChanged += (_, _) => LoadRows();
+        UiSearchDebouncer.Bind(this, _search, LoadRows);
 
         _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Member", DataPropertyName = "FullName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Status", DataPropertyName = "Status", Width = 90 });
@@ -61,6 +61,7 @@ public sealed class ChapterMembersForm : Form
         try
         {
             var rows = new MemberRepository().GetByChapter(_chapterId, _search.TextValue);
+            _empty.ResetMessage();
             _grid.DataSource = rows;
             _grid.Visible = rows.Count > 0;
             _empty.Visible = rows.Count == 0;
@@ -77,6 +78,11 @@ public sealed class ChapterMembersForm : Form
         catch (Exception ex)
         {
             AppLogger.Error("Load Chapter Members", ex);
+            _grid.DataSource = null;
+            _grid.Visible = false;
+            _empty.ShowMessage("Chapter Members Could Not Load", "The Member list is temporarily unavailable. Try refreshing again.");
+            _empty.Visible = true;
+            _empty.BringToFront();
             _dashboard.Notify("Could not load Chapter members.", true);
         }
     }

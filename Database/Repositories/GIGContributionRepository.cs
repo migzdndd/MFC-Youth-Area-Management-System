@@ -1,6 +1,7 @@
 using System.Data.SQLite;
 using MFCYouthAreaManagementSystem.Database;
 using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Utilities;
 
 namespace MFCYouthAreaManagementSystem.Repositories;
 
@@ -15,11 +16,11 @@ public sealed class GIGContributionRepository
 SELECT ContributionID, MemberID, ContributionDate, Amount, Remarks
 FROM GIGContribution
 WHERE MemberID=@MemberID
-  AND (@Search='' OR ContributionDate LIKE @Like OR IFNULL(Remarks,'') LIKE @Like OR CAST(Amount AS TEXT) LIKE @Like)
+  AND (@Search='' OR ContributionDate LIKE @Like ESCAPE '\' OR IFNULL(Remarks,'') LIKE @Like ESCAPE '\' OR CAST(Amount AS TEXT) LIKE @Like ESCAPE '\')
 ORDER BY ContributionDate DESC, ContributionID DESC;";
         command.Parameters.AddWithValue("@MemberID", memberId);
         command.Parameters.AddWithValue("@Search", cleanSearch);
-        command.Parameters.AddWithValue("@Like", $"%{cleanSearch}%");
+        command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
         using var reader = command.ExecuteReader();
         var list = new List<GIGContribution>();
         while (reader.Read()) list.Add(Map(reader));
@@ -58,12 +59,13 @@ SELECT last_insert_rowid();";
         if (command.ExecuteNonQuery() != 1) throw new InvalidOperationException("Contribution was not found.");
     }
 
-    public void Delete(long id)
+    public void Delete(long id, long memberId)
     {
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM GIGContribution WHERE ContributionID=@Id;";
+        command.CommandText = "DELETE FROM GIGContribution WHERE ContributionID=@Id AND MemberID=@MemberID;";
         command.Parameters.AddWithValue("@Id", id);
+        command.Parameters.AddWithValue("@MemberID", memberId);
         if (command.ExecuteNonQuery() != 1) throw new InvalidOperationException("Contribution was not found.");
     }
 

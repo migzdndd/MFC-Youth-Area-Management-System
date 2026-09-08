@@ -88,7 +88,7 @@ public sealed class EventsForm : Form
         content.Controls.Add(_empty);
         root.Controls.Add(content, 0, 2);
 
-        _search.TextValueChanged += (_, _) => LoadRows();
+        UiSearchDebouncer.Bind(this, _search, LoadRows);
         Shown += (_, _) => LoadRows();
     }
 
@@ -107,6 +107,7 @@ public sealed class EventsForm : Form
         try
         {
             var rows = _repo.GetAll(_search.TextValue);
+            _empty.ResetMessage();
             _grid.DataSource = rows;
             _grid.Visible = rows.Count > 0;
             _empty.Visible = rows.Count == 0;
@@ -115,6 +116,11 @@ public sealed class EventsForm : Form
         catch (Exception ex)
         {
             AppLogger.Error("Load Events", ex);
+            _grid.DataSource = null;
+            _grid.Visible = false;
+            _empty.ShowMessage("Events Could Not Load", "The Event list is temporarily unavailable. Try refreshing again.");
+            _empty.Visible = true;
+            _empty.BringToFront();
             _dashboard.Notify("Could not load Events.", true);
         }
     }
@@ -123,6 +129,7 @@ public sealed class EventsForm : Form
     {
         if (ModalHelper.Show(this, () => new EventEditorForm(), "Open Add Event") != DialogResult.OK) return;
         LoadRows();
+        DashboardTrendStore.CaptureCurrentTotals();
         _dashboard.Notify("Event created.");
     }
 
@@ -162,6 +169,7 @@ public sealed class EventsForm : Form
         {
             _repo.Delete(areaEvent.EventID);
             LoadRows();
+            DashboardTrendStore.CaptureCurrentTotals();
             _dashboard.Notify("Event deleted.");
         }
         catch (Exception ex)

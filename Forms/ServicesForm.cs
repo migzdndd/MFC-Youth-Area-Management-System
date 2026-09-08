@@ -26,13 +26,13 @@ public sealed class ServicesForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
 
-        root.Controls.Add(new PageHeader("Services", "Review the seven MFC Youth service assignments and the Members serving in each."), 0, 0);
+        root.Controls.Add(new PageHeader("Services", "Review the MFC Youth service assignments and the Members serving in each."), 0, 0);
         _search.Dock = DockStyle.Fill;
         _search.Margin = new Padding(0, 6, 0, 6);
         root.Controls.Add(_search, 0, 1);
         root.Controls.Add(_cards, 0, 2);
 
-        _search.TextValueChanged += (_, _) => LoadCards();
+        UiSearchDebouncer.Bind(this, _search, LoadCards);
         Shown += (_, _) => LoadCards();
     }
 
@@ -42,39 +42,59 @@ public sealed class ServicesForm : Form
         {
             var services = _repo.GetAll(_search.TextValue);
             _cards.SuspendLayout();
-            _cards.Controls.Clear();
-            foreach (var service in services)
+            try
             {
-                var serviceId = service.ServiceID;
-                var card = new ServiceCard(service);
-                UiHelper.ScaleNewControlForCurrentDpi(card, _cards);
-                card.ViewClicked += (_, _) =>
+                UiHelper.DisposeChildControls(_cards);
+                foreach (var service in services)
                 {
-                    ModalHelper.Show(this, () => new ServiceMembersForm(serviceId, _dashboard), "Open Service Members");
-                    LoadCards();
-                };
-                _cards.Controls.Add(card);
+                    var serviceId = service.ServiceID;
+                    var card = new ServiceCard(service);
+                    UiHelper.ScaleNewControlForCurrentDpi(card, _cards);
+                    card.ViewClicked += (_, _) =>
+                    {
+                        ModalHelper.Show(this, () => new ServiceMembersForm(serviceId, _dashboard), "Open Service Members");
+                        LoadCards();
+                    };
+                    _cards.Controls.Add(card);
+                }
+                if (services.Count == 0)
+                {
+                    _cards.Controls.Add(new Label
+                    {
+                        Text = "Service Not Found.",
+                        AutoSize = true,
+                        Font = ThemeFonts.Body,
+                        ForeColor = ThemeColors.TextSecondary,
+                        Margin = new Padding(8, 16, 0, 0)
+                    });
+                }
             }
-            if (services.Count == 0)
+            finally
             {
-                _cards.Controls.Add(new Label
-                {
-                    Text = "No Services match your search.",
-                    AutoSize = true,
-                    Font = ThemeFonts.Body,
-                    ForeColor = ThemeColors.TextSecondary,
-                    Margin = new Padding(8, 16, 0, 0)
-                });
+                _cards.ResumeLayout();
             }
         }
         catch (Exception ex)
         {
             AppLogger.Error("Load Services", ex);
+            _cards.SuspendLayout();
+            try
+            {
+                UiHelper.DisposeChildControls(_cards);
+                _cards.Controls.Add(new Label
+                {
+                    Text = "Services could not be loaded. Try refreshing again.",
+                    AutoSize = true,
+                    Font = ThemeFonts.Body,
+                    ForeColor = ThemeColors.Danger,
+                    Margin = new Padding(8, 16, 0, 0)
+                });
+            }
+            finally
+            {
+                _cards.ResumeLayout();
+            }
             _dashboard.Notify("Could not load Services.", true);
-        }
-        finally
-        {
-            _cards.ResumeLayout();
         }
     }
 }

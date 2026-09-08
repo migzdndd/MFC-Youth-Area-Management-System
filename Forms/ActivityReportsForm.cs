@@ -48,7 +48,7 @@ public sealed class ActivityReportsForm : Form
         _search.Margin = new Padding(0, 3, 0, 3);
         tools.Controls.Add(_search, 0, 0);
         tools.Controls.Add(actions, 0, 1);
-        _search.TextValueChanged += (_, _) => LoadRows();
+        UiSearchDebouncer.Bind(this, _search, LoadRows);
         root.Controls.Add(tools, 0, 1);
 
         _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Date", DataPropertyName = "ReportDate", Width = 115, DefaultCellStyle = { Format = "MMM d, yyyy" } });
@@ -73,6 +73,7 @@ public sealed class ActivityReportsForm : Form
         try
         {
             var rows = _repo.GetAll(_search.TextValue);
+            _empty.ResetMessage();
             _grid.DataSource = rows;
             _grid.Visible = rows.Count > 0;
             _empty.Visible = rows.Count == 0;
@@ -81,6 +82,11 @@ public sealed class ActivityReportsForm : Form
         catch (Exception ex)
         {
             AppLogger.Error("Load Activity Reports", ex);
+            _grid.DataSource = null;
+            _grid.Visible = false;
+            _empty.ShowMessage("Activity Reports Could Not Load", "The Report list is temporarily unavailable. Try refreshing again.");
+            _empty.Visible = true;
+            _empty.BringToFront();
             _dashboard.Notify("Could not load Activity Reports.", true);
         }
     }
@@ -103,6 +109,7 @@ public sealed class ActivityReportsForm : Form
         }
         if (ModalHelper.Show(this, () => new ActivityReportEditorForm(), "Open Add Activity Report") != DialogResult.OK) return;
         LoadRows();
+        DashboardTrendStore.CaptureCurrentTotals();
         _dashboard.Notify("Activity Report saved.");
     }
 
@@ -124,6 +131,7 @@ public sealed class ActivityReportsForm : Form
         {
             _repo.Delete(report.ReportID);
             LoadRows();
+            DashboardTrendStore.CaptureCurrentTotals();
             _dashboard.Notify("Activity Report deleted.");
         }
         catch (Exception ex)

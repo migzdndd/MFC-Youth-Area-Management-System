@@ -1,6 +1,7 @@
 using System.Data.SQLite;
 using MFCYouthAreaManagementSystem.Database;
 using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Utilities;
 
 namespace MFCYouthAreaManagementSystem.Repositories;
 
@@ -32,19 +33,19 @@ JOIN Chapter c ON c.ChapterID = m.ChapterID";
         using var command = connection.CreateCommand();
         command.CommandText = SelectBase + @"
 WHERE @Search = '' OR
-      m.FirstName LIKE @Like OR IFNULL(m.MiddleName, '') LIKE @Like OR m.LastName LIKE @Like OR
-      TRIM(m.FirstName || ' ' || IFNULL(m.MiddleName || ' ', '') || m.LastName) LIKE @Like OR
-      c.ChapterName LIKE @Like OR m.ContactNumber LIKE @Like OR IFNULL(m.EmailAddress, '') LIKE @Like OR
-      m.Address LIKE @Like OR m.Status LIKE @Like OR
+      m.FirstName LIKE @Like ESCAPE '\' OR IFNULL(m.MiddleName, '') LIKE @Like ESCAPE '\' OR m.LastName LIKE @Like ESCAPE '\' OR
+      TRIM(m.FirstName || ' ' || IFNULL(m.MiddleName || ' ', '') || m.LastName) LIKE @Like ESCAPE '\' OR
+      c.ChapterName LIKE @Like ESCAPE '\' OR m.ContactNumber LIKE @Like ESCAPE '\' OR IFNULL(m.EmailAddress, '') LIKE @Like ESCAPE '\' OR
+      m.Address LIKE @Like ESCAPE '\' OR m.Status LIKE @Like ESCAPE '\' OR
       EXISTS (
           SELECT 1
           FROM MemberService msSearch
           JOIN Service sSearch ON sSearch.ServiceID = msSearch.ServiceID
-          WHERE msSearch.MemberID = m.MemberID AND sSearch.ServiceName LIKE @Like
+          WHERE msSearch.MemberID = m.MemberID AND sSearch.ServiceName LIKE @Like ESCAPE '\'
       )
 ORDER BY m.LastName COLLATE NOCASE, m.FirstName COLLATE NOCASE, m.MemberID;";
         command.Parameters.AddWithValue("@Search", cleanSearch);
-        command.Parameters.AddWithValue("@Like", $"%{cleanSearch}%");
+        command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
         return ReadMembers(command);
     }
 
@@ -67,20 +68,20 @@ WHERE m.MemberID = @MemberID;";
         command.CommandText = SelectBase + @"
 WHERE m.ChapterID = @ChapterID
 AND (@Search = '' OR
-     m.FirstName LIKE @Like OR IFNULL(m.MiddleName, '') LIKE @Like OR m.LastName LIKE @Like OR
-     TRIM(m.FirstName || ' ' || IFNULL(m.MiddleName || ' ', '') || m.LastName) LIKE @Like OR
-     m.ContactNumber LIKE @Like OR IFNULL(m.EmailAddress,'') LIKE @Like OR m.Address LIKE @Like OR
-     m.Status LIKE @Like OR
+     m.FirstName LIKE @Like ESCAPE '\' OR IFNULL(m.MiddleName, '') LIKE @Like ESCAPE '\' OR m.LastName LIKE @Like ESCAPE '\' OR
+     TRIM(m.FirstName || ' ' || IFNULL(m.MiddleName || ' ', '') || m.LastName) LIKE @Like ESCAPE '\' OR
+     m.ContactNumber LIKE @Like ESCAPE '\' OR IFNULL(m.EmailAddress,'') LIKE @Like ESCAPE '\' OR m.Address LIKE @Like ESCAPE '\' OR
+     m.Status LIKE @Like ESCAPE '\' OR
      EXISTS (
          SELECT 1
          FROM MemberService msSearch
          JOIN Service sSearch ON sSearch.ServiceID = msSearch.ServiceID
-         WHERE msSearch.MemberID = m.MemberID AND sSearch.ServiceName LIKE @Like
+         WHERE msSearch.MemberID = m.MemberID AND sSearch.ServiceName LIKE @Like ESCAPE '\'
      ))
 ORDER BY m.LastName COLLATE NOCASE, m.FirstName COLLATE NOCASE, m.MemberID;";
         command.Parameters.AddWithValue("@ChapterID", chapterId);
         command.Parameters.AddWithValue("@Search", cleanSearch);
-        command.Parameters.AddWithValue("@Like", $"%{cleanSearch}%");
+        command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
         return ReadMembers(command);
     }
 
@@ -95,14 +96,14 @@ WHERE EXISTS (
     WHERE assigned.MemberID = m.MemberID AND assigned.ServiceID = @ServiceID
 )
 AND (@Search = '' OR
-     m.FirstName LIKE @Like OR IFNULL(m.MiddleName, '') LIKE @Like OR m.LastName LIKE @Like OR
-     TRIM(m.FirstName || ' ' || IFNULL(m.MiddleName || ' ', '') || m.LastName) LIKE @Like OR
-     c.ChapterName LIKE @Like OR m.ContactNumber LIKE @Like OR IFNULL(m.EmailAddress,'') LIKE @Like OR
-     m.Address LIKE @Like OR m.Status LIKE @Like)
+     m.FirstName LIKE @Like ESCAPE '\' OR IFNULL(m.MiddleName, '') LIKE @Like ESCAPE '\' OR m.LastName LIKE @Like ESCAPE '\' OR
+     TRIM(m.FirstName || ' ' || IFNULL(m.MiddleName || ' ', '') || m.LastName) LIKE @Like ESCAPE '\' OR
+     c.ChapterName LIKE @Like ESCAPE '\' OR m.ContactNumber LIKE @Like ESCAPE '\' OR IFNULL(m.EmailAddress,'') LIKE @Like ESCAPE '\' OR
+     m.Address LIKE @Like ESCAPE '\' OR m.Status LIKE @Like ESCAPE '\')
 ORDER BY m.LastName COLLATE NOCASE, m.FirstName COLLATE NOCASE, m.MemberID;";
         command.Parameters.AddWithValue("@ServiceID", serviceId);
         command.Parameters.AddWithValue("@Search", cleanSearch);
-        command.Parameters.AddWithValue("@Like", $"%{cleanSearch}%");
+        command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
         return ReadMembers(command);
     }
 

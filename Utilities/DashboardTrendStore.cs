@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MFCYouthAreaManagementSystem.Database;
+using MFCYouthAreaManagementSystem.Repositories;
 
 namespace MFCYouthAreaManagementSystem.Utilities;
 
@@ -21,6 +22,28 @@ public static class DashboardTrendStore
     {
         return ReadAll().FirstOrDefault(snapshot =>
             string.Equals(snapshot.SnapshotMonth, snapshotMonth, StringComparison.Ordinal));
+    }
+
+    public static void CaptureCurrentTotals()
+    {
+        try
+        {
+            var now = DateTime.Now;
+            var currentMonth = now.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+            Upsert(new DashboardTrendSnapshot(
+                currentMonth,
+                new MemberRepository().GetTotalCount(),
+                new ChapterRepository().GetTotalCount(),
+                new ServiceRepository().GetTotalCount(),
+                new ActivityReportRepository().GetTotalCount(),
+                new EventRepository().GetTotalCount()));
+        }
+        catch (Exception ex)
+        {
+            // Trend history is optional. Never let presentation tracking turn a
+            // successful record change into an application error.
+            AppLogger.Error("Capture dashboard trend totals", ex);
+        }
     }
 
     public static void Upsert(DashboardTrendSnapshot snapshot)
@@ -59,6 +82,11 @@ public static class DashboardTrendStore
 
         try
         {
+            if (DatabaseWasReplacedAfterTrendHistoryWasCreated())
+            {
+                PreserveTrendFile("stale");
+                return new List<DashboardTrendSnapshot>();
+            }
             var json = File.ReadAllText(FilePath);
             if (string.IsNullOrWhiteSpace(json))
                 return new List<DashboardTrendSnapshot>();
@@ -71,25 +99,34 @@ public static class DashboardTrendStore
             // Trend history is optional presentation data. Preserve a malformed
             // file for diagnosis, restart tracking, and never block the dashboard.
             AppLogger.Error("Read dashboard trend history", ex);
-            PreserveCorruptTrendFile();
+            PreserveTrendFile("corrupt");
             return new List<DashboardTrendSnapshot>();
         }
     }
 
-    private static void PreserveCorruptTrendFile()
+    private static bool DatabaseWasReplacedAfterTrendHistoryWasCreated()
+    {
+        if (!File.Exists(DatabaseConfiguration.DatabasePath) || !File.Exists(FilePath)) return false;
+
+        var databaseCreated = File.GetCreationTimeUtc(DatabaseConfiguration.DatabasePath);
+        var trendCreated = File.GetCreationTimeUtc(FilePath);
+        return databaseCreated > trendCreated.AddSeconds(2);
+    }
+
+    private static void PreserveTrendFile(string reason)
     {
         try
         {
             if (!File.Exists(FilePath)) return;
 
-            var corruptPath = Path.Combine(
+            var preservedPath = Path.Combine(
                 DatabaseConfiguration.AppDataDirectory,
-                $"dashboard-monthly-trends-corrupt-{DateTime.Now:yyyyMMdd-HHmmss}.json");
-            File.Move(FilePath, corruptPath, false);
+                $"dashboard-monthly-trends-{reason}-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+            File.Move(FilePath, preservedPath, false);
         }
         catch (Exception ex)
         {
-            AppLogger.Error("Preserve corrupt dashboard trend history", ex);
+            AppLogger.Error($"Preserve {reason} dashboard trend history", ex);
         }
     }
 }

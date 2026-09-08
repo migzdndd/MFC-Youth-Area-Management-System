@@ -33,7 +33,7 @@ public sealed class MemberDetailsForm : Form
     private void LoadMember()
     {
         _content.SuspendLayout();
-        _content.Controls.Clear();
+        UiHelper.DisposeChildControls(_content);
 
         try
         {
@@ -158,6 +158,20 @@ public sealed class MemberDetailsForm : Form
 
             UiHelper.ScaleNewControlForCurrentDpi(root, _content);
         }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Load Member Details", ex);
+            UiHelper.DisposeChildControls(_content);
+            _content.Controls.Add(new Label
+            {
+                Text = "Member details could not be loaded. Close this window and try again.",
+                Dock = DockStyle.Fill,
+                Font = ThemeFonts.Body,
+                ForeColor = ThemeColors.Danger,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = new Padding(24)
+            });
+        }
         finally
         {
             _content.ResumeLayout(true);
@@ -239,6 +253,7 @@ public sealed class MemberDetailsForm : Form
         try
         {
             new MemberRepository().Delete(_memberId);
+            DashboardTrendStore.CaptureCurrentTotals();
             _dashboard.Notify("Member deleted.");
             DialogResult = DialogResult.OK;
             Close();

@@ -16,3 +16,22 @@ This source package applies the release-blocking fixes found during the intensiv
 - Consolidated duplicate publish profiles.
 
 The final Windows `.NET` publish and Inno Setup compilation still need to be run on a Windows development machine with the .NET SDK and Inno Setup 6 installed.
+
+## 2026-09-08 Stability & Consistency Pass
+
+No new application features were added in this pass. The existing v2.0.3-beta behavior was hardened and cleaned up.
+
+- Kept Chapter name snapshots synchronized on Chapter rename so later deletion does not make historical Reports or Event registrations revert to an older Chapter name.
+- Allowed historical Activity Reports and Event registrations to be edited without forcing a replacement Chapter/Service after the original record has been deleted.
+- Preserved historical Chapter/Service snapshot labels when those detached records are edited.
+- Kept dashboard month snapshots current when Members, Chapters, Activity Reports, or Events are added/deleted, while keeping trend tracking optional and outside the core database.
+- Discarded stale dashboard trend history when a newly replaced local database can be detected.
+- Prevented failed list/detail refreshes from leaving previously loaded information visible as though it were current.
+- Added a short search debounce to avoid re-querying SQLite on every keystroke while the user is still typing.
+- Escaped literal `%`, `_`, and `\\` characters in search text so they are searched as characters instead of unintended SQL wildcards.
+- Tightened GIG contribution deletion so the contribution must belong to the Member currently being viewed.
+- Added a post-migration foreign-key relationship check at startup.
+- Standardized Escape/Cancel behavior on remaining editor dialogs.
+- Disposed replaced dynamic WinForms controls instead of only detaching them.
+- Cleared Mode of Payment when a participant is saved as Not Paid, preventing contradictory payment records.
+- Removed dead dashboard/theme code, stale generated build output, the obsolete installer script, and the duplicate publish profile from the source package.

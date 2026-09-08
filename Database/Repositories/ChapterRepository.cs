@@ -1,5 +1,6 @@
 using MFCYouthAreaManagementSystem.Database;
 using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Utilities;
 
 namespace MFCYouthAreaManagementSystem.Repositories;
 
@@ -14,11 +15,11 @@ public sealed class ChapterRepository
 SELECT c.ChapterID, c.ChapterName, COUNT(m.MemberID) AS MemberCount
 FROM Chapter c
 LEFT JOIN Member m ON m.ChapterID = c.ChapterID
-WHERE @Search='' OR c.ChapterName LIKE @Like
+WHERE @Search='' OR c.ChapterName LIKE @Like ESCAPE '\'
 GROUP BY c.ChapterID, c.ChapterName
 ORDER BY c.ChapterName COLLATE NOCASE, c.ChapterID;";
         command.Parameters.AddWithValue("@Search", cleanSearch);
-        command.Parameters.AddWithValue("@Like", $"%{cleanSearch}%");
+        command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
         using var reader = command.ExecuteReader();
         var result = new List<Chapter>();
         while (reader.Read()) result.Add(Map(reader));
@@ -51,12 +52,41 @@ GROUP BY c.ChapterID, c.ChapterName;";
 
     public void Rename(long id, string name)
     {
+        var cleanName = name.Trim();
         using var connection = DatabaseManager.OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE Chapter SET ChapterName=@Name WHERE ChapterID=@Id;";
-        command.Parameters.AddWithValue("@Name", name.Trim());
-        command.Parameters.AddWithValue("@Id", id);
-        if (command.ExecuteNonQuery() != 1) throw new InvalidOperationException("Chapter was not found.");
+        using var transaction = connection.BeginTransaction();
+
+        using (var rename = connection.CreateCommand())
+        {
+            rename.Transaction = transaction;
+            rename.CommandText = "UPDATE Chapter SET ChapterName=@Name WHERE ChapterID=@Id;";
+            rename.Parameters.AddWithValue("@Name", cleanName);
+            rename.Parameters.AddWithValue("@Id", id);
+            if (rename.ExecuteNonQuery() != 1) throw new InvalidOperationException("Chapter was not found.");
+        }
+
+        // Keep the stored historical label synchronized while records are still
+        // linked to this Chapter. If the Chapter is later deleted, the latest
+        // visible Chapter name is retained instead of reverting to an older name.
+        using (var reports = connection.CreateCommand())
+        {
+            reports.Transaction = transaction;
+            reports.CommandText = "UPDATE ActivityReport SET ChapterNameSnapshot=@Name WHERE ChapterID=@Id;";
+            reports.Parameters.AddWithValue("@Name", cleanName);
+            reports.Parameters.AddWithValue("@Id", id);
+            reports.ExecuteNonQuery();
+        }
+
+        using (var participants = connection.CreateCommand())
+        {
+            participants.Transaction = transaction;
+            participants.CommandText = "UPDATE EventParticipant SET ChapterNameSnapshot=@Name WHERE ChapterID=@Id;";
+            participants.Parameters.AddWithValue("@Name", cleanName);
+            participants.Parameters.AddWithValue("@Id", id);
+            participants.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
     }
 
     public int GetMemberCount(long id)

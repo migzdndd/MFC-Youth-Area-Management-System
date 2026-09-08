@@ -12,6 +12,7 @@ public static class DatabaseInitializer
         using var connection = DatabaseManager.OpenConnection();
         VerifyIntegrity(connection);
         DatabaseMigrator.Apply(connection);
+        VerifyForeignKeys(connection);
         SeedServices(connection);
     }
 
@@ -33,6 +34,24 @@ public static class DatabaseInitializer
             throw new InvalidOperationException(
                 "The local database failed an integrity check. No migration was attempted. " +
                 "Restore a known-good backup before continuing. Details: " + string.Join(" | ", errors));
+    }
+
+    private static void VerifyForeignKeys(SQLiteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA foreign_key_check;";
+        using var reader = command.ExecuteReader();
+        var violations = new List<string>();
+        while (reader.Read())
+        {
+            violations.Add($"{reader[0]} row {reader[1]} references {reader[2]}");
+            if (violations.Count >= 5) break;
+        }
+
+        if (violations.Count > 0)
+            throw new InvalidOperationException(
+                "The local database contains broken record relationships and cannot be opened safely. " +
+                "Details: " + string.Join(" | ", violations));
     }
 
     private static void SeedServices(SQLiteConnection connection)

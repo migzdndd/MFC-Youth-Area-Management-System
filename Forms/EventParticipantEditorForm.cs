@@ -30,6 +30,8 @@ public sealed class EventParticipantEditorForm : Form
         TextAlign = ContentAlignment.MiddleLeft
     };
     private bool _dirty;
+    private bool _canPreserveDeletedChapter;
+    private bool _canPreserveDeletedService;
 
     public string RegisteredParticipantName { get; private set; } = string.Empty;
 
@@ -160,14 +162,14 @@ public sealed class EventParticipantEditorForm : Form
     private void LoadChoices()
     {
         var chapters = new ChapterRepository().GetAll();
-        if (chapters.Count == 0) throw new InvalidOperationException("Create at least one Chapter before registering Event participants.");
+        if (!_participantId.HasValue && chapters.Count == 0) throw new InvalidOperationException("Create at least one Chapter before registering Event participants.");
         _chapter.DisplayMember = "ChapterName";
         _chapter.ValueMember = "ChapterID";
         _chapter.DataSource = chapters;
         _chapter.SelectedIndex = -1;
 
         var services = new ServiceRepository().GetAll();
-        if (services.Count == 0) throw new InvalidOperationException("No Services are available for participant registration.");
+        if (!_participantId.HasValue && services.Count == 0) throw new InvalidOperationException("No Services are available for participant registration.");
         _service.DisplayMember = "ServiceName";
         _service.ValueMember = "ServiceID";
         _service.DataSource = services;
@@ -188,8 +190,32 @@ public sealed class EventParticipantEditorForm : Form
         _age.Value = Math.Min(_age.Maximum, Math.Max(_age.Minimum, participant.Age));
         _contact.TextValue = participant.ContactNumber;
         _address.TextValue = participant.Address;
-        if (participant.ChapterID.HasValue) _chapter.SelectedValue = participant.ChapterID.Value; else _chapter.SelectedIndex = -1;
-        if (participant.ServiceID.HasValue) _service.SelectedValue = participant.ServiceID.Value; else _service.SelectedIndex = -1;
+        if (participant.ChapterID.HasValue)
+        {
+            _chapter.SelectedValue = participant.ChapterID.Value;
+        }
+        else
+        {
+            _chapter.SelectedIndex = -1;
+            _canPreserveDeletedChapter = true;
+        }
+
+        if (participant.ServiceID.HasValue)
+        {
+            _service.SelectedValue = participant.ServiceID.Value;
+        }
+        else
+        {
+            _service.SelectedIndex = -1;
+            _canPreserveDeletedService = true;
+        }
+
+        var preserved = new List<string>();
+        if (_canPreserveDeletedChapter) preserved.Add($"Chapter: {participant.ChapterName}");
+        if (_canPreserveDeletedService) preserved.Add($"Service: {participant.ServiceName}");
+        if (preserved.Count > 0)
+            _error.Text = "The original " + string.Join(" and ", preserved) + " no longer exists. It will remain on this registration unless you choose a replacement.";
+
         _modeOfPayment.TextValue = participant.ModeOfPayment ?? string.Empty;
         _paymentStatus.SelectedItem = participant.PaymentStatus;
         _dirty = false;
@@ -206,8 +232,12 @@ public sealed class EventParticipantEditorForm : Form
         var mode = ValidationHelper.Clean(_modeOfPayment.TextValue);
         var paymentStatus = Convert.ToString(_paymentStatus.SelectedItem) ?? string.Empty;
 
-        if (first.Length == 0 || last.Length == 0 || contact.Length == 0 || address.Length == 0 ||
-            _chapter.SelectedValue == null || _service.SelectedValue == null || paymentStatus.Length == 0)
+        var selectedChapterId = _chapter.SelectedValue == null ? (long?)null : Convert.ToInt64(_chapter.SelectedValue);
+        var selectedServiceId = _service.SelectedValue == null ? (long?)null : Convert.ToInt64(_service.SelectedValue);
+
+        if (first.Length == 0 || last.Length == 0 || contact.Length == 0 || address.Length == 0 || paymentStatus.Length == 0 ||
+            (!selectedChapterId.HasValue && !_canPreserveDeletedChapter) ||
+            (!selectedServiceId.HasValue && !_canPreserveDeletedService))
         {
             _error.Text = "Please complete all required participant fields.";
             return;
@@ -231,6 +261,9 @@ public sealed class EventParticipantEditorForm : Form
             return;
         }
 
+        if (!string.Equals(paymentStatus, "Paid", StringComparison.OrdinalIgnoreCase))
+            mode = string.Empty;
+
         button.Enabled = false;
         try
         {
@@ -244,8 +277,8 @@ public sealed class EventParticipantEditorForm : Form
                 Age = decimal.ToInt32(_age.Value),
                 ContactNumber = contact,
                 Address = address,
-                ChapterID = Convert.ToInt64(_chapter.SelectedValue),
-                ServiceID = Convert.ToInt64(_service.SelectedValue),
+                ChapterID = selectedChapterId,
+                ServiceID = selectedServiceId,
                 ModeOfPayment = mode.Length == 0 ? null : mode,
                 PaymentStatus = paymentStatus
             };

@@ -1,6 +1,7 @@
 using System.Data.SQLite;
 using MFCYouthAreaManagementSystem.Database;
 using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Utilities;
 
 namespace MFCYouthAreaManagementSystem.Repositories;
 
@@ -21,11 +22,11 @@ SELECT e.EventID, e.EventName, e.EventDescription, e.RegistrationFee, e.PeopleAt
        END AS TotalRegistrationFees
 FROM AreaEvent e
 LEFT JOIN EventParticipant p ON p.EventID = e.EventID
-WHERE @Search='' OR e.EventName LIKE @Like OR e.EventDescription LIKE @Like OR e.Venue LIKE @Like
+WHERE @Search='' OR e.EventName LIKE @Like ESCAPE '\' OR e.EventDescription LIKE @Like ESCAPE '\' OR e.Venue LIKE @Like ESCAPE '\'
 GROUP BY e.EventID, e.EventName, e.EventDescription, e.RegistrationFee, e.PeopleAttended, e.Venue, e.EventDateTime
 ORDER BY e.EventDateTime DESC, e.EventID DESC;";
         command.Parameters.AddWithValue("@Search", cleanSearch);
-        command.Parameters.AddWithValue("@Like", $"%{cleanSearch}%");
+        command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
         using var reader = command.ExecuteReader();
         var result = new List<AreaEvent>();
         while (reader.Read()) result.Add(Map(reader));

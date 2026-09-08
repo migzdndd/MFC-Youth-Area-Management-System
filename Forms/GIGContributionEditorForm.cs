@@ -52,6 +52,7 @@ public sealed class GIGContributionEditorForm : Form
         actions.Controls.AddRange(new Control[] { save, cancel });
         root.Controls.Add(actions, 0, 4);
         AcceptButton = save;
+        CancelButton = cancel;
 
         if (id.HasValue) LoadContribution(id.Value);
     }

@@ -77,7 +77,7 @@ public sealed class MembersForm : Form
         tools.Controls.Add(actions, 0, 1);
         _search.Dock = DockStyle.Fill;
         _search.Margin = new Padding(0, 3, 0, 3);
-        _search.TextValueChanged += (_, _) => LoadRows();
+        UiSearchDebouncer.Bind(this, _search, LoadRows);
 
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Name", HeaderText = "Member", DataPropertyName = "FullName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, FillWeight = 180 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Chapter", HeaderText = "Chapter", DataPropertyName = "ChapterName", Width = 150 });
@@ -109,6 +109,7 @@ public sealed class MembersForm : Form
         try
         {
             var rows = _repo.Search(_search.TextValue);
+            _empty.ResetMessage();
             _grid.DataSource = rows;
             _grid.Visible = rows.Count > 0;
             _empty.Visible = rows.Count == 0;
@@ -117,6 +118,11 @@ public sealed class MembersForm : Form
         catch (Exception ex)
         {
             AppLogger.Error("Load Members", ex);
+            _grid.DataSource = null;
+            _grid.Visible = false;
+            _empty.ShowMessage("Members Could Not Load", "The Member list is temporarily unavailable. Try refreshing again.");
+            _empty.Visible = true;
+            _empty.BringToFront();
             _dashboard.Notify("Could not load Members.", true);
         }
     }
@@ -139,6 +145,7 @@ public sealed class MembersForm : Form
         }
         if (ModalHelper.Show(this, () => new MemberEditorForm(), "Open Add Member") != DialogResult.OK) return;
         LoadRows();
+        DashboardTrendStore.CaptureCurrentTotals();
         _dashboard.Notify("Member added successfully.");
     }
 
@@ -187,6 +194,7 @@ public sealed class MembersForm : Form
         {
             _repo.Delete(member.MemberID);
             LoadRows();
+            DashboardTrendStore.CaptureCurrentTotals();
             _dashboard.Notify("Member deleted.");
         }
         catch (Exception ex)

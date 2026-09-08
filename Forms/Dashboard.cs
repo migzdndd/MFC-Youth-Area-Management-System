@@ -347,11 +347,6 @@ public sealed class Dashboard : Form
         _content.Update();
     }
 
-    public void RefreshDashboardIfVisible()
-    {
-        if (_current is DashboardHomeForm home) home.RefreshStats();
-    }
-
     public void Notify(string message, bool error = false) => ToastNotification.Show(this, message, error);
 
     private void ToggleMaximize()

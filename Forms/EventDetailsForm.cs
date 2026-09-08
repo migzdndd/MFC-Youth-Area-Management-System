@@ -89,7 +89,7 @@ public sealed class EventDetailsForm : Form
         root.Controls.Add(footer, 0, 5);
         CancelButton = close;
 
-        _search.TextValueChanged += (_, _) => LoadParticipants();
+        UiSearchDebouncer.Bind(this, _search, LoadParticipants);
         Shown += (_, _) => ReloadAll();
     }
 
@@ -243,6 +243,15 @@ public sealed class EventDetailsForm : Form
         catch (Exception ex)
         {
             AppLogger.Error("Load Event Details", ex);
+            _event = null;
+            _eventName.Text = _dateTime.Text = _venue.Text = _fee.Text = _description.Text = "—";
+            _registered.Value = _attended.Value = _paid.Value = _totalFees.Value = "—";
+            _grid.DataSource = null;
+            _grid.Visible = false;
+            _empty.ShowMessage("Event Details Could Not Load", "The Event information is temporarily unavailable. Try refreshing again.");
+            _empty.Visible = true;
+            _empty.BringToFront();
+            Text = "Event Details";
             CustomDialog.Show(this, "Unable to Load Event", ex.Message, true);
         }
     }
@@ -252,6 +261,7 @@ public sealed class EventDetailsForm : Form
         try
         {
             var rows = _participantRepo.GetByEvent(_eventId, _search.TextValue);
+            _empty.ResetMessage();
             _grid.DataSource = rows;
             _grid.Visible = rows.Count > 0;
             _empty.Visible = rows.Count == 0;
@@ -260,6 +270,11 @@ public sealed class EventDetailsForm : Form
         catch (Exception ex)
         {
             AppLogger.Error("Load Event Participants", ex);
+            _grid.DataSource = null;
+            _grid.Visible = false;
+            _empty.ShowMessage("Participants Could Not Load", "The participant list is temporarily unavailable. Try refreshing again.");
+            _empty.Visible = true;
+            _empty.BringToFront();
             CustomDialog.Show(this, "Participants Could Not Load", "The participant list could not be loaded.", true);
         }
     }

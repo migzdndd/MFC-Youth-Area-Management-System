@@ -19,6 +19,7 @@ public sealed class ActivityReportEditorForm : Form
     private readonly DateTimePicker _date = new() { Format = DateTimePickerFormat.Long };
     private readonly Label _error = new() { AutoSize = false, Dock = DockStyle.Fill, ForeColor = ThemeColors.Danger, Font = ThemeFonts.Small, TextAlign = ContentAlignment.MiddleLeft };
     private bool _dirty;
+    private bool _canPreserveDeletedChapter;
 
     public ActivityReportEditorForm(long? id = null)
     {
@@ -72,6 +73,7 @@ public sealed class ActivityReportEditorForm : Form
         root.Controls.Add(actions, 0, 6);
         root.SetColumnSpan(actions, 2);
         AcceptButton = save;
+        CancelButton = cancel;
 
         _chapter.DisplayMember = "ChapterName";
         _chapter.ValueMember = "ChapterID";
@@ -128,7 +130,8 @@ public sealed class ActivityReportEditorForm : Form
         else
         {
             _chapter.SelectedIndex = -1;
-            _error.Text = $"The original Chapter ({report.ChapterName}) was deleted. Select a Chapter before saving changes.";
+            _canPreserveDeletedChapter = true;
+            _error.Text = $"The original Chapter ({report.ChapterName}) was deleted. It will remain on this Report unless you choose another Chapter.";
         }
         if (!_type.Items.Cast<object>().Any(item => string.Equals(Convert.ToString(item), report.ReportType, StringComparison.OrdinalIgnoreCase)))
             _type.Items.Add(report.ReportType);
@@ -150,7 +153,9 @@ public sealed class ActivityReportEditorForm : Form
             ValidationHelper.Clean(_prepared.TextValue),
             ValidationHelper.Clean(_description.TextValue)
         };
-        if (values.Any(string.IsNullOrWhiteSpace) || _chapter.SelectedValue == null || _type.SelectedItem == null)
+        var selectedChapterId = _chapter.SelectedValue == null ? (long?)null : Convert.ToInt64(_chapter.SelectedValue);
+        if (values.Any(string.IsNullOrWhiteSpace) || _type.SelectedItem == null ||
+            (!selectedChapterId.HasValue && !_canPreserveDeletedChapter))
         {
             _error.Text = "Please complete all required Report fields.";
             return;
@@ -163,7 +168,7 @@ public sealed class ActivityReportEditorForm : Form
             {
                 ReportID = _id ?? 0,
                 Title = values[0],
-                ChapterID = Convert.ToInt64(_chapter.SelectedValue),
+                ChapterID = selectedChapterId,
                 ReportType = Convert.ToString(_type.SelectedItem)!,
                 Activity = values[1],
                 ReportDate = _date.Value.Date,

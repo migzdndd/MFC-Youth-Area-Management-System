@@ -1,6 +1,7 @@
 using System.Data.SQLite;
 using MFCYouthAreaManagementSystem.Database;
 using MFCYouthAreaManagementSystem.Models;
+using MFCYouthAreaManagementSystem.Utilities;
 
 namespace MFCYouthAreaManagementSystem.Repositories;
 
@@ -15,11 +16,11 @@ public sealed class ActivityReportRepository
 SELECT r.ReportID, r.Title, r.ChapterID, COALESCE(c.ChapterName, r.ChapterNameSnapshot) AS ChapterName, r.ReportType, r.Activity, r.ReportDate, r.PreparedBy, r.Description
 FROM ActivityReport r
 LEFT JOIN Chapter c ON c.ChapterID = r.ChapterID
-WHERE @Search = '' OR r.Title LIKE @Like OR COALESCE(c.ChapterName, r.ChapterNameSnapshot) LIKE @Like OR r.ReportType LIKE @Like OR
-      r.Activity LIKE @Like OR r.PreparedBy LIKE @Like OR r.Description LIKE @Like
+WHERE @Search = '' OR r.Title LIKE @Like ESCAPE '\' OR COALESCE(c.ChapterName, r.ChapterNameSnapshot) LIKE @Like ESCAPE '\' OR r.ReportType LIKE @Like ESCAPE '\' OR
+      r.Activity LIKE @Like ESCAPE '\' OR r.PreparedBy LIKE @Like ESCAPE '\' OR r.Description LIKE @Like ESCAPE '\'
 ORDER BY r.ReportDate DESC, r.ReportID DESC;";
         command.Parameters.AddWithValue("@Search", cleanSearch);
-        command.Parameters.AddWithValue("@Like", $"%{cleanSearch}%");
+        command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
         using var reader = command.ExecuteReader();
         var list = new List<ActivityReport>();
         while (reader.Read()) list.Add(Map(reader));
@@ -60,7 +61,10 @@ SELECT last_insert_rowid();";
         command.CommandText = @"
 UPDATE ActivityReport
 SET Title=@Title, ChapterID=@ChapterID,
-    ChapterNameSnapshot=(SELECT ChapterName FROM Chapter WHERE ChapterID=@ChapterID),
+    ChapterNameSnapshot=CASE
+        WHEN @ChapterID IS NULL THEN ChapterNameSnapshot
+        ELSE (SELECT ChapterName FROM Chapter WHERE ChapterID=@ChapterID)
+    END,
     ReportType=@Type, Activity=@Activity, ReportDate=@Date,
     PreparedBy=@PreparedBy, Description=@Description, UpdatedAt=@Now
 WHERE ReportID=@Id;";

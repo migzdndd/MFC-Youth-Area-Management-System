@@ -61,7 +61,7 @@ public sealed class GIGTrackerForm : Form
         _search.Width = 300;
         _search.Margin = new Padding(0, 0, 12, 0);
         tools.Controls.Add(_search);
-        _search.TextValueChanged += (_, _) => LoadRows();
+        UiSearchDebouncer.Bind(this, _search, LoadRows);
         root.Controls.Add(tools, 0, 2);
 
         _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Date", DataPropertyName = "ContributionDate", Width = 140, DefaultCellStyle = { Format = "MMMM d, yyyy" } });
@@ -84,6 +84,7 @@ public sealed class GIGTrackerForm : Form
         try
         {
             var rows = _repo.GetByMember(_memberId, _search.TextValue);
+            _empty.ResetMessage();
             _grid.DataSource = rows;
             _total.Text = FormattingHelper.Peso(_repo.GetTotalForMember(_memberId));
             _grid.Visible = rows.Count > 0;
@@ -93,6 +94,12 @@ public sealed class GIGTrackerForm : Form
         catch (Exception ex)
         {
             AppLogger.Error("Load GIG", ex);
+            _grid.DataSource = null;
+            _grid.Visible = false;
+            _total.Text = "—";
+            _empty.ShowMessage("Contributions Could Not Load", "The contribution list is temporarily unavailable. Try refreshing again.");
+            _empty.Visible = true;
+            _empty.BringToFront();
             _dashboard.Notify("Could not load GIG contributions.", true);
         }
     }
@@ -120,7 +127,7 @@ public sealed class GIGTrackerForm : Form
         if (!CustomDialog.Confirm(this, "Delete Contribution?", $"Date: {FormattingHelper.Date(contribution.ContributionDate)}\nAmount: {FormattingHelper.Peso(contribution.Amount)}\n\nThis action cannot be undone.", "Delete Contribution", true)) return;
         try
         {
-            _repo.Delete(contribution.ContributionID);
+            _repo.Delete(contribution.ContributionID, _memberId);
             LoadRows();
             _dashboard.Notify("Contribution deleted.");
         }

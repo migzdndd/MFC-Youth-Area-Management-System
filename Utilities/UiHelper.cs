@@ -101,4 +101,14 @@ public static class UiHelper
         control.Scale(new SizeF(factor, factor));
     }
 
+    public static void DisposeChildControls(Control parent)
+    {
+        while (parent.Controls.Count > 0)
+        {
+            var child = parent.Controls[0];
+            parent.Controls.RemoveAt(0);
+            child.Dispose();
+        }
+    }
+
 }

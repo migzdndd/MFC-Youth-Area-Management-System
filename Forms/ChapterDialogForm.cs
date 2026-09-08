@@ -62,6 +62,7 @@ public sealed class ChapterDialogForm : Form
         actions.Controls.AddRange(new Control[] { save, cancel });
         root.Controls.Add(actions, 0, 3);
         AcceptButton = save;
+        CancelButton = cancel;
 
         if (chapter != null) _name.TextValue = chapter.ChapterName;
     }
