@@ -85,8 +85,32 @@ public static class ActivityReportPdfExporter
         document.PrintPage += renderer.OnPrintPage;
         document.Print();
 
+        WaitForPdfOutput(fullPath);
         if (!File.Exists(fullPath) || new FileInfo(fullPath).Length == 0)
             throw new IOException("Windows did not create the PDF file at the selected location.");
+    }
+
+    private static void WaitForPdfOutput(string fullPath)
+    {
+        // The Windows PDF print driver can finish writing a fraction of a second
+        // after PrintDocument.Print() returns. Give it a short bounded window so
+        // a successful export is not incorrectly reported as a failure.
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            if (File.Exists(fullPath))
+            {
+                try
+                {
+                    if (new FileInfo(fullPath).Length > 0) return;
+                }
+                catch (IOException)
+                {
+                    // The spooler may still have the file open. Retry briefly.
+                }
+            }
+
+            System.Threading.Thread.Sleep(50);
+        }
     }
 
     private sealed class ActivityReportPrintRenderer : IDisposable
@@ -143,6 +167,7 @@ public static class ActivityReportPdfExporter
 
             var y = DrawHeader(graphics, bounds);
             var bottom = bounds.Bottom - 24f;
+            using var sectionBrush = Brush(ThemeColors.Primary);
 
             if (_pageNumber == 1)
             {
@@ -150,7 +175,12 @@ public static class ActivityReportPdfExporter
                 y = DrawMetrics(graphics, bounds, y);
                 y = DrawAnalyticsSnapshot(graphics, bounds, y);
                 y += 5f;
-                graphics.DrawString("Detailed Activity Reports", _sectionFont, Brush(ThemeColors.Primary), bounds.Left, y);
+                graphics.DrawString("Detailed Activity Reports", _sectionFont, sectionBrush, bounds.Left, y);
+                y += _sectionFont.GetHeight(graphics) + 8f;
+            }
+            else
+            {
+                graphics.DrawString("Detailed Activity Reports (continued)", _sectionFont, sectionBrush, bounds.Left, y);
                 y += _sectionFont.GetHeight(graphics) + 8f;
             }
 
@@ -347,7 +377,8 @@ public static class ActivityReportPdfExporter
             for (var i = 0; i < items.Count; i++)
             {
                 var item = items[i];
-                var count = item.Value.ToString();
+                var percentage = _reports.Count == 0 ? 0d : item.Value * 100d / _reports.Count;
+                var count = $"{item.Value} ({percentage:0}%)";
                 var countWidth = graphics.MeasureString(count, _smallBoldFont).Width;
                 var labelWidth = Math.Max(30f, rect.Width - countWidth - 22f);
                 var label = FitText(graphics, $"{i + 1}. {item.Key}", _smallFont, labelWidth);
@@ -436,7 +467,20 @@ public static class ActivityReportPdfExporter
                     _ => (_bodyFont, text, 2.5f)
                 };
                 var lineHeight = font.GetHeight(graphics) + spacing;
-                if (y + lineHeight > bottom) return;
+
+                // Keep section labels with at least the first line of their body
+                // instead of leaving "Activity" or "Description" orphaned at
+                // the bottom of a page.
+                if (item.Kind == DocumentItemKind.Label && _detailIndex + 1 < _detailItems.Count &&
+                    _detailItems[_detailIndex + 1].Kind == DocumentItemKind.Body)
+                {
+                    var nextLineHeight = _bodyFont.GetHeight(graphics) + 2.5f;
+                    if (y + lineHeight + nextLineHeight > bottom) return;
+                }
+                else if (y + lineHeight > bottom)
+                {
+                    return;
+                }
 
                 graphics.DrawString(item.Text, font, brush, new RectangleF(x, y, maxWidth, lineHeight + 2f));
                 y += lineHeight;

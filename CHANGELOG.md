@@ -25,6 +25,15 @@
 - Kept PDF generation fully offline by using the Windows built-in **Microsoft Print to PDF** printer instead of adding another NuGet/runtime dependency.
 - Kept database schema version 4 unchanged; PDF export is read-only and does not modify stored records.
 
+### Reports & Analytics Phase 4
+
+- Polished Activity Reports action states so Edit/Delete require a selected row, Export PDF requires matching results, and Clear Filters is only active when filters are applied.
+- Added a dedicated "No Reports Match These Filters" empty state while preserving the original first-report empty state.
+- Improved Report Type and Chapter analytics with percentage values and clearer top-results captions while keeping calculations tied to the full filtered dataset.
+- Hardened PDF export completion detection for the Windows PDF print driver.
+- Improved PDF pagination with continued-section headings and protection against orphaned Activity/Description labels.
+- Kept application version `2.0.3-beta.1`, database schema version 4, package dependencies, and installer configuration unchanged.
+
 ## v2.0.3-beta.1 - Stability Revision & Release Label Repair
 
 ### Release Engineering

@@ -204,8 +204,9 @@ public sealed class ReportAnalyticsCard : Panel
         {
             var data = _data.Take(6).ToList();
             var max = Math.Max(1, data.Max(item => item.Value));
+            var total = Math.Max(1, _data.Sum(item => item.Value));
             var labelWidth = Math.Min(118, Math.Max(82, Width / 3));
-            var valueWidth = 34;
+            var valueWidth = 66;
             var plotLeft = labelWidth + 8;
             var plotWidth = Math.Max(35, Width - plotLeft - valueWidth - 4);
             var rowHeight = Height / (float)Math.Max(1, data.Count);
@@ -243,8 +244,10 @@ public sealed class ReportAnalyticsCard : Panel
                     Alignment = StringAlignment.Far,
                     LineAlignment = StringAlignment.Center
                 };
+                var percentage = item.Value * 100d / total;
+                var valueText = $"{item.Value} ({percentage:0}%)";
                 var valueRect = new RectangleF(plotLeft + plotWidth + 4, rowHeight * i, valueWidth, rowHeight);
-                graphics.DrawString(item.Value.ToString(), ThemeFonts.SmallBold, valueBrush, valueRect, valueFormat);
+                graphics.DrawString(valueText, ThemeFonts.SmallBold, valueBrush, valueRect, valueFormat);
             }
         }
     }

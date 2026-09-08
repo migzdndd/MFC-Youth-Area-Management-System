@@ -23,7 +23,12 @@ public sealed class ActivityReportsForm : Form
     private readonly ReportAnalyticsCard _typeChart = new("Report Type Mix", "Most common report types in the selected results", ReportChartKind.HorizontalBars, ThemeColors.Warning);
     private readonly ReportAnalyticsCard _chapterChart = new("Chapter Activity", "Most active chapters in the selected results", ReportChartKind.HorizontalBars, ThemeColors.Success);
     private readonly EmptyStatePanel _empty = new("No Activity Reports Yet", "Create the first Activity Report to begin documenting Area and Chapter activities.");
+    private ModernButton? _editButton;
+    private ModernButton? _deleteButton;
+    private ModernButton? _exportButton;
+    private ModernButton? _clearFiltersButton;
     private bool _suppressFilterReload;
+    private int _matchingCount;
 
     public ActivityReportsForm(Dashboard dashboard)
     {
@@ -54,6 +59,7 @@ public sealed class ActivityReportsForm : Form
         _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Type", DataPropertyName = "ReportType", Width = 135 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Prepared By", DataPropertyName = "PreparedBy", Width = 150 });
         _grid.DoubleClick += (_, _) => Edit();
+        _grid.SelectionChanged += (_, _) => UpdateActionState();
 
         var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
         content.Controls.Add(_grid);
@@ -158,6 +164,10 @@ public sealed class ActivityReportsForm : Form
         var export = Btn("Export PDF", 106, ModernButtonStyle.Blue);
         var refresh = Btn("Refresh", 86, ModernButtonStyle.Ghost);
         var clear = Btn("Clear Filters", 104, ModernButtonStyle.Ghost);
+        _editButton = edit;
+        _deleteButton = del;
+        _exportButton = export;
+        _clearFiltersButton = clear;
         add.Click += (_, _) => Add();
         edit.Click += (_, _) => Edit();
         del.Click += (_, _) => Delete();
@@ -165,6 +175,7 @@ public sealed class ActivityReportsForm : Form
         refresh.Click += (_, _) => LoadRows();
         clear.Click += (_, _) => ClearFilters();
         actions.Controls.AddRange(new Control[] { add, del, edit, export, refresh, clear });
+        UpdateActionState();
         return actions;
     }
 
@@ -291,23 +302,66 @@ public sealed class ActivityReportsForm : Form
         {
             var rows = _repo.GetAll(CurrentFilter());
             UpdateAnalytics(rows);
-            _empty.ResetMessage();
             _grid.DataSource = rows;
+
+            _matchingCount = rows.Count;
             _grid.Visible = rows.Count > 0;
             _empty.Visible = rows.Count == 0;
-            if (_grid.Visible) _grid.BringToFront(); else _empty.BringToFront();
+
+            if (_grid.Visible)
+            {
+                _empty.ResetMessage();
+                _grid.BringToFront();
+            }
+            else
+            {
+                ShowEmptyResultMessage();
+                _empty.BringToFront();
+            }
+
+            UpdateActionState();
         }
         catch (Exception ex)
         {
             AppLogger.Error("Load Activity Reports", ex);
+            _matchingCount = 0;
             _grid.DataSource = null;
             _grid.Visible = false;
             UpdateAnalytics(Array.Empty<ActivityReport>());
             _empty.ShowMessage("Activity Reports Could Not Load", "The Report list is temporarily unavailable. Try refreshing again.");
             _empty.Visible = true;
             _empty.BringToFront();
+            UpdateActionState();
             _dashboard.Notify("Could not load Activity Reports.", true);
         }
+    }
+
+    private void ShowEmptyResultMessage()
+    {
+        if (HasActiveFilters())
+        {
+            _empty.ShowMessage(
+                "No Reports Match These Filters",
+                "Try changing the Search, Chapter, Report Type, or Period filter, or use Clear Filters to show all Activity Reports.");
+            return;
+        }
+
+        _empty.ResetMessage();
+    }
+
+    private bool HasActiveFilters() =>
+        !string.IsNullOrWhiteSpace(_search.TextValue) ||
+        _chapterFilter.SelectedIndex > 0 ||
+        _typeFilter.SelectedIndex > 0 ||
+        _periodFilter.SelectedIndex > 0;
+
+    private void UpdateActionState()
+    {
+        var hasSelection = Selected() != null;
+        if (_editButton != null) _editButton.Enabled = hasSelection;
+        if (_deleteButton != null) _deleteButton.Enabled = hasSelection;
+        if (_exportButton != null) _exportButton.Enabled = _matchingCount > 0;
+        if (_clearFiltersButton != null) _clearFiltersButton.Enabled = HasActiveFilters();
     }
 
     private void UpdateAnalytics(IReadOnlyCollection<ActivityReport> rows)
@@ -335,18 +389,22 @@ public sealed class ActivityReportsForm : Form
             .Select(group => new KeyValuePair<string, int>(group.Key, group.Count()))
             .OrderByDescending(item => item.Value)
             .ThenBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
-            .Take(6)
             .ToList();
         _typeChart.SetData(reportTypes);
+        _typeChart.SetCaption(reportTypes.Count == 0
+            ? "No matching report types in the selected results"
+            : $"Top {Math.Min(6, reportTypes.Count)} of {reportTypes.Count} report types in view");
 
         var chapters = rows
             .GroupBy(r => NormalizeAnalyticsLabel(r.ChapterName, "Unassigned"), StringComparer.OrdinalIgnoreCase)
             .Select(group => new KeyValuePair<string, int>(group.Key, group.Count()))
             .OrderByDescending(item => item.Value)
             .ThenBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
-            .Take(6)
             .ToList();
         _chapterChart.SetData(chapters);
+        _chapterChart.SetCaption(chapters.Count == 0
+            ? "No matching chapters in the selected results"
+            : $"Top {Math.Min(6, chapters.Count)} of {chapters.Count} chapters in view");
     }
 
     private static string NormalizeAnalyticsLabel(string? value, string fallback)

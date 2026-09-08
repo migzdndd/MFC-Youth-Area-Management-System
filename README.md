@@ -20,7 +20,7 @@ A custom-designed, fully offline Windows desktop management application for orga
 - Member management with Birth Date, contact information, address, status, Chapter, and multiple Services
 - Chapter management with case-insensitive duplicate protection and safe delete rules
 - Seven system-defined MFC Youth Service roles with many-to-many Member assignments
-- Activity Reports with separate Activity and Description fields, combined filters, summary metrics, visual analytics, and professional filtered PDF export
+- Activity Reports with separate Activity and Description fields, combined filters, summary metrics, percentage-based visual analytics, polished empty/selection states, and professional filtered PDF export
 - GIG contribution tracking per Member with Philippine peso totals
 - Dashboard statistics and monthly trend indicators for Members, Chapters, Services, Activity Reports, and Events
 - Event management with participant registration, attendance counts, payment status, and registration-fee summaries
