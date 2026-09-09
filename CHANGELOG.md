@@ -1,5 +1,15 @@
 # Changelog
 
+## In Development - Phone Compatibility / Mobile Access
+
+### Phase 1 - Responsive Shell Foundation
+
+- Started the mobile-readiness roadmap as a source-only update, with no installer release.
+- Added `ResponsiveLayoutHelper` as the shared place for compact layout constants and touch-friendly UI behavior.
+- Added compact dashboard shell behavior for narrower Windows screens: icon-only navigation rail, shortened branding, hidden sidebar artwork, smaller page padding, and retained navigation tooltips.
+- Made standard application tables more touch-friendly by increasing DataGridView row and header height through the shared grid factory.
+- Kept application version `2.0.3-beta.1`, database schema version 4, package dependencies, and installer configuration unchanged.
+
 ## In Development - Reports & Analytics Improvements
 
 ### Reports & Analytics Phase 1
@@ -15,6 +25,7 @@
 - Added Chapter activity comparison analytics for the most active Chapters in the selected results.
 - Implemented the analytics charts with lightweight custom WinForms drawing and no new third-party dependency.
 - Kept database schema version 4 unchanged; the analytics are calculated from existing Activity Report records.
+
 
 ### Reports & Analytics Phase 3
 

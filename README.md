@@ -26,6 +26,7 @@ A custom-designed, fully offline Windows desktop management application for orga
 - Event management with participant registration, attendance counts, payment status, and registration-fee summaries
 - Local SQLite persistence under the signed-in Windows user's application-data folder
 - Custom navy/gold WinForms UI, reusable controls, custom dialogs, toast feedback, and styled DataGridViews
+- Early mobile-readiness foundation with compact sidebar behavior and touch-friendlier tables for narrow Windows screens
 
 ## Technology
 
@@ -45,6 +46,7 @@ A custom-designed, fully offline Windows desktop management application for orga
 - No separate .NET installation is required for the release installer
 - No internet connection is required after the installer has been downloaded
 - The Activity Reports **Export PDF** feature uses the Windows built-in **Microsoft Print to PDF** optional feature
+- Phone/mobile access is still a roadmap phase; the current app remains a Windows desktop app while responsive foundations are being added
 
 The `win-x64` release is published **self-contained**, so the required .NET 8 runtime is bundled with the application.
 
