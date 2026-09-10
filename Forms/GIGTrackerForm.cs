@@ -24,12 +24,9 @@ public sealed class GIGTrackerForm : Form
 
         Text = "GIG Tracker";
         StartPosition = FormStartPosition.CenterParent;
-        Size = new Size(900, 650);
-        MinimumSize = new Size(780, 560);
         BackColor = ThemeColors.Background;
         Font = ThemeFonts.Body;
-        Padding = new Padding(24);
-        AutoScaleMode = AutoScaleMode.Dpi;
+        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(900, 650), new Size(560, 500), allowMaximize: true);
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Margin = Padding.Empty, Padding = Padding.Empty };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -61,12 +58,14 @@ public sealed class GIGTrackerForm : Form
         _search.Width = 300;
         _search.Margin = new Padding(0, 0, 12, 0);
         tools.Controls.Add(_search);
+        ResponsiveLayoutHelper.WireResponsiveActionBar(this, tools, root.RowStyles[2], normalActionHeight: 70, compactActionHeight: ResponsiveLayoutHelper.CompactToolbarActionsHeight);
+        ResponsiveLayoutHelper.WireResponsiveSearchWidth(this, _search, 300);
         UiSearchDebouncer.Bind(this, _search, LoadRows);
         root.Controls.Add(tools, 0, 2);
 
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Date", DataPropertyName = "ContributionDate", Width = 140, DefaultCellStyle = { Format = "MMMM d, yyyy" } });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Amount", DataPropertyName = "Amount", Width = 140, DefaultCellStyle = { Format = "C2", FormatProvider = System.Globalization.CultureInfo.GetCultureInfo("en-PH") } });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Remarks", DataPropertyName = "Remarks", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", HeaderText = "Date", DataPropertyName = "ContributionDate", Width = 140, DefaultCellStyle = { Format = "MMMM d, yyyy" } });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Amount", HeaderText = "Amount", DataPropertyName = "Amount", Width = 140, DefaultCellStyle = { Format = "C2", FormatProvider = System.Globalization.CultureInfo.GetCultureInfo("en-PH") } });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Remarks", HeaderText = "Remarks", DataPropertyName = "Remarks", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
         _grid.DoubleClick += (_, _) => Edit();
 
         var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };

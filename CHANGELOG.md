@@ -1,5 +1,22 @@
 # Changelog
 
+## In Development - Mobile Compatibility
+
+### Phase 1
+- Added a responsive dashboard shell and compact sidebar.
+
+### Phase 2
+- Added responsive tables, action bars, and compact module layouts.
+
+### Phase 3
+- Added responsive forms, dialogs, and small-screen scrolling.
+
+### Phase 4
+- Added DPI-aware sizing and spacing.
+- Improved the dashboard for smaller displays.
+- Completed Windows-side mobile compatibility.
+
+
 ## In Development - Reports & Analytics Improvements
 
 ### Reports & Analytics Phase 1

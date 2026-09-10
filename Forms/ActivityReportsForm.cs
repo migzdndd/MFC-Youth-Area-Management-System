@@ -48,16 +48,31 @@ public sealed class ActivityReportsForm : Form
         Controls.Add(root);
 
         root.Controls.Add(new PageHeader("Activity Reports & Analytics", "Review activity reports, filter the records you need, and see an instant summary of the selected data."), 0, 0);
-        root.Controls.Add(BuildSummaryCards(), 0, 1);
-        root.Controls.Add(BuildFilters(), 0, 2);
-        root.Controls.Add(BuildAnalyticsCharts(), 0, 3);
-        root.Controls.Add(BuildActions(), 0, 4);
+        var summaryCards = BuildSummaryCards();
+        var filters = BuildFilters();
+        var charts = BuildAnalyticsCharts();
+        var actions = BuildActions();
+        root.Controls.Add(summaryCards, 0, 1);
+        root.Controls.Add(filters, 0, 2);
+        root.Controls.Add(charts, 0, 3);
+        root.Controls.Add(actions, 0, 4);
+        if (summaryCards is TableLayoutPanel summaryLayout)
+            ResponsiveLayoutHelper.WireResponsiveTableLayout(this, summaryLayout, root.RowStyles[1], normalColumns: 4, compactColumns: 2, normalHeight: 126, compactHeight: 224);
+        if (filters is TableLayoutPanel filterLayout)
+            ResponsiveLayoutHelper.WireResponsiveTableLayout(this, filterLayout, root.RowStyles[2], normalColumns: 4, compactColumns: 2, normalHeight: 82, compactHeight: 154);
+        ResponsiveLayoutHelper.WireCompactRowVisibility(this, charts, root.RowStyles[3], normalHeight: 246);
+        if (actions is FlowLayoutPanel actionBar)
+            ResponsiveLayoutHelper.WireResponsiveActionBar(this, actionBar, root.RowStyles[4], normalActionHeight: ThemeSizes.ToolbarActionsHeight + 12, compactActionHeight: ResponsiveLayoutHelper.CompactToolbarActionsHeight);
 
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Date", DataPropertyName = "ReportDate", Width = 115, DefaultCellStyle = { Format = "MMM d, yyyy" } });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Title", DataPropertyName = "Title", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Chapter", DataPropertyName = "ChapterName", Width = 150 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Type", DataPropertyName = "ReportType", Width = 135 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Prepared By", DataPropertyName = "PreparedBy", Width = 150 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", HeaderText = "Date", DataPropertyName = "ReportDate", Width = 115, DefaultCellStyle = { Format = "MMM d, yyyy" } });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Title", HeaderText = "Title", DataPropertyName = "Title", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Chapter", HeaderText = "Chapter", DataPropertyName = "ChapterName", Width = 150 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Type", HeaderText = "Type", DataPropertyName = "ReportType", Width = 135 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "PreparedBy", HeaderText = "Prepared By", DataPropertyName = "PreparedBy", Width = 150 });
+        ResponsiveLayoutHelper.WireResponsiveGridColumns(this, _grid,
+            new ResponsiveGridColumnRule("PreparedBy", 780),
+            new ResponsiveGridColumnRule("Type", 700),
+            new ResponsiveGridColumnRule("Chapter", 620));
         _grid.DoubleClick += (_, _) => Edit();
         _grid.SelectionChanged += (_, _) => UpdateActionState();
 

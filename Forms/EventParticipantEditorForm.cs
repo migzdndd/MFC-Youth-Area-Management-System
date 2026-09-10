@@ -41,15 +41,9 @@ public sealed class EventParticipantEditorForm : Form
         _participantId = participantId;
         Text = participantId.HasValue ? "Edit Participant" : "Register Participant";
         StartPosition = FormStartPosition.CenterParent;
-        Size = new Size(820, 790);
-        MinimumSize = new Size(780, 760);
         BackColor = ThemeColors.Background;
         Font = ThemeFonts.Body;
-        Padding = new Padding(24);
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
+        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(820, 790), new Size(440, 540));
 
         _age.Minimum = 1;
         _age.Maximum = 120;
@@ -114,6 +108,7 @@ public sealed class EventParticipantEditorForm : Form
         actions.Controls.AddRange(new Control[] { save, cancel });
         root.Controls.Add(actions, 0, 7);
         root.SetColumnSpan(actions, 2);
+        ResponsiveLayoutHelper.WireResponsiveDialogGrid(this, root, actions);
         AcceptButton = save;
         CancelButton = cancel;
 

@@ -75,6 +75,7 @@ public sealed class MembersForm : Form
         actions.Controls.AddRange(new Control[] { add, del, gig, service, edit, refresh });
         tools.Controls.Add(_search, 0, 0);
         tools.Controls.Add(actions, 0, 1);
+        ResponsiveLayoutHelper.WireResponsiveActionBar(this, actions, tools.RowStyles[1], root.RowStyles[1], normalToolbarHeight: ThemeSizes.ToolbarSearchHeight + ThemeSizes.ToolbarActionsHeight + 12, compactToolbarHeight: ThemeSizes.ToolbarSearchHeight + ResponsiveLayoutHelper.CompactToolbarActionsHeight + ResponsiveLayoutHelper.CompactToolbarGap);
         _search.Dock = DockStyle.Fill;
         _search.Margin = new Padding(0, 3, 0, 3);
         UiSearchDebouncer.Bind(this, _search, LoadRows);
@@ -84,6 +85,10 @@ public sealed class MembersForm : Form
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", HeaderText = "Status", DataPropertyName = "Status", Width = 90 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Services", HeaderText = "Services", DataPropertyName = "Services", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, FillWeight = 170 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Contact", HeaderText = "Contact Number", DataPropertyName = "ContactNumber", Width = 125 });
+        ResponsiveLayoutHelper.WireResponsiveGridColumns(this, _grid,
+            new ResponsiveGridColumnRule("Services", 760),
+            new ResponsiveGridColumnRule("Contact", 700),
+            new ResponsiveGridColumnRule("Status", 560));
         _grid.DoubleClick += (_, _) => OpenDetails();
 
         var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };

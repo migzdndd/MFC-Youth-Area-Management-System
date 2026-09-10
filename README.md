@@ -27,6 +27,12 @@ A custom-designed, fully offline Windows desktop management application for orga
 - Local SQLite persistence under the signed-in Windows user's application-data folder
 - Custom navy/gold WinForms UI, reusable controls, custom dialogs, toast feedback, and styled DataGridViews
 
+## Mobile Compatibility
+
+The Windows app now includes responsive layouts for smaller screens, compact forms, touch-friendly tables, and DPI-aware scaling.
+
+Windows-side mobile readiness is complete. Actual Android/iPhone access will be added later through the planned web/PWA and hybrid online/offline system.
+
 ## Technology
 
 - C#

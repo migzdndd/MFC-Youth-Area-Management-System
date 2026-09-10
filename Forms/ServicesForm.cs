@@ -32,6 +32,7 @@ public sealed class ServicesForm : Form
         root.Controls.Add(_search, 0, 1);
         root.Controls.Add(_cards, 0, 2);
 
+        ResponsiveLayoutHelper.WireResponsiveServiceCards(this, _cards);
         UiSearchDebouncer.Bind(this, _search, LoadCards);
         Shown += (_, _) => LoadCards();
     }

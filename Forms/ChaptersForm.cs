@@ -50,11 +50,12 @@ public sealed class ChaptersForm : Form
         _search.Margin = new Padding(0, 3, 0, 3);
         tools.Controls.Add(_search, 0, 0);
         tools.Controls.Add(actions, 0, 1);
+        ResponsiveLayoutHelper.WireResponsiveActionBar(this, actions, tools.RowStyles[1], root.RowStyles[1], normalToolbarHeight: ThemeSizes.ToolbarSearchHeight + ThemeSizes.ToolbarActionsHeight + 12, compactToolbarHeight: ThemeSizes.ToolbarSearchHeight + ResponsiveLayoutHelper.CompactToolbarActionsHeight + ResponsiveLayoutHelper.CompactToolbarGap);
         UiSearchDebouncer.Bind(this, _search, LoadRows);
         root.Controls.Add(tools, 0, 1);
 
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Chapter", DataPropertyName = "ChapterName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Members", DataPropertyName = "MemberCount", Width = 120 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Chapter", HeaderText = "Chapter", DataPropertyName = "ChapterName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Members", HeaderText = "Members", DataPropertyName = "MemberCount", Width = 120 });
         _grid.DoubleClick += (_, _) => View();
 
         var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };

@@ -1,4 +1,5 @@
 using MFCYouthAreaManagementSystem.UI.Theme;
+using MFCYouthAreaManagementSystem.Utilities;
 
 namespace MFCYouthAreaManagementSystem.UI.Controls;
 
@@ -9,17 +10,11 @@ public sealed class CustomDialog : Form
     private CustomDialog(string title, string message, bool confirm, string actionText, bool danger)
     {
         Text = title;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterParent;
-        Size = new Size(500, 300);
-        MinimumSize = new Size(460, 270);
-        MaximizeBox = false;
-        MinimizeBox = false;
         ShowInTaskbar = false;
         BackColor = ThemeColors.Surface;
         Font = ThemeFonts.Body;
-        Padding = new Padding(24);
-        AutoScaleMode = AutoScaleMode.Dpi;
+        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(500, 300), new Size(360, 300));
 
         var root = new TableLayoutPanel
         {
@@ -94,6 +89,7 @@ public sealed class CustomDialog : Form
         }
 
         root.Controls.Add(actions, 0, 2);
+        ResponsiveLayoutHelper.WireResponsiveDialogActions(this, actions, root);
     }
 
     public static bool Confirm(IWin32Window owner, string title, string message, string actionText = "Confirm", bool danger = false)

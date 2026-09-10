@@ -73,14 +73,20 @@ public sealed class EventsForm : Form
         refresh.Click += (_, _) => LoadRows();
         actions.Controls.AddRange(new Control[] { add, delete, edit, view, refresh });
         tools.Controls.Add(actions, 0, 1);
+        ResponsiveLayoutHelper.WireResponsiveActionBar(this, actions, tools.RowStyles[1], root.RowStyles[1], normalToolbarHeight: ThemeSizes.ToolbarSearchHeight + ThemeSizes.ToolbarActionsHeight + 12, compactToolbarHeight: ThemeSizes.ToolbarSearchHeight + ResponsiveLayoutHelper.CompactToolbarActionsHeight + ResponsiveLayoutHelper.CompactToolbarGap);
         root.Controls.Add(tools, 0, 1);
 
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Date & Time", DataPropertyName = "EventDateTime", Width = 170, DefaultCellStyle = { Format = "MMM d, yyyy h:mm tt" } });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Event", DataPropertyName = "EventName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, MinimumWidth = 180 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Venue", DataPropertyName = "Venue", Width = 170 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Fee", DataPropertyName = "RegistrationFee", Width = 105, DefaultCellStyle = { Format = "C2", FormatProvider = System.Globalization.CultureInfo.GetCultureInfo("en-PH"), NullValue = "—" } });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Registered", DataPropertyName = "RegisteredCount", Width = 95 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Attended", DataPropertyName = "PeopleAttended", Width = 85 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "DateTime", HeaderText = "Date & Time", DataPropertyName = "EventDateTime", Width = 170, DefaultCellStyle = { Format = "MMM d, yyyy h:mm tt" } });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Event", HeaderText = "Event", DataPropertyName = "EventName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, MinimumWidth = 180 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Venue", HeaderText = "Venue", DataPropertyName = "Venue", Width = 170 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Fee", HeaderText = "Fee", DataPropertyName = "RegistrationFee", Width = 105, DefaultCellStyle = { Format = "C2", FormatProvider = System.Globalization.CultureInfo.GetCultureInfo("en-PH"), NullValue = "—" } });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Registered", HeaderText = "Registered", DataPropertyName = "RegisteredCount", Width = 95 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Attended", HeaderText = "Attended", DataPropertyName = "PeopleAttended", Width = 85 });
+        ResponsiveLayoutHelper.WireResponsiveGridColumns(this, _grid,
+            new ResponsiveGridColumnRule("Fee", 820),
+            new ResponsiveGridColumnRule("Registered", 720),
+            new ResponsiveGridColumnRule("Attended", 680),
+            new ResponsiveGridColumnRule("Venue", 620));
         _grid.DoubleClick += (_, _) => View();
 
         var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };

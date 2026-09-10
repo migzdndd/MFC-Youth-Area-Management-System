@@ -21,14 +21,9 @@ public sealed class GIGContributionEditorForm : Form
         _id = id;
         Text = id.HasValue ? "Edit Contribution" : "Add Contribution";
         StartPosition = FormStartPosition.CenterParent;
-        Size = new Size(540, 540);
         BackColor = ThemeColors.Background;
         Font = ThemeFonts.Body;
-        Padding = new Padding(24);
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
+        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(540, 540), new Size(420, 460));
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, Margin = Padding.Empty, Padding = Padding.Empty };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -51,6 +46,8 @@ public sealed class GIGContributionEditorForm : Form
         cancel.Click += (_, _) => Close();
         actions.Controls.AddRange(new Control[] { save, cancel });
         root.Controls.Add(actions, 0, 4);
+        ResponsiveLayoutHelper.WireResponsiveDialogActions(this, actions, root);
+        ResponsiveLayoutHelper.WireDialogVerticalScroll(this, root);
         AcceptButton = save;
         CancelButton = cancel;
 

@@ -30,12 +30,9 @@ public sealed class EventDetailsForm : Form
         _eventId = eventId;
         Text = "Event Details";
         StartPosition = FormStartPosition.CenterParent;
-        Size = new Size(1120, 820);
-        MinimumSize = new Size(980, 720);
         BackColor = ThemeColors.Background;
         Font = ThemeFonts.Body;
-        Padding = new Padding(22);
-        AutoScaleMode = AutoScaleMode.Dpi;
+        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(1120, 820), new Size(560, 560), normalPadding: 22, allowMaximize: true);
 
         var root = new TableLayoutPanel
         {
@@ -55,17 +52,32 @@ public sealed class EventDetailsForm : Form
         Controls.Add(root);
 
         root.Controls.Add(new PageHeader("Event Details", "Review Event information, registration summary, and participants."), 0, 0);
+        var summary = BuildSummary();
+        var participantTools = BuildParticipantTools();
         root.Controls.Add(BuildInfoCard(), 0, 1);
-        root.Controls.Add(BuildSummary(), 0, 2);
-        root.Controls.Add(BuildParticipantTools(), 0, 3);
+        root.Controls.Add(summary, 0, 2);
+        root.Controls.Add(participantTools, 0, 3);
+        if (summary is TableLayoutPanel summaryLayout)
+            ResponsiveLayoutHelper.WireResponsiveTableLayout(this, summaryLayout, root.RowStyles[2], normalColumns: 4, compactColumns: 2, normalHeight: 150, compactHeight: 238);
+        if (participantTools is TableLayoutPanel participantToolsLayout)
+        {
+            var participantActions = participantToolsLayout.Controls.OfType<FlowLayoutPanel>().FirstOrDefault();
+            if (participantActions != null)
+                ResponsiveLayoutHelper.WireResponsiveActionBar(this, participantActions, participantToolsLayout.RowStyles[1], root.RowStyles[3], normalToolbarHeight: ThemeSizes.ToolbarSearchHeight + ThemeSizes.ToolbarActionsHeight + 8, compactToolbarHeight: ThemeSizes.ToolbarSearchHeight + ResponsiveLayoutHelper.CompactToolbarActionsHeight + ResponsiveLayoutHelper.CompactToolbarGap);
+        }
 
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Participant", DataPropertyName = "FullName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, MinimumWidth = 180 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Age", DataPropertyName = "Age", Width = 58 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Chapter", DataPropertyName = "ChapterName", Width = 145 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Service", DataPropertyName = "ServiceName", Width = 145 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Contact", DataPropertyName = "ContactNumber", Width = 115 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Payment", DataPropertyName = "ModeOfPayment", Width = 105 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Status", DataPropertyName = "PaymentStatus", Width = 90 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Participant", HeaderText = "Participant", DataPropertyName = "FullName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, MinimumWidth = 180 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Age", HeaderText = "Age", DataPropertyName = "Age", Width = 58 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Chapter", HeaderText = "Chapter", DataPropertyName = "ChapterName", Width = 145 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Service", HeaderText = "Service", DataPropertyName = "ServiceName", Width = 145 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Contact", HeaderText = "Contact", DataPropertyName = "ContactNumber", Width = 115 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Payment", HeaderText = "Payment", DataPropertyName = "ModeOfPayment", Width = 105 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", HeaderText = "Status", DataPropertyName = "PaymentStatus", Width = 90 });
+        ResponsiveLayoutHelper.WireResponsiveGridColumns(this, _grid,
+            new ResponsiveGridColumnRule("Payment", 920),
+            new ResponsiveGridColumnRule("Contact", 860),
+            new ResponsiveGridColumnRule("Service", 800),
+            new ResponsiveGridColumnRule("Status", 760));
         _grid.DoubleClick += (_, _) => EditParticipant();
 
         var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
@@ -86,6 +98,7 @@ public sealed class EventDetailsForm : Form
         close.Click += (_, _) => Close();
         editEvent.Click += (_, _) => EditEvent();
         footer.Controls.AddRange(new Control[] { close, editEvent });
+        ResponsiveLayoutHelper.WireResponsiveActionBar(this, footer, root.RowStyles[5], normalActionHeight: ThemeSizes.DialogActionsHeight, compactActionHeight: ThemeSizes.DialogActionsHeight);
         root.Controls.Add(footer, 0, 5);
         CancelButton = close;
 

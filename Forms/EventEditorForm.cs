@@ -32,15 +32,9 @@ public sealed class EventEditorForm : Form
         _id = id;
         Text = id.HasValue ? "Edit Event" : "Add Event";
         StartPosition = FormStartPosition.CenterParent;
-        Size = new Size(780, 700);
-        MinimumSize = new Size(740, 670);
         BackColor = ThemeColors.Background;
         Font = ThemeFonts.Body;
-        Padding = new Padding(24);
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
+        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(780, 700), new Size(440, 520));
 
         _peopleAttended.Minimum = 0;
         _peopleAttended.Maximum = 100000;
@@ -106,6 +100,7 @@ public sealed class EventEditorForm : Form
         actions.Controls.AddRange(new Control[] { save, cancel });
         root.Controls.Add(actions, 0, 5);
         root.SetColumnSpan(actions, 2);
+        ResponsiveLayoutHelper.WireResponsiveDialogGrid(this, root, actions);
         AcceptButton = save;
         CancelButton = cancel;
 

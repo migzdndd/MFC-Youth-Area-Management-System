@@ -17,15 +17,9 @@ public sealed class MemberDetailsForm : Form
         _dashboard = dashboard;
         Text = "Member Details";
         StartPosition = FormStartPosition.CenterParent;
-        Size = new Size(720, 690);
-        MinimumSize = new Size(680, 630);
         BackColor = ThemeColors.Background;
         Font = ThemeFonts.Body;
-        Padding = new Padding(24);
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
+        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(720, 690), new Size(520, 520));
         Controls.Add(_content);
         LoadMember();
     }
@@ -155,6 +149,7 @@ public sealed class MemberDetailsForm : Form
             delete.Click += (_, _) => DeleteMember(member.FullName);
             actions.Controls.AddRange(new Control[] { close, delete, edit, services, gig });
             root.Controls.Add(actions, 0, 2);
+            ResponsiveLayoutHelper.WireResponsiveDialogActions(this, actions, root, normalHeight: 70, compactHeight: 132);
 
             UiHelper.ScaleNewControlForCurrentDpi(root, _content);
         }

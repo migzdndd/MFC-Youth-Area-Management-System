@@ -13,6 +13,7 @@ public sealed class DashboardHomeForm : Form
     private readonly DashboardMetricCell _services = new("Services", "Available service roles", Color.FromArgb(94, 117, 177));
     private readonly DashboardMetricCell _reports = new("Activity Reports", "Reports currently filed", ThemeColors.Success);
     private readonly DashboardMetricCell _events = new("Events", "Events currently recorded", ThemeColors.Warning);
+    private TableLayoutPanel _summaryMetrics = null!;
 
     public DashboardHomeForm()
     {
@@ -28,7 +29,8 @@ public sealed class DashboardHomeForm : Form
             RowCount = 3,
             Margin = Padding.Empty,
             Padding = Padding.Empty,
-            BackColor = ThemeColors.Background
+            BackColor = ThemeColors.Background,
+            AutoScroll = true
         };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.PageHeaderHeight));
@@ -42,6 +44,17 @@ public sealed class DashboardHomeForm : Form
             0);
 
         root.Controls.Add(BuildSummary(), 0, 1);
+        ResponsiveLayoutHelper.WireResponsiveTableLayout(
+            this,
+            _summaryMetrics,
+            root.RowStyles[1],
+            normalColumns: 5,
+            compactColumns: 2,
+            normalHeight: 232,
+            compactHeight: 410);
+        UpdateSummaryDividers();
+        HandleCreated += (_, _) => UpdateSummaryDividers();
+        Resize += (_, _) => UpdateSummaryDividers();
 
         Shown += (_, _) => RefreshStats();
     }
@@ -112,6 +125,8 @@ public sealed class DashboardHomeForm : Form
             BackColor = Color.Transparent
         };
 
+        _summaryMetrics = metrics;
+
         for (var i = 0; i < 5; i++)
             metrics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
         metrics.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -129,6 +144,20 @@ public sealed class DashboardHomeForm : Form
         section.Controls.Add(surface, 0, 1);
 
         return section;
+    }
+
+
+    private void UpdateSummaryDividers()
+    {
+        var columns = ResponsiveLayoutHelper.IsCompactModule(this) ? 2 : 5;
+        var cells = new[] { _members, _chapters, _services, _reports, _events };
+        for (var i = 0; i < cells.Length; i++)
+        {
+            var isLastItem = i == cells.Length - 1;
+            var isLastColumn = i % columns == columns - 1;
+            cells[i].ShowDivider = !isLastItem && !isLastColumn;
+            cells[i].Invalidate();
+        }
     }
 
     public void RefreshStats()

@@ -22,12 +22,9 @@ public sealed class ChapterMembersForm : Form
         var chapter = new ChapterRepository().GetById(id) ?? throw new InvalidOperationException("Chapter not found.");
         Text = chapter.ChapterName;
         StartPosition = FormStartPosition.CenterParent;
-        Size = new Size(880, 600);
-        MinimumSize = new Size(760, 520);
         BackColor = ThemeColors.Background;
         Font = ThemeFonts.Body;
-        Padding = new Padding(24);
-        AutoScaleMode = AutoScaleMode.Dpi;
+        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(880, 600), new Size(560, 480), allowMaximize: true);
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = Padding.Empty, Padding = Padding.Empty };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -43,10 +40,14 @@ public sealed class ChapterMembersForm : Form
         root.Controls.Add(_search, 0, 1);
         UiSearchDebouncer.Bind(this, _search, LoadRows);
 
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Member", DataPropertyName = "FullName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Status", DataPropertyName = "Status", Width = 90 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Contact", DataPropertyName = "ContactNumber", Width = 130 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Services", DataPropertyName = "Services", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Member", HeaderText = "Member", DataPropertyName = "FullName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", HeaderText = "Status", DataPropertyName = "Status", Width = 90 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Contact", HeaderText = "Contact", DataPropertyName = "ContactNumber", Width = 130 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Services", HeaderText = "Services", DataPropertyName = "Services", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+        ResponsiveLayoutHelper.WireResponsiveGridColumns(this, _grid,
+            new ResponsiveGridColumnRule("Services", 760),
+            new ResponsiveGridColumnRule("Contact", 680),
+            new ResponsiveGridColumnRule("Status", 560));
         _grid.DoubleClick += (_, _) => Open();
 
         var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };

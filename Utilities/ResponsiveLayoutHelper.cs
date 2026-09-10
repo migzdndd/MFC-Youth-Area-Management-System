@@ -13,6 +13,8 @@ namespace MFCYouthAreaManagementSystem.Utilities;
 /// </summary>
 public static class ResponsiveLayoutHelper
 {
+    private const int ReferenceDpi = 96;
+
     public const int CompactShellBreakpoint = 980;
     public const int CompactModuleBreakpoint = 840;
     public const int CompactDialogBreakpoint = 560;
@@ -26,14 +28,57 @@ public static class ResponsiveLayoutHelper
     public const int TouchGridRowHeight = 48;
     public const int TouchGridHeaderHeight = 48;
 
-    public static bool IsCompactShell(Control control) =>
-        control.ClientSize.Width > 0 && control.ClientSize.Width < CompactShellBreakpoint;
+    /// <summary>
+    /// Converts a logical 96-DPI measurement into the current control DPI. This keeps
+    /// responsive spacing and minimum touch sizes visually consistent on 125%, 150%,
+    /// 175%, and 200% Windows scaling.
+    /// </summary>
+    public static int ScaleLogical(Control control, int logicalPixels)
+    {
+        if (logicalPixels == 0) return 0;
+        var dpi = control.DeviceDpi > 0 ? control.DeviceDpi : ReferenceDpi;
+        var scaled = (int)Math.Round(logicalPixels * (dpi / (double)ReferenceDpi));
+        return logicalPixels > 0 ? Math.Max(1, scaled) : Math.Min(-1, scaled);
+    }
 
-    public static bool IsCompactModule(Control control) =>
-        control.ClientSize.Width > 0 && control.ClientSize.Width < CompactModuleBreakpoint;
+    public static Size ScaleLogical(Control control, Size logicalSize) =>
+        new(ScaleLogical(control, logicalSize.Width), ScaleLogical(control, logicalSize.Height));
 
-    public static bool IsCompactDialog(Control control) =>
-        control.ClientSize.Width > 0 && control.ClientSize.Width < CompactDialogBreakpoint;
+    public static Padding ScaleLogical(Control control, Padding logicalPadding) =>
+        new(
+            ScaleLogical(control, logicalPadding.Left),
+            ScaleLogical(control, logicalPadding.Top),
+            ScaleLogical(control, logicalPadding.Right),
+            ScaleLogical(control, logicalPadding.Bottom));
+
+    /// <summary>
+    /// Returns the current client width normalized to 96-DPI logical pixels so the
+    /// same responsive breakpoint is selected regardless of Windows display scaling.
+    /// </summary>
+    public static int LogicalClientWidth(Control control)
+    {
+        if (control.ClientSize.Width <= 0) return 0;
+        var dpi = control.DeviceDpi > 0 ? control.DeviceDpi : ReferenceDpi;
+        return (int)Math.Round(control.ClientSize.Width * (ReferenceDpi / (double)dpi));
+    }
+
+    public static bool IsCompactShell(Control control)
+    {
+        var width = LogicalClientWidth(control);
+        return width > 0 && width < CompactShellBreakpoint;
+    }
+
+    public static bool IsCompactModule(Control control)
+    {
+        var width = LogicalClientWidth(control);
+        return width > 0 && width < CompactModuleBreakpoint;
+    }
+
+    public static bool IsCompactDialog(Control control)
+    {
+        var width = LogicalClientWidth(control);
+        return width > 0 && width < CompactDialogBreakpoint;
+    }
 
     /// <summary>
     /// Makes a modal/detail window safe on smaller displays without changing its data or behavior.
@@ -56,23 +101,27 @@ public static class ResponsiveLayoutHelper
 
         void ApplyPadding()
         {
-            form.Padding = IsCompactDialog(form)
+            var logical = IsCompactDialog(form)
                 ? new Padding(CompactDialogPadding)
                 : new Padding(normalPadding);
+            form.Padding = ScaleLogical(form, logical);
         }
 
         void FitToWorkingArea()
         {
             var workingArea = Screen.FromControl(form).WorkingArea;
-            var safeWidth = Math.Max(360, workingArea.Width - 48);
-            var safeHeight = Math.Max(420, workingArea.Height - 48);
+            var safeMargin = ScaleLogical(form, 48);
+            var safeWidth = Math.Max(ScaleLogical(form, 360), workingArea.Width - safeMargin);
+            var safeHeight = Math.Max(ScaleLogical(form, 420), workingArea.Height - safeMargin);
+            var scaledMinimum = ScaleLogical(form, compactMinimumSize);
+            var scaledPreferred = ScaleLogical(form, preferredSize);
 
-            var minimumWidth = Math.Min(compactMinimumSize.Width, safeWidth);
-            var minimumHeight = Math.Min(compactMinimumSize.Height, safeHeight);
+            var minimumWidth = Math.Min(scaledMinimum.Width, safeWidth);
+            var minimumHeight = Math.Min(scaledMinimum.Height, safeHeight);
             form.MinimumSize = new Size(minimumWidth, minimumHeight);
 
-            var width = Math.Min(preferredSize.Width, safeWidth);
-            var height = Math.Min(preferredSize.Height, safeHeight);
+            var width = Math.Min(scaledPreferred.Width, safeWidth);
+            var height = Math.Min(scaledPreferred.Height, safeHeight);
             if (form.Width > safeWidth || form.Height > safeHeight)
                 form.Size = new Size(Math.Max(minimumWidth, width), Math.Max(minimumHeight, height));
 
@@ -121,16 +170,17 @@ public static class ResponsiveLayoutHelper
 
         void UpdateNormalScroll()
         {
-            var needsScroll = normalContentHeight > 0 && table.ClientSize.Height > 0 && normalContentHeight > table.ClientSize.Height;
+            var scaledContentHeight = ScaleLogical(host, normalContentHeight);
+            var needsScroll = scaledContentHeight > 0 && table.ClientSize.Height > 0 && scaledContentHeight > table.ClientSize.Height;
             table.AutoScroll = needsScroll;
-            table.AutoScrollMinSize = needsScroll ? new Size(0, normalContentHeight) : Size.Empty;
+            table.AutoScrollMinSize = needsScroll ? new Size(0, scaledContentHeight) : Size.Empty;
         }
 
         float RowHeightFor(int row)
         {
             if (row >= 0 && row < rowStyles.Length && rowStyles[row].SizeType == SizeType.Absolute)
-                return rowStyles[row].Height;
-            return 90f;
+                return ScaleLogical(host, (int)Math.Ceiling(rowStyles[row].Height));
+            return ScaleLogical(host, 90);
         }
 
         void ConfigureActions(bool compact)
@@ -139,10 +189,10 @@ public static class ResponsiveLayoutHelper
             actionBar.FlowDirection = compact ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
             actionBar.WrapContents = compact;
             actionBar.AutoScroll = compact;
-            actionBar.Padding = compact ? new Padding(0, 8, 0, 4) : new Padding(0, 8, 0, 0);
+            actionBar.Padding = ScaleLogical(host, compact ? new Padding(0, 8, 0, 4) : new Padding(0, 8, 0, 0));
 
             foreach (Control control in actionBar.Controls)
-                control.Margin = compact ? new Padding(0, 0, 8, 8) : new Padding(6, 0, 0, 0);
+                control.Margin = ScaleLogical(host, compact ? new Padding(0, 0, 8, 8) : new Padding(6, 0, 0, 0));
         }
 
         void RestoreNormal()
@@ -159,7 +209,12 @@ public static class ResponsiveLayoutHelper
                 foreach (var style in columnStyles)
                     table.ColumnStyles.Add(new ColumnStyle(style.SizeType, style.Width));
                 foreach (var style in rowStyles)
-                    table.RowStyles.Add(new RowStyle(style.SizeType, style.Height));
+                {
+                    var height = style.SizeType == SizeType.Absolute
+                        ? ScaleLogical(host, (int)Math.Ceiling(style.Height))
+                        : style.Height;
+                    table.RowStyles.Add(new RowStyle(style.SizeType, height));
+                }
 
                 foreach (var cell in cells)
                 {
@@ -254,10 +309,10 @@ public static class ResponsiveLayoutHelper
             actionBar.FlowDirection = compact ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
             actionBar.WrapContents = compact;
             actionBar.AutoScroll = compact;
-            actionBar.Padding = compact ? new Padding(0, 8, 0, 4) : new Padding(0, 8, 0, 0);
+            actionBar.Padding = ScaleLogical(host, compact ? new Padding(0, 8, 0, 4) : new Padding(0, 8, 0, 0));
 
             foreach (Control control in actionBar.Controls)
-                control.Margin = compact ? new Padding(0, 0, 8, 8) : new Padding(6, 0, 0, 0);
+                control.Margin = ScaleLogical(host, compact ? new Padding(0, 0, 8, 8) : new Padding(6, 0, 0, 0));
 
             if (parentTable != null && parentTable.Controls.Contains(actionBar))
             {
@@ -265,7 +320,7 @@ public static class ResponsiveLayoutHelper
                 if (row >= 0 && row < parentTable.RowStyles.Count)
                 {
                     parentTable.RowStyles[row].SizeType = SizeType.Absolute;
-                    parentTable.RowStyles[row].Height = compact ? compactHeight : normalHeight;
+                    parentTable.RowStyles[row].Height = ScaleLogical(host, compact ? compactHeight : normalHeight);
                 }
             }
         }
@@ -283,9 +338,10 @@ public static class ResponsiveLayoutHelper
 
         void Apply()
         {
-            var needsScroll = contentHeight > 0 && table.ClientSize.Height > 0 && contentHeight > table.ClientSize.Height;
+            var scaledContentHeight = ScaleLogical(host, contentHeight);
+            var needsScroll = scaledContentHeight > 0 && table.ClientSize.Height > 0 && scaledContentHeight > table.ClientSize.Height;
             table.AutoScroll = needsScroll;
-            table.AutoScrollMinSize = needsScroll ? new Size(0, contentHeight) : Size.Empty;
+            table.AutoScrollMinSize = needsScroll ? new Size(0, scaledContentHeight) : Size.Empty;
         }
 
         Apply();
@@ -293,17 +349,24 @@ public static class ResponsiveLayoutHelper
         host.Resize += (_, _) => Apply();
     }
 
-    public static Padding PagePaddingFor(Control control) =>
-        IsCompactShell(control) ? new Padding(CompactPagePadding) : new Padding(ThemeSizes.PagePadding);
+    public static Padding PagePaddingFor(Control control)
+    {
+        var logical = IsCompactShell(control) ? CompactPagePadding : ThemeSizes.PagePadding;
+        var scaled = ScaleLogical(control, logical);
+        return new Padding(scaled);
+    }
 
     public static void ApplyTouchFriendlyGrid(DataGridView grid)
     {
-        grid.RowTemplate.Height = TouchGridRowHeight;
-        grid.RowTemplate.MinimumHeight = TouchGridRowHeight;
-        grid.ColumnHeadersHeight = TouchGridHeaderHeight;
+        var rowHeight = ScaleLogical(grid, TouchGridRowHeight);
+        var headerHeight = ScaleLogical(grid, TouchGridHeaderHeight);
+        var horizontalPadding = ScaleLogical(grid, 10);
+        grid.RowTemplate.Height = rowHeight;
+        grid.RowTemplate.MinimumHeight = rowHeight;
+        grid.ColumnHeadersHeight = headerHeight;
         grid.ScrollBars = ScrollBars.Both;
-        grid.DefaultCellStyle.Padding = new Padding(10, 0, 10, 0);
-        grid.ColumnHeadersDefaultCellStyle.Padding = new Padding(10, 0, 10, 0);
+        grid.DefaultCellStyle.Padding = new Padding(horizontalPadding, 0, horizontalPadding, 0);
+        grid.ColumnHeadersDefaultCellStyle.Padding = new Padding(horizontalPadding, 0, horizontalPadding, 0);
     }
 
     public static void WireResponsiveActionBar(
@@ -325,18 +388,18 @@ public static class ResponsiveLayoutHelper
                 actionBar.FlowDirection = compact ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
                 actionBar.WrapContents = compact;
                 actionBar.AutoScroll = compact;
-                actionBar.Padding = compact ? new Padding(0, 6, 0, 4) : new Padding(0, 6, 0, 6);
+                actionBar.Padding = ScaleLogical(host, compact ? new Padding(0, 6, 0, 4) : new Padding(0, 6, 0, 6));
 
                 foreach (Control control in actionBar.Controls)
                 {
                     if (control is ModernButton button)
                     {
-                        button.Margin = compact ? new Padding(0, 0, 8, 8) : new Padding(6, 0, 0, 0);
-                        button.Height = ThemeSizes.ButtonHeight;
+                        button.Margin = ScaleLogical(host, compact ? new Padding(0, 0, 8, 8) : new Padding(6, 0, 0, 0));
+                        button.Height = ScaleLogical(host, ThemeSizes.ButtonHeight);
                     }
                     else
                     {
-                        control.Margin = compact ? new Padding(0, 0, 8, 8) : new Padding(0, 0, 12, 0);
+                        control.Margin = ScaleLogical(host, compact ? new Padding(0, 0, 8, 8) : new Padding(0, 0, 12, 0));
                     }
                 }
             }
@@ -348,13 +411,13 @@ public static class ResponsiveLayoutHelper
             if (actionRowStyle != null)
             {
                 actionRowStyle.SizeType = SizeType.Absolute;
-                actionRowStyle.Height = compact ? compactActionHeight : normalActionHeight;
+                actionRowStyle.Height = ScaleLogical(host, compact ? compactActionHeight : normalActionHeight);
             }
 
             if (toolbarRowStyle != null)
             {
                 toolbarRowStyle.SizeType = SizeType.Absolute;
-                toolbarRowStyle.Height = compact && compactToolbarHeight > 0 ? compactToolbarHeight : normalToolbarHeight;
+                toolbarRowStyle.Height = ScaleLogical(host, compact && compactToolbarHeight > 0 ? compactToolbarHeight : normalToolbarHeight);
             }
         }
 
@@ -367,15 +430,19 @@ public static class ResponsiveLayoutHelper
     {
         void Apply()
         {
-            if (IsCompactModule(host))
+            var compact = IsCompactModule(host);
+            var scaledNormalWidth = ScaleLogical(host, normalWidth);
+            if (compact)
             {
-                searchBox.Width = Math.Max(220, Math.Min(normalWidth, Math.Max(220, host.ClientSize.Width - 48)));
-                searchBox.Margin = new Padding(0, 0, 8, 8);
+                var minimumWidth = ScaleLogical(host, 220);
+                var availableWidth = Math.Max(minimumWidth, host.ClientSize.Width - ScaleLogical(host, 48));
+                searchBox.Width = Math.Max(minimumWidth, Math.Min(scaledNormalWidth, availableWidth));
+                searchBox.Margin = ScaleLogical(host, new Padding(0, 0, 8, 8));
             }
             else
             {
-                searchBox.Width = normalWidth;
-                searchBox.Margin = new Padding(0, 0, 12, 0);
+                searchBox.Width = scaledNormalWidth;
+                searchBox.Margin = ScaleLogical(host, new Padding(0, 0, 12, 0));
             }
         }
 
@@ -420,7 +487,7 @@ public static class ResponsiveLayoutHelper
                     var control = controls[i];
                     var column = i % columns;
                     var row = i / columns;
-                    control.Margin = CompactCardMargin(column, columns, compact);
+                    control.Margin = CompactCardMargin(host, column, columns, compact);
                     table.Controls.Add(control, column, row);
                 }
             }
@@ -430,7 +497,7 @@ public static class ResponsiveLayoutHelper
             }
 
             rowStyle.SizeType = SizeType.Absolute;
-            rowStyle.Height = compact ? compactHeight : normalHeight;
+            rowStyle.Height = ScaleLogical(host, compact ? compactHeight : normalHeight);
         }
 
         Apply();
@@ -445,7 +512,7 @@ public static class ResponsiveLayoutHelper
             var compact = IsCompactModule(host);
             control.Visible = !compact;
             rowStyle.SizeType = SizeType.Absolute;
-            rowStyle.Height = compact ? 0 : normalHeight;
+            rowStyle.Height = compact ? 0 : ScaleLogical(host, normalHeight);
         }
 
         Apply();
@@ -459,14 +526,16 @@ public static class ResponsiveLayoutHelper
         void Apply()
         {
             var compact = IsCompactModule(host);
+            var compactMinimum = ScaleLogical(host, 240);
+            var compactMaximum = ScaleLogical(host, 420);
             var cardWidth = compact
-                ? Math.Max(240, Math.Min(420, Math.Max(240, host.ClientSize.Width - 32)))
-                : 270;
+                ? Math.Max(compactMinimum, Math.Min(compactMaximum, Math.Max(compactMinimum, host.ClientSize.Width - ScaleLogical(host, 32))))
+                : ScaleLogical(host, 270);
 
             foreach (var card in cardsPanel.Controls.OfType<ServiceCard>())
             {
                 card.Width = cardWidth;
-                card.Margin = compact ? new Padding(0, 0, 0, 14) : new Padding(0, 0, 16, 16);
+                card.Margin = ScaleLogical(host, compact ? new Padding(0, 0, 0, 14) : new Padding(0, 0, 16, 16));
             }
         }
 
@@ -480,7 +549,7 @@ public static class ResponsiveLayoutHelper
     {
         void Apply()
         {
-            var width = host.ClientSize.Width;
+            var width = LogicalClientWidth(host);
             if (width <= 0) return;
 
             foreach (var rule in rules)
@@ -495,12 +564,12 @@ public static class ResponsiveLayoutHelper
         host.Resize += (_, _) => Apply();
     }
 
-    private static Padding CompactCardMargin(int column, int columns, bool compact)
+    private static Padding CompactCardMargin(Control host, int column, int columns, bool compact)
     {
-        if (!compact)
-            return new Padding(column == 0 ? 0 : 6, 0, column == columns - 1 ? 0 : 6, 0);
-
-        return new Padding(column == 0 ? 0 : 6, 0, column == columns - 1 ? 0 : 6, 10);
+        var logical = !compact
+            ? new Padding(column == 0 ? 0 : 6, 0, column == columns - 1 ? 0 : 6, 0)
+            : new Padding(column == 0 ? 0 : 6, 0, column == columns - 1 ? 0 : 6, 10);
+        return ScaleLogical(host, logical);
     }
 }
 

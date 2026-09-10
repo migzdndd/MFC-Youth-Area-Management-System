@@ -26,15 +26,9 @@ public sealed class ActivityReportEditorForm : Form
         _id = id;
         Text = id.HasValue ? "Edit Activity Report" : "Add Activity Report";
         StartPosition = FormStartPosition.CenterParent;
-        Size = new Size(740, 720);
-        MinimumSize = new Size(700, 690);
         BackColor = ThemeColors.Background;
         Font = ThemeFonts.Body;
-        Padding = new Padding(24);
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
+        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(740, 720), new Size(440, 520));
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 7, Margin = Padding.Empty, Padding = Padding.Empty };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
@@ -72,6 +66,7 @@ public sealed class ActivityReportEditorForm : Form
         actions.Controls.AddRange(new Control[] { save, cancel });
         root.Controls.Add(actions, 0, 6);
         root.SetColumnSpan(actions, 2);
+        ResponsiveLayoutHelper.WireResponsiveDialogGrid(this, root, actions);
         AcceptButton = save;
         CancelButton = cancel;
 
