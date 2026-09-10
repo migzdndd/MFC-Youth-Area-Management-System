@@ -11,31 +11,13 @@ public sealed class Dashboard : Form
     private Label _pageLabel = null!;
     private Label _versionLabel = null!;
     private readonly Dictionary<string, NavigationButton> _nav = new();
-    private readonly Dictionary<string, string> _navText = new();
-    private readonly ToolTip _navTips = new()
-    {
-        InitialDelay = 350,
-        ReshowDelay = 100,
-        AutoPopDelay = 5000,
-        ShowAlways = true
-    };
-    private TableLayoutPanel? _body;
-    private ColumnStyle? _sidebarColumn;
-    private ColumnStyle? _titleBrandColumn;
-    private RowStyle? _sidebarBrandRow;
-    private RowStyle? _sidebarArtworkRow;
-    private Label? _titleBrandLabel;
-    private Label? _sideBrandTitle;
-    private Label? _sideBrandSubtitle;
-    private Control? _sidebarArtwork;
     private Form? _current;
-    private bool _compactShell;
 
     public Dashboard()
     {
         Text = ApplicationConstants.AppName;
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(900, 680);
+        MinimumSize = new Size(1050, 680);
         Size = new Size(1280, 760);
         FormBorderStyle = FormBorderStyle.None;
         BackColor = ThemeColors.Primary;
@@ -72,8 +54,6 @@ public sealed class Dashboard : Form
         body.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, ThemeSizes.SidebarWidth));
         body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         body.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        _body = body;
-        _sidebarColumn = body.ColumnStyles[0];
         shell.Controls.Add(body, 0, 1);
 
         var sidebar = BuildSidebar();
@@ -127,10 +107,7 @@ public sealed class Dashboard : Form
         };
         versionFooter.Controls.Add(_versionLabel);
 
-        Shown += (_, _) => UpdateResponsiveShell();
-
         ShowPage("Dashboard", new DashboardHomeForm());
-        UpdateResponsiveShell();
     }
 
     private Control BuildTitleBar()
@@ -148,7 +125,6 @@ public sealed class Dashboard : Form
         title.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         title.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 138));
         title.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        _titleBrandColumn = title.ColumnStyles[0];
         title.MouseDown += TitleMouseDown;
         title.DoubleClick += (_, _) => ToggleMaximize();
 
@@ -161,7 +137,6 @@ public sealed class Dashboard : Form
             Font = ThemeFonts.AppBrand,
             ForeColor = ThemeColors.Primary
         };
-        _titleBrandLabel = brand;
         brand.MouseDown += TitleMouseDown;
         brand.DoubleClick += (_, _) => ToggleMaximize();
         title.Controls.Add(brand, 0, 0);
@@ -172,8 +147,7 @@ public sealed class Dashboard : Form
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
             Font = ThemeFonts.BodyBold,
-            ForeColor = ThemeColors.TextSecondary,
-            AutoEllipsis = true
+            ForeColor = ThemeColors.TextSecondary
         };
         _pageLabel.MouseDown += TitleMouseDown;
         _pageLabel.DoubleClick += (_, _) => ToggleMaximize();
@@ -210,8 +184,6 @@ public sealed class Dashboard : Form
         sidebar.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.SidebarBrandHeight));
         sidebar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         sidebar.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.SidebarArtworkHeight));
-        _sidebarBrandRow = sidebar.RowStyles[0];
-        _sidebarArtworkRow = sidebar.RowStyles[2];
 
         var sideBrand = new TableLayoutPanel
         {
@@ -225,18 +197,17 @@ public sealed class Dashboard : Form
         sideBrand.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         sideBrand.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
         sideBrand.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
-        _sideBrandTitle = new Label
+        sideBrand.Controls.Add(new Label
         {
             Text = "MFC YOUTH",
             Dock = DockStyle.Fill,
             ForeColor = Color.White,
-            Font = ThemeFonts.SidebarBrand,
+            Font = new Font("Segoe UI", 16, FontStyle.Bold),
             TextAlign = ContentAlignment.MiddleLeft,
             AutoEllipsis = true,
             Margin = Padding.Empty
-        };
-        sideBrand.Controls.Add(_sideBrandTitle, 0, 0);
-        _sideBrandSubtitle = new Label
+        }, 0, 0);
+        sideBrand.Controls.Add(new Label
         {
             Text = "AREA MANAGEMENT SYSTEM",
             Dock = DockStyle.Fill,
@@ -245,8 +216,7 @@ public sealed class Dashboard : Form
             TextAlign = ContentAlignment.TopLeft,
             AutoEllipsis = true,
             Margin = Padding.Empty
-        };
-        sideBrand.Controls.Add(_sideBrandSubtitle, 0, 1);
+        }, 0, 1);
         sidebar.Controls.Add(sideBrand, 0, 0);
 
         var navHost = new Panel
@@ -269,8 +239,7 @@ public sealed class Dashboard : Form
         // This row always remains at the bottom of the sidebar. Its height is
         // fixed in logical pixels and automatically follows Windows DPI scaling.
         // The artwork control itself preserves the aspect ratio of a custom PNG.
-        _sidebarArtwork = new SidebarArtworkPanel();
-        sidebar.Controls.Add(_sidebarArtwork, 0, 2);
+        sidebar.Controls.Add(new SidebarArtworkPanel(), 0, 2);
 
         return sidebar;
     }
@@ -319,8 +288,6 @@ public sealed class Dashboard : Form
         };
         host.Controls.Add(button);
         _nav[text] = button;
-        _navText[text] = "   " + text;
-        _navTips.SetToolTip(button, text);
     }
 
     public void ShowPage(string name, Form form)
@@ -382,62 +349,6 @@ public sealed class Dashboard : Form
 
     public void Notify(string message, bool error = false) => ToastNotification.Show(this, message, error);
 
-    private void UpdateResponsiveShell()
-    {
-        if (_body == null || _sidebarColumn == null || _titleBrandColumn == null) return;
-
-        var compact = ResponsiveLayoutHelper.IsCompactShell(this);
-        var shellModeChanged = _compactShell != compact;
-        _compactShell = compact;
-
-        var sidebarWidth = compact ? ResponsiveLayoutHelper.CompactSidebarWidth : ThemeSizes.SidebarWidth;
-        _sidebarColumn.Width = sidebarWidth;
-        _titleBrandColumn.Width = sidebarWidth;
-        _content.Padding = ResponsiveLayoutHelper.PagePaddingFor(this);
-
-        if (_titleBrandLabel != null)
-        {
-            _titleBrandLabel.Text = compact ? "MFC" : "MFC YOUTH";
-            _titleBrandLabel.TextAlign = compact ? ContentAlignment.MiddleCenter : ContentAlignment.MiddleLeft;
-            _titleBrandLabel.Padding = compact ? Padding.Empty : new Padding(18, 0, 0, 0);
-        }
-
-        if (_sidebarBrandRow != null)
-            _sidebarBrandRow.Height = compact ? ResponsiveLayoutHelper.CompactSidebarBrandHeight : ThemeSizes.SidebarBrandHeight;
-
-        if (_sidebarArtworkRow != null)
-            _sidebarArtworkRow.Height = compact ? 0 : ThemeSizes.SidebarArtworkHeight;
-
-        if (_sidebarArtwork != null)
-            _sidebarArtwork.Visible = !compact;
-
-        if (_sideBrandTitle != null)
-        {
-            _sideBrandTitle.Text = compact ? "MFC" : "MFC YOUTH";
-            _sideBrandTitle.Font = compact ? ThemeFonts.AppBrand : ThemeFonts.SidebarBrand;
-            _sideBrandTitle.TextAlign = compact ? ContentAlignment.MiddleCenter : ContentAlignment.MiddleLeft;
-            _sideBrandTitle.Padding = compact ? Padding.Empty : new Padding(0);
-        }
-
-        if (_sideBrandSubtitle != null)
-            _sideBrandSubtitle.Visible = !compact;
-
-        foreach (var item in _nav)
-        {
-            var button = item.Value;
-            button.Text = compact ? string.Empty : _navText[item.Key];
-            button.ImageAlign = compact ? ContentAlignment.MiddleCenter : ContentAlignment.MiddleLeft;
-            button.TextImageRelation = compact ? TextImageRelation.Overlay : TextImageRelation.ImageBeforeText;
-            button.TextAlign = compact ? ContentAlignment.MiddleCenter : ContentAlignment.MiddleLeft;
-            button.Padding = compact ? new Padding(ResponsiveLayoutHelper.CompactNavigationPadding) : new Padding(18, 0, 8, 0);
-        }
-
-        if (shellModeChanged)
-            _body.PerformLayout();
-
-        Invalidate(true);
-    }
-
     private void ToggleMaximize()
     {
         if (WindowState == FormWindowState.Maximized)
@@ -460,13 +371,6 @@ public sealed class Dashboard : Form
     {
         base.OnShown(e);
         MaximizedBounds = Screen.FromHandle(Handle).WorkingArea;
-        UpdateResponsiveShell();
-    }
-
-    protected override void OnResize(EventArgs e)
-    {
-        base.OnResize(e);
-        if (IsHandleCreated) UpdateResponsiveShell();
     }
 
     protected override void WndProc(ref Message m)
@@ -497,14 +401,6 @@ public sealed class Dashboard : Form
         }
         else if (point.X < grip) m.Result = (IntPtr)10;
         else if (point.X > Width - grip) m.Result = (IntPtr)11;
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-            _navTips.Dispose();
-
-        base.Dispose(disposing);
     }
 
     [DllImport("user32.dll")]

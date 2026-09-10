@@ -5,7 +5,6 @@ public static class ThemeFonts
     private static readonly string PreferredFamily = ResolvePreferredFamily();
 
     public static readonly Font AppBrand = new(PreferredFamily, 12, FontStyle.Bold);
-    public static readonly Font SidebarBrand = new(PreferredFamily, 16, FontStyle.Bold);
     public static readonly Font PageTitle = new(PreferredFamily, 20, FontStyle.Bold);
     public static readonly Font SectionTitle = new(PreferredFamily, 13, FontStyle.Bold);
     public static readonly Font Body = new(PreferredFamily, 10.5f, FontStyle.Regular);

@@ -59,7 +59,6 @@ public static class UiHelper
         grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
         grid.ColumnHeadersDefaultCellStyle.Font = ThemeFonts.BodyBold;
         grid.ColumnHeadersDefaultCellStyle.Padding = new Padding(8, 0, 8, 0);
-        ResponsiveLayoutHelper.ApplyTouchFriendlyGrid(grid);
         return grid;
     }
 
