@@ -231,16 +231,25 @@ public sealed class ActivityReportsForm : Form
             chapters.AddRange(new ChapterRepository().GetAll().Select(c => new ChapterFilterChoice(c.ChapterID, c.ChapterName)));
             _chapterFilter.DataSource = chapters;
 
-            _typeFilter.Items.Clear();
-            _typeFilter.Items.Add("All Types");
-            var reportTypes = ApplicationConstants.ReportTypes
-                .Concat(_repo.GetAll().Select(r => r.ReportType))
-                .Where(type => !string.IsNullOrWhiteSpace(type))
-                .Select(type => type.Trim())
+            _typeFilter.DisplayMember = nameof(ReportTypeFilterChoice.Text);
+            var existingTypes = _repo.GetAll()
+                .Select(r => r.ReportType?.Trim() ?? string.Empty)
+                .Where(type => type.Length > 0)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(type => type, StringComparer.OrdinalIgnoreCase);
-            foreach (var type in reportTypes) _typeFilter.Items.Add(type);
-            _typeFilter.SelectedIndex = 0;
+                .ToArray();
+
+            var standardTypes = ApplicationConstants.ReportTypes
+                .Select(type => new ReportTypeFilterChoice(type, type));
+
+            var legacyTypes = existingTypes
+                .Where(type => !ApplicationConstants.ReportTypes.Contains(type, StringComparer.OrdinalIgnoreCase))
+                .OrderBy(type => type, StringComparer.OrdinalIgnoreCase)
+                .Select(type => new ReportTypeFilterChoice(type, $"{type} (Legacy)"));
+
+            _typeFilter.DataSource = new[] { new ReportTypeFilterChoice(null, "All Types") }
+                .Concat(standardTypes)
+                .Concat(legacyTypes)
+                .ToList();
 
             _periodFilter.DisplayMember = nameof(PeriodFilterChoice.Text);
             _periodFilter.DataSource = new[]
@@ -265,7 +274,7 @@ public sealed class ActivityReportsForm : Form
     private ActivityReportFilter CurrentFilter()
     {
         var chapterId = (_chapterFilter.SelectedItem as ChapterFilterChoice)?.ChapterID;
-        var type = _typeFilter.SelectedIndex <= 0 ? null : Convert.ToString(_typeFilter.SelectedItem);
+        var type = (_typeFilter.SelectedItem as ReportTypeFilterChoice)?.Value;
         var period = (_periodFilter.SelectedItem as PeriodFilterChoice)?.Period ?? ReportPeriod.AllTime;
         var (from, to) = ResolvePeriod(period, DateTime.Today);
         return new ActivityReportFilter
@@ -473,7 +482,7 @@ public sealed class ActivityReportsForm : Form
         var context = new ActivityReportPdfExportContext(
             Search: string.IsNullOrWhiteSpace(_search.TextValue) ? "None" : _search.TextValue.Trim(),
             Chapter: (_chapterFilter.SelectedItem as ChapterFilterChoice)?.Text ?? "All Chapters",
-            ReportType: _typeFilter.SelectedIndex <= 0 ? "All Types" : Convert.ToString(_typeFilter.SelectedItem) ?? "All Types",
+            ReportType: (_typeFilter.SelectedItem as ReportTypeFilterChoice)?.Text ?? "All Types",
             Period: (_periodFilter.SelectedItem as PeriodFilterChoice)?.Text ?? "All Time",
             GeneratedAt: DateTime.Now);
 
@@ -559,6 +568,7 @@ public sealed class ActivityReportsForm : Form
     };
 
     private sealed record ChapterFilterChoice(long? ChapterID, string Text);
+    private sealed record ReportTypeFilterChoice(string? Value, string Text);
     private sealed record PeriodFilterChoice(ReportPeriod Period, string Text);
     private enum ReportPeriod { AllTime, ThisMonth, Last30Days, ThisYear }
 }

@@ -61,18 +61,20 @@ public sealed class MembersForm : Form
         };
 
         var add = Btn("+ Add Member", 130, ModernButtonStyle.Primary);
+        var view = Btn("View", 82, ModernButtonStyle.Secondary);
         var edit = Btn("Edit", 82, ModernButtonStyle.Secondary);
         var service = Btn("Services", 92, ModernButtonStyle.Secondary);
         var gig = Btn("GIG", 74, ModernButtonStyle.Secondary);
         var del = Btn("Delete", 82, ModernButtonStyle.Danger);
         var refresh = Btn("Refresh", 88, ModernButtonStyle.Ghost);
         add.Click += (_, _) => AddMember();
+        view.Click += (_, _) => OpenDetails();
         edit.Click += (_, _) => EditSelected();
         service.Click += (_, _) => AssignServices();
         gig.Click += (_, _) => OpenGig();
         del.Click += (_, _) => DeleteSelected();
         refresh.Click += (_, _) => LoadRows();
-        actions.Controls.AddRange(new Control[] { add, del, gig, service, edit, refresh });
+        actions.Controls.AddRange(new Control[] { add, del, gig, service, edit, view, refresh });
         tools.Controls.Add(_search, 0, 0);
         tools.Controls.Add(actions, 0, 1);
         ResponsiveLayoutHelper.WireResponsiveActionBar(this, actions, tools.RowStyles[1], root.RowStyles[1], normalToolbarHeight: ThemeSizes.ToolbarSearchHeight + ThemeSizes.ToolbarActionsHeight + 12, compactToolbarHeight: ThemeSizes.ToolbarSearchHeight + ResponsiveLayoutHelper.CompactToolbarActionsHeight + ResponsiveLayoutHelper.CompactToolbarGap);
@@ -167,8 +169,7 @@ public sealed class MembersForm : Form
     {
         var member = Selected();
         if (member == null) return;
-        ModalHelper.Show(this, () => new MemberDetailsForm(member.MemberID, _dashboard), "Open Member Details");
-        LoadRows();
+        ModalHelper.Show(this, () => new MemberDetailsForm(member.MemberID), "Open Member Details");
     }
 
     private void AssignServices()

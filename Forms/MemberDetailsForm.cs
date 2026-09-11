@@ -1,3 +1,4 @@
+using MFCYouthAreaManagementSystem.Models;
 using MFCYouthAreaManagementSystem.Repositories;
 using MFCYouthAreaManagementSystem.UI.Controls;
 using MFCYouthAreaManagementSystem.UI.Theme;
@@ -5,21 +6,23 @@ using MFCYouthAreaManagementSystem.Utilities;
 
 namespace MFCYouthAreaManagementSystem.Forms;
 
+/// <summary>
+/// Read-only Member profile view. Editing, Service assignment, GIG management, and
+/// deletion intentionally remain separate workflows on the Members page.
+/// </summary>
 public sealed class MemberDetailsForm : Form
 {
     private readonly long _memberId;
-    private readonly Dashboard _dashboard;
     private readonly Panel _content = new() { Dock = DockStyle.Fill };
 
-    public MemberDetailsForm(long memberId, Dashboard dashboard)
+    public MemberDetailsForm(long memberId)
     {
         _memberId = memberId;
-        _dashboard = dashboard;
         Text = "Member Details";
         StartPosition = FormStartPosition.CenterParent;
         BackColor = ThemeColors.Background;
         Font = ThemeFonts.Body;
-        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(720, 690), new Size(520, 520));
+        ResponsiveLayoutHelper.ConfigureResponsiveDialog(this, new Size(780, 760), new Size(500, 520));
         Controls.Add(_content);
         LoadMember();
     }
@@ -34,10 +37,14 @@ public sealed class MemberDetailsForm : Form
             var member = new MemberRepository().GetById(_memberId);
             if (member == null)
             {
+                CustomDialog.Show(this, "Member Not Found", "This Member no longer exists or could not be loaded.", true);
                 DialogResult = DialogResult.Abort;
                 Close();
                 return;
             }
+
+            var contributions = LoadContributionsSafely();
+            var totalContribution = LoadGigTotalSafely(contributions);
 
             var root = new TableLayoutPanel
             {
@@ -48,108 +55,14 @@ public sealed class MemberDetailsForm : Form
                 Padding = Padding.Empty
             };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 108));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
             _content.Controls.Add(root);
 
-            var firstInitial = string.IsNullOrWhiteSpace(member.FirstName) ? '?' : char.ToUpperInvariant(member.FirstName[0]);
-            var lastInitial = string.IsNullOrWhiteSpace(member.LastName) ? '?' : char.ToUpperInvariant(member.LastName[0]);
-
-            var identity = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 2,
-                Margin = Padding.Empty,
-                Padding = new Padding(0, 8, 0, 8)
-            };
-            identity.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 88));
-            identity.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            identity.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
-            identity.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
-
-            var avatarHost = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
-            var avatar = new MemberAvatar
-            {
-                Initials = $"{firstInitial}{lastInitial}",
-                Anchor = AnchorStyles.Left | AnchorStyles.Top
-            };
-            avatar.Location = new Point(0, 6);
-            avatarHost.Controls.Add(avatar);
-            identity.Controls.Add(avatarHost, 0, 0);
-            identity.SetRowSpan(avatarHost, 2);
-
-            identity.Controls.Add(new Label
-            {
-                Text = member.FullName,
-                Dock = DockStyle.Fill,
-                Font = ThemeFonts.PageTitle,
-                ForeColor = ThemeColors.TextPrimary,
-                TextAlign = ContentAlignment.BottomLeft,
-                AutoEllipsis = true,
-                Margin = new Padding(4, 0, 0, 0)
-            }, 1, 0);
-            identity.Controls.Add(new Label
-            {
-                Text = $"{member.Status}  •  {member.ChapterName}",
-                Dock = DockStyle.Fill,
-                Font = ThemeFonts.Body,
-                ForeColor = ThemeColors.TextSecondary,
-                TextAlign = ContentAlignment.TopLeft,
-                AutoEllipsis = true,
-                Margin = new Padding(5, 2, 0, 0)
-            }, 1, 1);
-            root.Controls.Add(identity, 0, 0);
-
-            var info = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 5,
-                AutoScroll = true,
-                Margin = Padding.Empty,
-                Padding = new Padding(0, 8, 0, 8)
-            };
-            info.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            info.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-            info.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
-            info.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
-            info.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
-            info.RowStyles.Add(new RowStyle(SizeType.Absolute, 132));
-            info.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
-
-            AddInfo(info, "Birth Date", FormattingHelper.Date(member.BirthDate), 0, 0);
-            AddInfo(info, "Age", FormattingHelper.Age(member.BirthDate).ToString(), 1, 0);
-            AddInfo(info, "Contact Number", member.ContactNumber, 0, 1);
-            AddInfo(info, "Email Address", string.IsNullOrWhiteSpace(member.EmailAddress) ? "Not provided" : member.EmailAddress!, 1, 1);
-            AddInfo(info, "Services", member.Services, 0, 2, 2);
-            AddInfo(info, "Address", member.Address, 0, 3, 2, wrap: true);
-            var total = new GIGContributionRepository().GetTotalForMember(_memberId);
-            AddInfo(info, "GIG Total", FormattingHelper.Peso(total), 0, 4, 2);
-            root.Controls.Add(info, 0, 1);
-
-            var actions = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.RightToLeft,
-                WrapContents = false,
-                Padding = new Padding(0, 12, 0, 8),
-                Margin = Padding.Empty
-            };
-            var close = Btn("Close", 82, ModernButtonStyle.Secondary);
-            var edit = Btn("Edit Member", 110, ModernButtonStyle.Primary);
-            var services = Btn("Assign Services", 120, ModernButtonStyle.Secondary);
-            var gig = Btn("GIG Tracker", 105, ModernButtonStyle.Secondary);
-            var delete = Btn("Delete", 86, ModernButtonStyle.Danger);
-            close.Click += (_, _) => Close();
-            edit.Click += (_, _) => EditMember();
-            services.Click += (_, _) => AssignServices();
-            gig.Click += (_, _) => OpenGig();
-            delete.Click += (_, _) => DeleteMember(member.FullName);
-            actions.Controls.AddRange(new Control[] { close, delete, edit, services, gig });
-            root.Controls.Add(actions, 0, 2);
-            ResponsiveLayoutHelper.WireResponsiveDialogActions(this, actions, root, normalHeight: 70, compactHeight: 132);
+            root.Controls.Add(BuildIdentity(member), 0, 0);
+            root.Controls.Add(BuildScrollableBody(member, contributions, totalContribution), 0, 1);
+            root.Controls.Add(BuildActions(), 0, 2);
 
             UiHelper.ScaleNewControlForCurrentDpi(root, _content);
         }
@@ -173,6 +86,250 @@ public sealed class MemberDetailsForm : Form
         }
     }
 
+    private Control BuildIdentity(Member member)
+    {
+        var identity = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 2,
+            Margin = Padding.Empty,
+            Padding = new Padding(0, 8, 0, 8)
+        };
+        identity.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 88));
+        identity.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        identity.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
+        identity.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
+
+        var firstInitial = string.IsNullOrWhiteSpace(member.FirstName) ? '?' : char.ToUpperInvariant(member.FirstName[0]);
+        var lastInitial = string.IsNullOrWhiteSpace(member.LastName) ? '?' : char.ToUpperInvariant(member.LastName[0]);
+
+        var avatarHost = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
+        var avatar = new MemberAvatar
+        {
+            Initials = $"{firstInitial}{lastInitial}",
+            Anchor = AnchorStyles.Left | AnchorStyles.Top,
+            Location = new Point(0, 6)
+        };
+        avatarHost.Controls.Add(avatar);
+        identity.Controls.Add(avatarHost, 0, 0);
+        identity.SetRowSpan(avatarHost, 2);
+
+        identity.Controls.Add(new Label
+        {
+            Text = Fallback(member.FullName, "Unnamed Member"),
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.PageTitle,
+            ForeColor = ThemeColors.TextPrimary,
+            TextAlign = ContentAlignment.BottomLeft,
+            AutoEllipsis = true,
+            Margin = new Padding(4, 0, 0, 0)
+        }, 1, 0);
+
+        identity.Controls.Add(new Label
+        {
+            Text = $"{Fallback(member.Status, "Status Not Provided")}  •  {ChapterText(member)}",
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.Body,
+            ForeColor = ThemeColors.TextSecondary,
+            TextAlign = ContentAlignment.TopLeft,
+            AutoEllipsis = true,
+            Margin = new Padding(5, 2, 0, 0)
+        }, 1, 1);
+
+        return identity;
+    }
+
+    private Control BuildScrollableBody(Member member, List<GIGContribution> contributions, decimal totalContribution)
+    {
+        var scrollHost = new Panel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            BackColor = ThemeColors.Background
+        };
+
+        var body = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            ColumnCount = 1,
+            RowCount = 3,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            BackColor = ThemeColors.Background
+        };
+        body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        body.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 276));
+
+        body.Controls.Add(BuildInformationGrid(member, totalContribution), 0, 0);
+        body.Controls.Add(new Label
+        {
+            Text = "GIG Contribution History",
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.BodyBold,
+            ForeColor = ThemeColors.TextPrimary,
+            TextAlign = ContentAlignment.BottomLeft,
+            Margin = Padding.Empty,
+            Padding = new Padding(0, 10, 0, 6)
+        }, 0, 1);
+        body.Controls.Add(BuildGigHistory(contributions), 0, 2);
+
+        scrollHost.Controls.Add(body);
+        scrollHost.Resize += (_, _) => body.MaximumSize = new Size(Math.Max(0, scrollHost.ClientSize.Width - 2), 0);
+        return scrollHost;
+    }
+
+    private Control BuildInformationGrid(Member member, decimal totalContribution)
+    {
+        var info = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            ColumnCount = 2,
+            RowCount = 9,
+            Margin = Padding.Empty,
+            Padding = new Padding(0, 8, 0, 4),
+            BackColor = ThemeColors.Background
+        };
+        info.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        info.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        info.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
+        info.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
+        info.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
+        info.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
+        info.RowStyles.Add(new RowStyle(SizeType.Absolute, 86));
+        info.RowStyles.Add(new RowStyle(SizeType.Absolute, 104));
+        info.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
+        info.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
+        info.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
+
+        AddInfo(info, "Full Name", Fallback(member.FullName, "Unnamed Member"), 0, 0, 2);
+        AddInfo(info, "First Name", Fallback(member.FirstName, "Not Provided"), 0, 1);
+        AddInfo(info, "Middle Name", Fallback(member.MiddleName, "No Middle Name Provided"), 1, 1);
+        AddInfo(info, "Last Name", Fallback(member.LastName, "Not Provided"), 0, 2);
+        AddInfo(info, "Current Age", FormattingHelper.Age(member.BirthDate).ToString(), 1, 2);
+        AddInfo(info, "Birth Date", FormattingHelper.Date(member.BirthDate), 0, 3);
+        AddInfo(info, "Status", Fallback(member.Status, "Status Not Provided"), 1, 3);
+        AddInfo(info, "Contact Number", Fallback(member.ContactNumber, "No Contact Number Provided"), 0, 4);
+        AddInfo(info, "Email Address", Fallback(member.EmailAddress, "No Email Provided"), 1, 4);
+        AddInfo(info, "Address", Fallback(member.Address, "No Address Provided"), 0, 5, 2, wrap: true);
+        AddInfo(info, "Assigned Chapter", ChapterText(member), 0, 6, 2);
+        AddInfo(info, "Assigned Services", ServicesText(member), 0, 7, 2, wrap: true);
+        AddInfo(info, "Total GIG Contributions", FormattingHelper.Peso(totalContribution), 0, 8, 2);
+
+        return info;
+    }
+
+    private Control BuildGigHistory(List<GIGContribution> contributions)
+    {
+        var host = new Panel
+        {
+            Dock = DockStyle.Fill,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            BackColor = ThemeColors.Surface
+        };
+
+        if (contributions.Count == 0)
+        {
+            host.Controls.Add(new Label
+            {
+                Text = "No GIG contributions recorded",
+                Dock = DockStyle.Fill,
+                Font = ThemeFonts.Body,
+                ForeColor = ThemeColors.TextSecondary,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = new Padding(16)
+            });
+            return host;
+        }
+
+        var grid = UiHelper.CreateGrid();
+        grid.TabStop = false;
+        grid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Date",
+            HeaderText = "Date",
+            DataPropertyName = "Date",
+            Width = 150
+        });
+        grid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Amount",
+            HeaderText = "Amount",
+            DataPropertyName = "Amount",
+            Width = 130
+        });
+        grid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Note",
+            HeaderText = "Note",
+            DataPropertyName = "Note",
+            AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+            FillWeight = 180
+        });
+        grid.DataSource = contributions.Select(item => new
+        {
+            Date = FormattingHelper.Date(item.ContributionDate),
+            Amount = FormattingHelper.Peso(item.Amount),
+            Note = Fallback(item.Remarks, "No Note")
+        }).ToList();
+        host.Controls.Add(grid);
+        return host;
+    }
+
+    private Control BuildActions()
+    {
+        var actions = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.RightToLeft,
+            WrapContents = false,
+            Padding = new Padding(0, 10, 0, 6),
+            Margin = Padding.Empty,
+            BackColor = ThemeColors.Background
+        };
+        var close = Btn("Close", 88, ModernButtonStyle.Primary);
+        close.Click += (_, _) => Close();
+        actions.Controls.Add(close);
+        return actions;
+    }
+
+    private List<GIGContribution> LoadContributionsSafely()
+    {
+        try
+        {
+            return new GIGContributionRepository().GetByMember(_memberId);
+        }
+        catch (Exception ex)
+        {
+            // The profile itself should remain viewable even if a legacy/bad GIG row
+            // cannot be parsed. The repository error is still recorded for diagnosis.
+            AppLogger.Error("Load GIG history in Member Details", ex);
+            return new List<GIGContribution>();
+        }
+    }
+
+    private decimal LoadGigTotalSafely(List<GIGContribution> loadedContributions)
+    {
+        try
+        {
+            return new GIGContributionRepository().GetTotalForMember(_memberId);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Load GIG total in Member Details", ex);
+            return loadedContributions.Sum(item => item.Amount);
+        }
+    }
+
     private static ModernButton Btn(string text, int width, ModernButtonStyle style) => new()
     {
         Text = text,
@@ -189,7 +346,8 @@ public sealed class MemberDetailsForm : Form
             ColumnCount = 1,
             RowCount = 2,
             Padding = new Padding(0, 7, 16, 7),
-            Margin = Padding.Empty
+            Margin = Padding.Empty,
+            BackColor = ThemeColors.Background
         };
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         panel.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.FieldLabelHeight));
@@ -222,41 +380,17 @@ public sealed class MemberDetailsForm : Form
         if (span > 1) table.SetColumnSpan(panel, span);
     }
 
-    private void EditMember()
-    {
-        if (ModalHelper.Show(this, () => new MemberEditorForm(_memberId), "Open Edit Member from Details") != DialogResult.OK) return;
-        _dashboard.Notify("Member updated successfully.");
-        LoadMember();
-    }
+    private static string Fallback(string? value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
-    private void AssignServices()
-    {
-        if (ModalHelper.Show(this, () => new AssignServicesForm(_memberId), "Open Assign Services from Details") != DialogResult.OK) return;
-        _dashboard.Notify("Services updated.");
-        LoadMember();
-    }
+    private static string ChapterText(Member member) =>
+        string.IsNullOrWhiteSpace(member.ChapterName) ? "No Chapter Assigned" : member.ChapterName.Trim();
 
-    private void OpenGig()
+    private static string ServicesText(Member member)
     {
-        ModalHelper.Show(this, () => new GIGTrackerForm(_memberId, _dashboard), "Open GIG Tracker from Details");
-        LoadMember();
-    }
-
-    private void DeleteMember(string fullName)
-    {
-        if (!CustomDialog.Confirm(this, "Delete Member?", $"{fullName} will be permanently removed. Related Service assignments and GIG contributions will also be removed.\n\nThis action cannot be undone.", "Delete Member", true)) return;
-        try
-        {
-            new MemberRepository().Delete(_memberId);
-            DashboardTrendStore.CaptureCurrentTotals();
-            _dashboard.Notify("Member deleted.");
-            DialogResult = DialogResult.OK;
-            Close();
-        }
-        catch (Exception ex)
-        {
-            AppLogger.Error("Delete Member from details", ex);
-            CustomDialog.Show(this, "Delete Failed", ex.Message, true);
-        }
+        if (string.IsNullOrWhiteSpace(member.Services) ||
+            string.Equals(member.Services.Trim(), "No Service Assigned", StringComparison.OrdinalIgnoreCase))
+            return "No Services Assigned";
+        return member.Services.Trim();
     }
 }
