@@ -91,7 +91,7 @@ public sealed class ChapterMembersForm : Form
     private void Open()
     {
         if (_grid.CurrentRow?.DataBoundItem is not Member member) return;
-        ModalHelper.Show(this, () => new MemberDetailsForm(member.MemberID, _dashboard), "Open Member Details from Chapter");
+        ModalHelper.Show(this, () => new MemberDetailsForm(member.MemberID), "Open Member Details from Chapter");
         LoadRows();
     }
 }

@@ -26,26 +26,41 @@ JOIN Chapter c ON c.ChapterID = m.ChapterID";
 
     public List<Member> GetAll() => Search(string.Empty);
 
-    public List<Member> Search(string search)
+    public List<Member> Search(string search, string? status = null, long? chapterId = null)
     {
         var cleanSearch = search.Trim();
+        var cleanStatus = string.IsNullOrWhiteSpace(status) ? null : status.Trim();
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = SelectBase + @"
-WHERE @Search = '' OR
-      m.FirstName LIKE @Like ESCAPE '\' OR IFNULL(m.MiddleName, '') LIKE @Like ESCAPE '\' OR m.LastName LIKE @Like ESCAPE '\' OR
+WHERE (@Status IS NULL OR m.Status = @Status COLLATE NOCASE)
+  AND (@ChapterID IS NULL OR m.ChapterID = @ChapterID)
+  AND (
+      @Search = '' OR
+      m.FirstName LIKE @Like ESCAPE '\' OR
+      IFNULL(m.MiddleName, '') LIKE @Like ESCAPE '\' OR
+      m.LastName LIKE @Like ESCAPE '\' OR
       TRIM(m.FirstName || ' ' || IFNULL(m.MiddleName || ' ', '') || m.LastName) LIKE @Like ESCAPE '\' OR
-      c.ChapterName LIKE @Like ESCAPE '\' OR m.ContactNumber LIKE @Like ESCAPE '\' OR IFNULL(m.EmailAddress, '') LIKE @Like ESCAPE '\' OR
-      m.Address LIKE @Like ESCAPE '\' OR m.Status LIKE @Like ESCAPE '\' OR
+      TRIM(m.FirstName || ' ' || m.LastName) LIKE @Like ESCAPE '\' OR
+      TRIM(m.LastName || ' ' || m.FirstName || CASE WHEN IFNULL(TRIM(m.MiddleName), '') = '' THEN '' ELSE ' ' || TRIM(m.MiddleName) END) LIKE @Like ESCAPE '\' OR
+      c.ChapterName LIKE @Like ESCAPE '\' OR
+      m.ContactNumber LIKE @Like ESCAPE '\' OR
+      IFNULL(m.EmailAddress, '') LIKE @Like ESCAPE '\' OR
+      m.Address LIKE @Like ESCAPE '\' OR
+      m.Status LIKE @Like ESCAPE '\' OR
       EXISTS (
           SELECT 1
           FROM MemberService msSearch
           JOIN Service sSearch ON sSearch.ServiceID = msSearch.ServiceID
-          WHERE msSearch.MemberID = m.MemberID AND sSearch.ServiceName LIKE @Like ESCAPE '\'
+          WHERE msSearch.MemberID = m.MemberID
+            AND sSearch.ServiceName LIKE @Like ESCAPE '\'
       )
+  )
 ORDER BY m.LastName COLLATE NOCASE, m.FirstName COLLATE NOCASE, m.MemberID;";
         command.Parameters.AddWithValue("@Search", cleanSearch);
         command.Parameters.AddWithValue("@Like", SearchPatternHelper.Contains(cleanSearch));
+        command.Parameters.AddWithValue("@Status", cleanStatus is null ? DBNull.Value : cleanStatus);
+        command.Parameters.AddWithValue("@ChapterID", chapterId.HasValue ? chapterId.Value : DBNull.Value);
         return ReadMembers(command);
     }
 

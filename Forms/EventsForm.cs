@@ -12,6 +12,7 @@ public sealed class EventsForm : Form
     private readonly EventRepository _repo = new();
     private readonly DataGridView _grid = UiHelper.CreateGrid();
     private readonly ModernTextBox _search = new() { Placeholder = "Search events by name, venue, or description..." };
+    private readonly ModernComboBox _timingFilter = new();
     private readonly EmptyStatePanel _empty = new("No Events Yet", "Create your first Event to begin managing registrations and participants.");
 
     public EventsForm(Dashboard dashboard)
@@ -48,9 +49,28 @@ public sealed class EventsForm : Form
         tools.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         tools.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.ToolbarSearchHeight));
         tools.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.ToolbarActionsHeight));
+        var filters = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        filters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72));
+        filters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
+        filters.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
         _search.Dock = DockStyle.Fill;
-        _search.Margin = new Padding(0, 3, 0, 3);
-        tools.Controls.Add(_search, 0, 0);
+        _search.Margin = new Padding(0, 3, 6, 3);
+        filters.Controls.Add(_search, 0, 0);
+
+        _timingFilter.Dock = DockStyle.Fill;
+        _timingFilter.Margin = new Padding(6, 3, 0, 3);
+        _timingFilter.Items.AddRange(new object[] { "All Events", "Upcoming", "Past" });
+        _timingFilter.SelectedIndex = 0;
+        filters.Controls.Add(_timingFilter, 1, 0);
+        tools.Controls.Add(filters, 0, 0);
 
         var actions = new FlowLayoutPanel
         {
@@ -77,6 +97,7 @@ public sealed class EventsForm : Form
         root.Controls.Add(tools, 0, 1);
 
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "DateTime", HeaderText = "Date & Time", DataPropertyName = "EventDateTime", Width = 170, DefaultCellStyle = { Format = "MMM d, yyyy h:mm tt" } });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", HeaderText = "Status", DataPropertyName = "TimingStatus", Width = 92 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Event", HeaderText = "Event", DataPropertyName = "EventName", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, MinimumWidth = 180 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Venue", HeaderText = "Venue", DataPropertyName = "Venue", Width = 170 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Fee", HeaderText = "Fee", DataPropertyName = "RegistrationFee", Width = 105, DefaultCellStyle = { Format = "C2", FormatProvider = System.Globalization.CultureInfo.GetCultureInfo("en-PH"), NullValue = "—" } });
@@ -87,6 +108,13 @@ public sealed class EventsForm : Form
             new ResponsiveGridColumnRule("Registered", 720),
             new ResponsiveGridColumnRule("Attended", 680),
             new ResponsiveGridColumnRule("Venue", 620));
+        _grid.CellFormatting += (_, e) =>
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0 || _grid.Columns[e.ColumnIndex].Name != "Status") return;
+            var status = Convert.ToString(e.Value);
+            e.CellStyle.ForeColor = status == "Upcoming" ? ThemeColors.ActionBlue : ThemeColors.TextSecondary;
+            e.CellStyle.Font = ThemeFonts.SmallBold;
+        };
         _grid.DoubleClick += (_, _) => View();
 
         var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
@@ -95,6 +123,7 @@ public sealed class EventsForm : Form
         root.Controls.Add(content, 0, 2);
 
         UiSearchDebouncer.Bind(this, _search, LoadRows);
+        _timingFilter.SelectedIndexChanged += (_, _) => LoadRows();
         Shown += (_, _) => LoadRows();
     }
 
@@ -112,8 +141,40 @@ public sealed class EventsForm : Form
     {
         try
         {
+            var now = DateTime.Now;
             var rows = _repo.GetAll(_search.TextValue);
+            var timing = _timingFilter.SelectedIndex <= 0
+                ? "All Events"
+                : Convert.ToString(_timingFilter.SelectedItem) ?? "All Events";
+
+            rows = timing switch
+            {
+                "Upcoming" => rows
+                    .Where(areaEvent => areaEvent.EventDateTime >= now)
+                    .OrderBy(areaEvent => areaEvent.EventDateTime)
+                    .ThenBy(areaEvent => areaEvent.EventID)
+                    .ToList(),
+                "Past" => rows
+                    .Where(areaEvent => areaEvent.EventDateTime < now)
+                    .OrderByDescending(areaEvent => areaEvent.EventDateTime)
+                    .ThenByDescending(areaEvent => areaEvent.EventID)
+                    .ToList(),
+                _ => rows
+                    .OrderBy(areaEvent => areaEvent.EventDateTime < now ? 1 : 0)
+                    .ThenBy(areaEvent => areaEvent.EventDateTime < now ? -areaEvent.EventDateTime.Ticks : areaEvent.EventDateTime.Ticks)
+                    .ToList()
+            };
+
             _empty.ResetMessage();
+            if (rows.Count == 0 && timing != "All Events")
+            {
+                _empty.ShowMessage(
+                    timing == "Upcoming" ? "No Upcoming Events" : "No Past Events",
+                    timing == "Upcoming"
+                        ? "Future Events will appear here once they are scheduled."
+                        : "Completed or elapsed Events will appear here automatically.");
+            }
+
             _grid.DataSource = rows;
             _grid.Visible = rows.Count > 0;
             _empty.Visible = rows.Count == 0;
