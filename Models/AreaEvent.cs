@@ -12,4 +12,7 @@ public sealed class AreaEvent
     public int RegisteredCount { get; set; }
     public int PaidCount { get; set; }
     public decimal TotalRegistrationFees { get; set; }
+
+    public bool IsUpcoming => EventDateTime >= DateTime.Now;
+    public string TimingStatus => IsUpcoming ? "Upcoming" : "Past";
 }

@@ -73,8 +73,7 @@ public sealed class ActivityReportEditorForm : Form
         _chapter.DisplayMember = "ChapterName";
         _chapter.ValueMember = "ChapterID";
         _chapter.DataSource = new ChapterRepository().GetAll();
-        _type.Items.AddRange(ApplicationConstants.ReportTypes.Cast<object>().ToArray());
-        if (_type.Items.Count > 0) _type.SelectedIndex = 0;
+        LoadReportTypeChoices();
         if (id.HasValue) LoadReport(id.Value);
 
         foreach (var textBox in new[] { _title, _activity, _prepared, _description })
@@ -114,6 +113,35 @@ public sealed class ActivityReportEditorForm : Form
         return panel;
     }
 
+    private void LoadReportTypeChoices(string? existingType = null)
+    {
+        var choices = new List<ReportTypeChoice>
+        {
+            new(null, "Select Report Type")
+        };
+
+        choices.AddRange(ApplicationConstants.ReportTypes
+            .Select(type => new ReportTypeChoice(type, type)));
+
+        var cleanExistingType = existingType?.Trim();
+        if (!string.IsNullOrWhiteSpace(cleanExistingType) &&
+            !ApplicationConstants.ReportTypes.Contains(cleanExistingType, StringComparer.OrdinalIgnoreCase))
+        {
+            choices.Add(new ReportTypeChoice(cleanExistingType, $"{cleanExistingType} (Legacy)"));
+        }
+
+        _type.DisplayMember = nameof(ReportTypeChoice.Text);
+        _type.DataSource = choices;
+        _type.SelectedIndex = 0;
+
+        if (!string.IsNullOrWhiteSpace(cleanExistingType))
+        {
+            var matchIndex = choices.FindIndex(choice =>
+                string.Equals(choice.Value, cleanExistingType, StringComparison.OrdinalIgnoreCase));
+            if (matchIndex >= 0) _type.SelectedIndex = matchIndex;
+        }
+    }
+
     private void LoadReport(long id)
     {
         var report = _repo.GetById(id) ?? throw new InvalidOperationException("Report not found.");
@@ -128,9 +156,7 @@ public sealed class ActivityReportEditorForm : Form
             _canPreserveDeletedChapter = true;
             _error.Text = $"The original Chapter ({report.ChapterName}) was deleted. It will remain on this Report unless you choose another Chapter.";
         }
-        if (!_type.Items.Cast<object>().Any(item => string.Equals(Convert.ToString(item), report.ReportType, StringComparison.OrdinalIgnoreCase)))
-            _type.Items.Add(report.ReportType);
-        _type.SelectedItem = _type.Items.Cast<object>().FirstOrDefault(item => string.Equals(Convert.ToString(item), report.ReportType, StringComparison.OrdinalIgnoreCase));
+        LoadReportTypeChoices(report.ReportType);
         _activity.TextValue = report.Activity;
         _date.Value = report.ReportDate;
         _prepared.TextValue = report.PreparedBy;
@@ -149,7 +175,8 @@ public sealed class ActivityReportEditorForm : Form
             ValidationHelper.Clean(_description.TextValue)
         };
         var selectedChapterId = _chapter.SelectedValue == null ? (long?)null : Convert.ToInt64(_chapter.SelectedValue);
-        if (values.Any(string.IsNullOrWhiteSpace) || _type.SelectedItem == null ||
+        var reportType = (_type.SelectedItem as ReportTypeChoice)?.Value;
+        if (values.Any(string.IsNullOrWhiteSpace) || string.IsNullOrWhiteSpace(reportType) ||
             (!selectedChapterId.HasValue && !_canPreserveDeletedChapter))
         {
             _error.Text = "Please complete all required Report fields.";
@@ -164,7 +191,7 @@ public sealed class ActivityReportEditorForm : Form
                 ReportID = _id ?? 0,
                 Title = values[0],
                 ChapterID = selectedChapterId,
-                ReportType = Convert.ToString(_type.SelectedItem)!,
+                ReportType = reportType,
                 Activity = values[1],
                 ReportDate = _date.Value.Date,
                 PreparedBy = values[2],
@@ -182,6 +209,8 @@ public sealed class ActivityReportEditorForm : Form
             button.Enabled = true;
         }
     }
+
+    private sealed record ReportTypeChoice(string? Value, string Text);
 
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {

@@ -140,13 +140,20 @@ public sealed class MemberEditorForm : Form
     {
         _error.Text = string.Empty;
         var first = ValidationHelper.Clean(_first.TextValue);
+        var middle = ValidationHelper.Clean(_middle.TextValue);
         var last = ValidationHelper.Clean(_last.TextValue);
         var contact = ValidationHelper.Clean(_contact.TextValue);
+        var email = ValidationHelper.Clean(_email.TextValue);
         var address = ValidationHelper.Clean(_address.TextValue);
 
-        if (first.Length == 0 || last.Length == 0 || contact.Length == 0 || address.Length == 0 || _chapter.SelectedValue == null || _status.SelectedItem == null)
+        if (first.Length == 0)
         {
-            _error.Text = "Please complete all required fields.";
+            _error.Text = "First Name is required.";
+            return;
+        }
+        if (last.Length == 0)
+        {
+            _error.Text = "Last Name is required.";
             return;
         }
         if (_birth.Value.Date > DateTime.Today)
@@ -154,31 +161,52 @@ public sealed class MemberEditorForm : Form
             _error.Text = "Birth Date cannot be in the future.";
             return;
         }
+        if (contact.Length == 0)
+        {
+            _error.Text = "Contact Number is required.";
+            return;
+        }
         if (!ValidationHelper.IsValidContact(contact))
         {
             _error.Text = "Contact Number must contain exactly 11 digits.";
             return;
         }
-        if (!ValidationHelper.IsValidOptionalEmail(_email.TextValue))
+        if (!ValidationHelper.IsValidOptionalEmail(email))
         {
             _error.Text = "Enter a valid email address or leave Email blank.";
+            return;
+        }
+        if (address.Length == 0 || _chapter.SelectedValue == null || _status.SelectedItem == null)
+        {
+            _error.Text = "Please complete all required fields.";
             return;
         }
 
         button.Enabled = false;
         try
         {
+            if (_repo.ContactNumberExists(contact, _id))
+            {
+                _error.Text = "Contact Number is already used by another Member.";
+                return;
+            }
+            if (email.Length > 0 && _repo.EmailAddressExists(email, _id))
+            {
+                _error.Text = "Email Address is already used by another Member.";
+                return;
+            }
+
             var member = new Member
             {
                 MemberID = _id ?? 0,
                 FirstName = first,
-                MiddleName = ValidationHelper.Clean(_middle.TextValue),
+                MiddleName = middle.Length == 0 ? null : middle,
                 LastName = last,
                 BirthDate = _birth.Value.Date,
                 ContactNumber = contact,
-                EmailAddress = ValidationHelper.Clean(_email.TextValue),
+                EmailAddress = email.Length == 0 ? null : email,
                 Address = address,
-                Status = Convert.ToString(_status.SelectedItem)!,
+                Status = ValidationHelper.Clean(Convert.ToString(_status.SelectedItem)),
                 ChapterID = Convert.ToInt64(_chapter.SelectedValue)
             };
             if (_id.HasValue) _repo.Update(member); else _repo.Add(member);
@@ -190,7 +218,10 @@ public sealed class MemberEditorForm : Form
         {
             AppLogger.Error("Save Member", ex);
             _error.Text = "Could not save the Member. " + ex.Message;
-            button.Enabled = true;
+        }
+        finally
+        {
+            if (DialogResult != DialogResult.OK) button.Enabled = true;
         }
     }
 

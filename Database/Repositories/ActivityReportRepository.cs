@@ -24,7 +24,7 @@ LEFT JOIN Chapter c ON c.ChapterID = r.ChapterID
 WHERE (@Search = '' OR r.Title LIKE @Like ESCAPE '\' OR COALESCE(c.ChapterName, r.ChapterNameSnapshot) LIKE @Like ESCAPE '\' OR r.ReportType LIKE @Like ESCAPE '\' OR
        r.Activity LIKE @Like ESCAPE '\' OR r.PreparedBy LIKE @Like ESCAPE '\' OR r.Description LIKE @Like ESCAPE '\')
   AND (@ChapterID IS NULL OR r.ChapterID = @ChapterID)
-  AND (@ReportType = '' OR r.ReportType = @ReportType COLLATE NOCASE)
+  AND (@ReportType = '' OR TRIM(r.ReportType) = @ReportType COLLATE NOCASE)
   AND (@DateFrom = '' OR r.ReportDate >= @DateFrom)
   AND (@DateTo = '' OR r.ReportDate <= @DateTo)
 ORDER BY r.ReportDate DESC, r.ReportID DESC;";

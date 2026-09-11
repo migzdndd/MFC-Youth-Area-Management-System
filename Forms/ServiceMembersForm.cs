@@ -100,7 +100,7 @@ public sealed class ServiceMembersForm : Form
     private void Open()
     {
         if (_grid.CurrentRow?.DataBoundItem is not Member member) return;
-        ModalHelper.Show(this, () => new MemberDetailsForm(member.MemberID, _dashboard), "Open Member Details from Service");
+        ModalHelper.Show(this, () => new MemberDetailsForm(member.MemberID), "Open Member Details from Service");
         LoadRows();
     }
 }

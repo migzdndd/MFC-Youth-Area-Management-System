@@ -1,4 +1,5 @@
 using System.Drawing.Drawing2D;
+using MFCYouthAreaManagementSystem.Models;
 using MFCYouthAreaManagementSystem.Repositories;
 using MFCYouthAreaManagementSystem.UI.Controls;
 using MFCYouthAreaManagementSystem.UI.Theme;
@@ -13,7 +14,10 @@ public sealed class DashboardHomeForm : Form
     private readonly DashboardMetricCell _services = new("Services", "Available service roles", Color.FromArgb(94, 117, 177));
     private readonly DashboardMetricCell _reports = new("Activity Reports", "Reports currently filed", ThemeColors.Success);
     private readonly DashboardMetricCell _events = new("Events", "Events currently recorded", ThemeColors.Warning);
+    private readonly TableLayoutPanel _upcomingEventsList = CreateEventListHost();
+    private readonly TableLayoutPanel _pastEventsList = CreateEventListHost();
     private TableLayoutPanel _summaryMetrics = null!;
+    private const int EventPreviewLimit = 4;
 
     public DashboardHomeForm()
     {
@@ -44,6 +48,9 @@ public sealed class DashboardHomeForm : Form
             0);
 
         root.Controls.Add(BuildSummary(), 0, 1);
+        var eventOverview = BuildEventOverview();
+        root.Controls.Add(eventOverview, 0, 2);
+
         ResponsiveLayoutHelper.WireResponsiveTableLayout(
             this,
             _summaryMetrics,
@@ -52,6 +59,14 @@ public sealed class DashboardHomeForm : Form
             compactColumns: 2,
             normalHeight: 232,
             compactHeight: 410);
+        ResponsiveLayoutHelper.WireResponsiveTableLayout(
+            this,
+            eventOverview,
+            root.RowStyles[2],
+            normalColumns: 2,
+            compactColumns: 1,
+            normalHeight: 330,
+            compactHeight: 590);
         UpdateSummaryDividers();
         HandleCreated += (_, _) => UpdateSummaryDividers();
         Resize += (_, _) => UpdateSummaryDividers();
@@ -147,6 +162,226 @@ public sealed class DashboardHomeForm : Form
     }
 
 
+    private TableLayoutPanel BuildEventOverview()
+    {
+        var overview = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = Padding.Empty,
+            Padding = new Padding(0, 14, 0, 0),
+            BackColor = ThemeColors.Background
+        };
+        overview.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        overview.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        overview.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        overview.Controls.Add(
+            BuildEventPreviewCard(
+                "Upcoming Events",
+                "Next scheduled Area events",
+                _upcomingEventsList),
+            0,
+            0);
+
+        overview.Controls.Add(
+            BuildEventPreviewCard(
+                "Past Events",
+                "Most recently completed Area events",
+                _pastEventsList),
+            1,
+            0);
+
+        return overview;
+    }
+
+    private static Control BuildEventPreviewCard(string title, string subtitle, TableLayoutPanel listHost)
+    {
+        var card = new DashboardSummarySurface
+        {
+            Dock = DockStyle.Fill,
+            Margin = Padding.Empty,
+            Padding = new Padding(18, 14, 18, 14)
+        };
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            BackColor = Color.Transparent
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        layout.Controls.Add(new Label
+        {
+            Text = title,
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.SectionTitle,
+            ForeColor = ThemeColors.Primary,
+            TextAlign = ContentAlignment.MiddleLeft,
+            AutoEllipsis = true,
+            Margin = Padding.Empty
+        }, 0, 0);
+
+        layout.Controls.Add(new Label
+        {
+            Text = subtitle,
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.Small,
+            ForeColor = ThemeColors.TextSecondary,
+            TextAlign = ContentAlignment.TopLeft,
+            AutoEllipsis = true,
+            Margin = Padding.Empty
+        }, 0, 1);
+
+        layout.Controls.Add(listHost, 0, 2);
+        card.Controls.Add(layout);
+        return card;
+    }
+
+    private static TableLayoutPanel CreateEventListHost() => new()
+    {
+        Dock = DockStyle.Fill,
+        ColumnCount = 1,
+        RowCount = 1,
+        Margin = Padding.Empty,
+        Padding = new Padding(0, 6, 0, 0),
+        BackColor = Color.Transparent,
+        AutoScroll = true
+    };
+
+    private static Control BuildEventPreviewRow(AreaEvent areaEvent)
+    {
+        var row = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 2,
+            Margin = new Padding(0, 0, 0, 6),
+            Padding = new Padding(12, 7, 12, 7),
+            BackColor = ThemeColors.Background
+        };
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 62));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38));
+        row.RowStyles.Add(new RowStyle(SizeType.Percent, 52));
+        row.RowStyles.Add(new RowStyle(SizeType.Percent, 48));
+
+        row.Controls.Add(new Label
+        {
+            Text = areaEvent.EventName,
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.BodyBold,
+            ForeColor = ThemeColors.TextPrimary,
+            TextAlign = ContentAlignment.BottomLeft,
+            AutoEllipsis = true,
+            Margin = Padding.Empty
+        }, 0, 0);
+
+        row.Controls.Add(new Label
+        {
+            Text = areaEvent.EventDateTime.ToString("MMM d, yyyy h:mm tt"),
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.SmallBold,
+            ForeColor = areaEvent.IsUpcoming ? ThemeColors.ActionBlue : ThemeColors.TextSecondary,
+            TextAlign = ContentAlignment.BottomRight,
+            AutoEllipsis = true,
+            Margin = Padding.Empty
+        }, 1, 0);
+
+        row.Controls.Add(new Label
+        {
+            Text = string.IsNullOrWhiteSpace(areaEvent.Venue) ? "Venue not specified" : areaEvent.Venue,
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.Small,
+            ForeColor = ThemeColors.TextSecondary,
+            TextAlign = ContentAlignment.TopLeft,
+            AutoEllipsis = true,
+            Margin = Padding.Empty
+        }, 0, 1);
+
+        row.Controls.Add(new Label
+        {
+            Text = areaEvent.RegisteredCount == 1 ? "1 registered" : $"{areaEvent.RegisteredCount} registered",
+            Dock = DockStyle.Fill,
+            Font = ThemeFonts.Small,
+            ForeColor = ThemeColors.TextSecondary,
+            TextAlign = ContentAlignment.TopRight,
+            AutoEllipsis = true,
+            Margin = Padding.Empty
+        }, 1, 1);
+
+        return row;
+    }
+
+    private static void PopulateEventList(TableLayoutPanel host, IReadOnlyList<AreaEvent> events, string emptyText)
+    {
+        host.SuspendLayout();
+        try
+        {
+            host.Controls.Clear();
+            host.RowStyles.Clear();
+            host.ColumnStyles.Clear();
+            host.ColumnCount = 1;
+            host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+            if (events.Count == 0)
+            {
+                host.RowCount = 1;
+                host.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+                host.Controls.Add(new Label
+                {
+                    Text = emptyText,
+                    Dock = DockStyle.Fill,
+                    Font = ThemeFonts.Body,
+                    ForeColor = ThemeColors.TextSecondary,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    AutoEllipsis = true,
+                    Margin = Padding.Empty
+                }, 0, 0);
+                return;
+            }
+
+            host.RowCount = events.Count;
+            for (var i = 0; i < events.Count; i++)
+            {
+                host.RowStyles.Add(new RowStyle(SizeType.Percent, 100f / events.Count));
+                host.Controls.Add(BuildEventPreviewRow(events[i]), 0, i);
+            }
+        }
+        finally
+        {
+            host.ResumeLayout(true);
+        }
+    }
+
+    private void UpdateEventOverview(IReadOnlyCollection<AreaEvent> events)
+    {
+        var now = DateTime.Now;
+        var upcoming = events
+            .Where(areaEvent => areaEvent.EventDateTime >= now)
+            .OrderBy(areaEvent => areaEvent.EventDateTime)
+            .ThenBy(areaEvent => areaEvent.EventID)
+            .Take(EventPreviewLimit)
+            .ToList();
+
+        var past = events
+            .Where(areaEvent => areaEvent.EventDateTime < now)
+            .OrderByDescending(areaEvent => areaEvent.EventDateTime)
+            .ThenByDescending(areaEvent => areaEvent.EventID)
+            .Take(EventPreviewLimit)
+            .ToList();
+
+        PopulateEventList(_upcomingEventsList, upcoming, "No upcoming Events scheduled.");
+        PopulateEventList(_pastEventsList, past, "No past Events recorded yet.");
+    }
+
     private void UpdateSummaryDividers()
     {
         var columns = ResponsiveLayoutHelper.IsCompactModule(this) ? 2 : 5;
@@ -168,13 +403,15 @@ public sealed class DashboardHomeForm : Form
             var chapters = new ChapterRepository().GetTotalCount();
             var services = new ServiceRepository().GetTotalCount();
             var reports = new ActivityReportRepository().GetTotalCount();
-            var events = new EventRepository().GetTotalCount();
+            var eventRows = new EventRepository().GetAll();
+            var events = eventRows.Count;
 
             _members.Value = members.ToString();
             _chapters.Value = chapters.ToString();
             _services.Value = services.ToString();
             _reports.Value = reports.ToString();
             _events.Value = events.ToString();
+            UpdateEventOverview(eventRows);
 
             try
             {
@@ -211,6 +448,8 @@ public sealed class DashboardHomeForm : Form
         {
             AppLogger.Error("Refresh Dashboard", ex);
             _members.Value = _chapters.Value = _services.Value = _reports.Value = _events.Value = "—";
+            PopulateEventList(_upcomingEventsList, Array.Empty<AreaEvent>(), "Upcoming Events could not load.");
+            PopulateEventList(_pastEventsList, Array.Empty<AreaEvent>(), "Past Events could not load.");
             _members.ClearTrend();
             _chapters.ClearTrend();
             _services.ClearTrend();

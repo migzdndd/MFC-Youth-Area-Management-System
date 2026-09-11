@@ -7,7 +7,7 @@ public static class ApplicationConstants
     public const string ReleaseChannel = "beta.1";
     public const string AppVersion = "v" + AppVersionNumber + "-" + ReleaseChannel;
     public static readonly string[] MemberStatuses = { "Active", "Inactive" };
-    public static readonly string[] ReportTypes = { "Household", "Chapter Assembly", "Youth Camp", "Area Event" };
+    public static readonly string[] ReportTypes = { "Core Household", "Household", "Assembly", "Fellowship" };
     public static readonly string[] PaymentStatuses = { "Paid", "Not Paid" };
     public static readonly string[] DefaultServices =
     {
