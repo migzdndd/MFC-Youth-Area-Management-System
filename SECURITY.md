@@ -6,7 +6,8 @@ The following versions are currently supported with security updates and bug fix
 
 | Version | Supported |
 | ------- | --------- |
-| v2.0.3-beta.1 | ✅ |
+| v2.0.3-beta.2 | ✅ |
+| v2.0.3-beta.1 | ❌ |
 | v2.0.3-beta | ❌ |
 | v2.0.2 | ✅ |
 | v2.0.1-fixed | ✅ |
@@ -17,7 +18,7 @@ The following versions are currently supported with security updates and bug fix
 
 Only the latest major release currently receives updates, bug fixes, and security-related improvements.
 
-Users are strongly encouraged to upgrade to **Version 2.0.3-beta.1** to receive the latest fixes, improvements, and supported functionality.
+Users are strongly encouraged to upgrade to **Version 2.0.3-beta.2** to receive the latest fixes, improvements, and supported functionality.
 
 Older Public Beta releases are retained for historical purposes but are no longer actively maintained.
 

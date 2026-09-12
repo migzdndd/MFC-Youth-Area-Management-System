@@ -1,7 +1,7 @@
-MFC Youth Area Management System v2.0.3-beta.1 - Public Beta Installer
+MFC Youth Area Management System v2.0.3-beta.2 - Public Beta Installer
 
 Installer source:
-  Installer/MFCYouthSetup_v2.0.3-beta.1.iss
+  Installer/MFCYouthSetup_v2.0.3-beta.2.iss
 
 Required artwork:
   Installer/MFCYouth-Main.ico
@@ -15,11 +15,11 @@ Recommended build path:
   Run Build-Release.cmd from the repository root.
 
 The release script verifies:
-  - ProductVersion 2.0.3-beta.1
-  - FileVersion 2.0.3.1
+  - ProductVersion 2.0.3-beta.2
+  - FileVersion 2.0.3.2
   - Required self-contained .NET runtime files
   - SQLite.Interop.dll
   - Approved installer artwork hashes
 
 Installer output:
-  dist/installer/MFCYouthSetup_v2.0.3-beta.1.exe
+  dist/installer/MFCYouthSetup_v2.0.3-beta.2.exe

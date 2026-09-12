@@ -112,8 +112,10 @@ public sealed class EventsForm : Form
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0 || _grid.Columns[e.ColumnIndex].Name != "Status") return;
             var status = Convert.ToString(e.Value);
-            e.CellStyle.ForeColor = status == "Upcoming" ? ThemeColors.ActionBlue : ThemeColors.TextSecondary;
-            e.CellStyle.Font = ThemeFonts.SmallBold;
+            var cellStyle = e.CellStyle;
+            if (cellStyle == null) return;
+            cellStyle.ForeColor = status == "Upcoming" ? ThemeColors.ActionBlue : ThemeColors.TextSecondary;
+            cellStyle.Font = ThemeFonts.SmallBold;
         };
         _grid.DoubleClick += (_, _) => View();
 

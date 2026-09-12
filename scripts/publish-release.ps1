@@ -7,8 +7,8 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 $Project = Join-Path $Root 'MFC Youth Area Management System.csproj'
 $ReleaseBaseVersion = '2.0.3'
-$ReleaseChannel = 'beta.1'
-$ReleaseRevision = '1'
+$ReleaseChannel = 'beta.2'
+$ReleaseRevision = '2'
 $ReleaseVersion = "$ReleaseBaseVersion-$ReleaseChannel"
 $ReleaseDisplayVersion = "v$ReleaseVersion"
 $PublishDir = Join-Path $Root 'dist\publish-win-x64'
@@ -85,6 +85,15 @@ $DatabaseInitializerText = Get-Content -LiteralPath $DatabaseInitializerPath -Ra
 if ($DatabaseInitializerText -notmatch [regex]::Escape('MigrateLegacyDatabaseIfNeeded();') -or
     $DatabaseInitializerText -notmatch [regex]::Escape('"MFC Youth Database", "MFCYouth.db"')) {
     throw 'Legacy database preservation check is missing from application startup.'
+}
+
+$DatabaseMigratorPath = Join-Path $Root 'Database\DatabaseMigrator.cs'
+$DatabaseMigratorText = Get-Content -LiteralPath $DatabaseMigratorPath -Raw
+if ($DatabaseMigratorText -notmatch [regex]::Escape('public const int CurrentVersion = 5;')) {
+    throw 'Database schema version mismatch. v2.0.3-beta.2 expects schema version 5.'
+}
+if ($DatabaseMigratorText -notmatch [regex]::Escape('ChapterID INTEGER NULL')) {
+    throw 'Schema v5 nullable Member Chapter migration is missing.'
 }
 
 $InstallerText = Get-Content -LiteralPath $InstallerScript -Raw

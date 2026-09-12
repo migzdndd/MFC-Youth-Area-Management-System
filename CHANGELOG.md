@@ -1,6 +1,33 @@
 # Changelog
 
-## In Development - Mobile Compatibility
+## v2.0.3-beta.2 - Mobile Access & Member/Chapter Workflow Checkpoint
+
+### Mobile Compatibility
+- Completed the responsive/DPI-aware Windows-side Mobile Access Phases 1–4.
+- Preserved compact 760x600 behavior, responsive dialogs, action bars, and smaller-screen table handling.
+
+### Members
+- Added a dedicated read-only Member Details view with identity, contact, Chapter, Services, current age, GIG total, and GIG contribution history.
+- Improved Member search across first/middle/last/full name, email, contact number, Chapter, and assigned Service.
+- Added combined Status and Chapter filters plus Clear Filters.
+- Strengthened Add/Edit validation for required names, future Birth Dates, 11-digit Contact Numbers, optional email format, duplicate Contact Numbers, and case-insensitive duplicate Emails.
+
+### Chapters
+- Added support for genuinely unassigned Members by making `Member.ChapterID` nullable.
+- Added a searchable checkbox multi-select **+ Add Members** workflow that only shows unassigned Members.
+- Added guarded transactional assignment so stale dialogs cannot silently move Members already assigned elsewhere.
+
+### Database
+- Advanced SQLite schema from version 4 to version 5.
+- Preserved existing Member IDs, Chapter assignments, Service assignments, GIG contributions, Reports, Events, Event participants, and timestamps during migration.
+- Retained compatibility detection for the short-lived dashboard-only schema-v5 test build.
+
+### Release Audit
+- Removed the stale unused `DashboardSnapshotRepository` that referenced the retired `DashboardMonthlySnapshot` table.
+- Hardened nullable Event grid formatting and Activity Report PDF rendering paths.
+- Synchronized application, manifest, release script, installer, and documentation metadata to `v2.0.3-beta.2` / file version `2.0.3.2`.
+
+## Detailed Mobile Compatibility Work (included in v2.0.3-beta.2)
 
 ### Phase 1
 - Added a responsive dashboard shell and compact sidebar.
@@ -17,7 +44,7 @@
 - Completed Windows-side mobile compatibility.
 
 
-## In Development - Reports & Analytics Improvements
+## Detailed Reports & Analytics Work (included in v2.0.3-beta.2)
 
 ### Reports & Analytics Phase 1
 

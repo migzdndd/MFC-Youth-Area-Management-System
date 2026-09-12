@@ -151,6 +151,11 @@ public static class ActivityReportPdfExporter
         {
             _pageNumber++;
             var graphics = e.Graphics;
+            if (graphics == null)
+            {
+                e.HasMorePages = false;
+                return;
+            }
             graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
 
             var bounds = new RectangleF(

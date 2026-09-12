@@ -1,17 +1,17 @@
 # MFC Youth Area Management System
 
-**Current release:** `v2.0.3-beta.1`
+**Current release:** `v2.0.3-beta.2`
 
-### v2.0.3-beta.1 maintenance focus
+### v2.0.3-beta.2 release focus
 
-- Adds a SQLite integrity check before schema migration.
-- Separates database-startup failures from unexpected runtime/UI errors.
-- Improves exception logging, including inner-exception details.
-- Synchronizes application, installer, manifest, and release-build version metadata.
-- Tightens Event participant Middle Initial validation.
-- Adds month-over-month green/red Dashboard Summary trend indicators.
-- Displays `v2.0.3-beta.1` in the permanent bottom-right application footer.
-- Keeps dashboard trend history outside the core SQLite database.
+- Includes the completed Windows-side Mobile Access Phases 1–4 with responsive, DPI-aware layouts.
+- Adds a dedicated read-only Member Details view with Services and GIG contribution history.
+- Improves Member search with combined Search, Status, and Chapter filters.
+- Strengthens Member validation, including duplicate Contact Number and case-insensitive duplicate Email checks.
+- Allows Members to exist without a Chapter and adds direct multi-member assignment from the Chapters page.
+- Advances the SQLite schema from version 4 to version 5 without intentionally deleting existing records.
+- Preserves installer database backup/migration safeguards and the existing offline-first Windows workflow.
+- Displays `v2.0.3-beta.2` in the permanent bottom-right application footer.
 
 A custom-designed, fully offline Windows desktop management application for organizing MFC Youth Area records.
 
@@ -94,7 +94,7 @@ The script:
 1. Clears stale `bin`, `obj`, and release publish output.
 2. Restores packages for `win-x64`.
 3. Publishes a self-contained Windows x64 application.
-4. Verifies the executable reports `2.0.3-beta.1` and file version `2.0.3.1`.
+4. Verifies the executable reports `2.0.3-beta.2` and file version `2.0.3.2`.
 5. Verifies the .NET runtime is actually present in the publish folder.
 6. Compiles the Inno Setup installer automatically when Inno Setup 6 is installed.
 
@@ -113,7 +113,7 @@ dotnet publish ".\MFC Youth Area Management System.csproj" `
 Expected installer output:
 
 ```text
-dist\installer\MFCYouthSetup_v2.0.3-beta.1.exe
+dist\installer\MFCYouthSetup_v2.0.3-beta.2.exe
 ```
 
 ## Local Database
@@ -132,6 +132,10 @@ Logs are written, when possible, to:
 
 The database is not stored beside the executable and should not be committed to source control.
 
+**Current database schema:** `5`
+
+Existing supported schema-v4 databases are migrated to schema v5 on startup. The v5 migration preserves existing Member IDs, Chapter assignments, Service assignments, GIG contributions, Reports, Events, and Event participants while making `Member.ChapterID` optional.
+
 ## Database Overview
 
 ### Chapter
@@ -140,7 +144,7 @@ Stores unique Chapter names. Chapter names use case-insensitive uniqueness. A Ch
 
 ### Member
 
-Stores Member identity and contact fields, Birth Date, Status, and the required Chapter foreign key. Contact Number is stored as `TEXT` so leading zeroes are preserved.
+Stores Member identity and contact fields, Birth Date, Status, and an optional Chapter foreign key. Members may remain unassigned until they are added to a Chapter. Contact Number is stored as `TEXT` so leading zeroes are preserved.
 
 ### Service
 
