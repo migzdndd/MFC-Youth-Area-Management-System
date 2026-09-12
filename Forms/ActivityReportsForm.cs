@@ -15,10 +15,12 @@ public sealed class ActivityReportsForm : Form
     private readonly ModernComboBox _chapterFilter = new();
     private readonly ModernComboBox _typeFilter = new();
     private readonly ModernComboBox _periodFilter = new();
-    private readonly StatCard _resultsCard = CreateStatCard("Matching Reports", "Reports shown below", ThemeColors.ActionBlue);
-    private readonly StatCard _monthCard = CreateStatCard("This Month", "Current month in these results", ThemeColors.Success);
-    private readonly StatCard _chaptersCard = CreateStatCard("Chapters", "Represented in these results", ThemeColors.Accent);
-    private readonly StatCard _typesCard = CreateStatCard("Report Types", "Represented in these results", ThemeColors.Warning);
+    private readonly Label _overviewCountTitle = OverviewLabel("Total Reports", ThemeFonts.BodyBold, ThemeColors.TextSecondary);
+    private readonly Label _overviewCountValue = OverviewLabel("0", OverviewValueFont(), ThemeColors.TextPrimary);
+    private readonly Label _overviewCountCaption = OverviewLabel("All recorded activity reports", ThemeFonts.Body, ThemeColors.TextSecondary);
+    private readonly Label _overviewMonthValue = OverviewLabel("0", OverviewValueFont(), ThemeColors.TextPrimary);
+    private readonly Label _overviewLatestValue = OverviewLabel("—", OverviewValueFont(), ThemeColors.TextPrimary);
+    private readonly Label _overviewLatestCaption = OverviewLabel("No reports recorded yet", ThemeFonts.Body, ThemeColors.TextSecondary);
     private readonly ReportAnalyticsCard _monthlyChart = new("Monthly Activity", "Report activity across the latest six months in view", ReportChartKind.VerticalBars, ThemeColors.ActionBlue);
     private readonly ReportAnalyticsCard _typeChart = new("Report Type Mix", "Most common report types in the selected results", ReportChartKind.HorizontalBars, ThemeColors.Warning);
     private readonly ReportAnalyticsCard _chapterChart = new("Chapter Activity", "Most active chapters in the selected results", ReportChartKind.HorizontalBars, ThemeColors.Success);
@@ -40,24 +42,24 @@ public sealed class ActivityReportsForm : Form
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6, Margin = Padding.Empty, Padding = Padding.Empty };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.PageHeaderHeight));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 126));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 114));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 246));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, ThemeSizes.ToolbarActionsHeight + 12));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
 
-        root.Controls.Add(new PageHeader("Activity Reports & Analytics", "Review activity reports, filter the records you need, and see an instant summary of the selected data."), 0, 0);
-        var summaryCards = BuildSummaryCards();
+        root.Controls.Add(new PageHeader("Activity Reports & Analytics", "Review and manage activity reports, filter the records you need, and explore reporting trends."), 0, 0);
+        var overview = BuildActivityOverview();
         var filters = BuildFilters();
         var charts = BuildAnalyticsCharts();
         var actions = BuildActions();
-        root.Controls.Add(summaryCards, 0, 1);
+        root.Controls.Add(overview, 0, 1);
         root.Controls.Add(filters, 0, 2);
         root.Controls.Add(charts, 0, 3);
         root.Controls.Add(actions, 0, 4);
-        if (summaryCards is TableLayoutPanel summaryLayout)
-            ResponsiveLayoutHelper.WireResponsiveTableLayout(this, summaryLayout, root.RowStyles[1], normalColumns: 4, compactColumns: 2, normalHeight: 126, compactHeight: 224);
+        if (overview is TableLayoutPanel overviewLayout)
+            ResponsiveLayoutHelper.WireResponsiveTableLayout(this, overviewLayout, root.RowStyles[1], normalColumns: 3, compactColumns: 1, normalHeight: 114, compactHeight: 252);
         if (filters is TableLayoutPanel filterLayout)
             ResponsiveLayoutHelper.WireResponsiveTableLayout(this, filterLayout, root.RowStyles[2], normalColumns: 4, compactColumns: 2, normalHeight: 82, compactHeight: 154);
         ResponsiveLayoutHelper.WireCompactRowVisibility(this, charts, root.RowStyles[3], normalHeight: 246);
@@ -89,28 +91,78 @@ public sealed class ActivityReportsForm : Form
         Shown += (_, _) => LoadRows();
     }
 
-    private Control BuildSummaryCards()
+    private Control BuildActivityOverview()
     {
-        var cards = new TableLayoutPanel
+        var overview = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 4,
+            ColumnCount = 3,
             RowCount = 1,
-            Padding = new Padding(0, 4, 0, 10),
-            Margin = Padding.Empty
+            Padding = new Padding(18, 12, 18, 12),
+            Margin = new Padding(0, 4, 0, 10),
+            BackColor = Color.White,
+            BorderStyle = BorderStyle.FixedSingle
         };
-        for (var i = 0; i < 4; i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        cards.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        overview.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.333f));
+        overview.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.333f));
+        overview.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.334f));
+        overview.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        var allCards = new[] { _resultsCard, _monthCard, _chaptersCard, _typesCard };
-        for (var i = 0; i < allCards.Length; i++)
-        {
-            allCards[i].Dock = DockStyle.Fill;
-            allCards[i].Margin = new Padding(i == 0 ? 0 : 6, 0, i == allCards.Length - 1 ? 0 : 6, 0);
-            cards.Controls.Add(allCards[i], i, 0);
-        }
-        return cards;
+        overview.Controls.Add(BuildOverviewMetric(_overviewCountTitle, _overviewCountValue, _overviewCountCaption, 0), 0, 0);
+        overview.Controls.Add(BuildOverviewMetric(
+            OverviewLabel("This Month", ThemeFonts.BodyBold, ThemeColors.TextSecondary),
+            _overviewMonthValue,
+            OverviewLabel("Reports dated in the current month", ThemeFonts.Body, ThemeColors.TextSecondary),
+            18), 1, 0);
+        overview.Controls.Add(BuildOverviewMetric(
+            OverviewLabel("Latest Report", ThemeFonts.BodyBold, ThemeColors.TextSecondary),
+            _overviewLatestValue,
+            _overviewLatestCaption,
+            18), 2, 0);
+        return overview;
     }
+
+    private static Control BuildOverviewMetric(Label title, Label value, Label caption, int leftPadding)
+    {
+        var metric = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(leftPadding, 0, 8, 0),
+            Margin = Padding.Empty,
+            BackColor = Color.White
+        };
+        metric.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
+        metric.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        metric.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        foreach (var label in new[] { title, value, caption })
+        {
+            label.Dock = DockStyle.Fill;
+            label.Margin = Padding.Empty;
+            label.TextAlign = ContentAlignment.MiddleLeft;
+            label.AutoEllipsis = true;
+        }
+        caption.TextAlign = ContentAlignment.TopLeft;
+
+        metric.Controls.Add(title, 0, 0);
+        metric.Controls.Add(value, 0, 1);
+        metric.Controls.Add(caption, 0, 2);
+        return metric;
+    }
+
+    private static Label OverviewLabel(string text, Font font, Color color) => new()
+    {
+        Text = text,
+        Font = font,
+        ForeColor = color,
+        BackColor = Color.Transparent,
+        AutoSize = false
+    };
+
+    private static Font OverviewValueFont() =>
+        new(ThemeFonts.BodyBold.FontFamily, 16f, FontStyle.Bold);
 
     private Control BuildFilters()
     {
@@ -146,9 +198,9 @@ public sealed class ActivityReportsForm : Form
             Margin = Padding.Empty,
             BackColor = ThemeColors.Background
         };
-        charts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 36));
-        charts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
-        charts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
+        charts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34));
+        charts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28));
+        charts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38));
         charts.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         var cards = new[] { _monthlyChart, _typeChart, _chapterChart };
@@ -325,7 +377,8 @@ public sealed class ActivityReportsForm : Form
         try
         {
             var rows = _repo.GetAll(CurrentFilter());
-            UpdateAnalytics(rows);
+            var totalReportCount = HasActiveFilters() ? _repo.GetAll().Count : rows.Count;
+            UpdateAnalytics(rows, totalReportCount);
             _grid.DataSource = rows;
 
             _matchingCount = rows.Count;
@@ -351,7 +404,7 @@ public sealed class ActivityReportsForm : Form
             _matchingCount = 0;
             _grid.DataSource = null;
             _grid.Visible = false;
-            UpdateAnalytics(Array.Empty<ActivityReport>());
+            UpdateAnalytics(Array.Empty<ActivityReport>(), 0);
             _empty.ShowMessage("Activity Reports Could Not Load", "The Report list is temporarily unavailable. Try refreshing again.");
             _empty.Visible = true;
             _empty.BringToFront();
@@ -388,14 +441,41 @@ public sealed class ActivityReportsForm : Form
         if (_clearFiltersButton != null) _clearFiltersButton.Enabled = HasActiveFilters();
     }
 
-    private void UpdateAnalytics(IReadOnlyCollection<ActivityReport> rows)
+    private void UpdateAnalytics(IReadOnlyCollection<ActivityReport> rows, int totalReportCount)
     {
         var today = DateTime.Today;
         var monthStart = new DateTime(today.Year, today.Month, 1);
-        _resultsCard.Value = rows.Count.ToString();
-        _monthCard.Value = rows.Count(r => r.ReportDate.Date >= monthStart && r.ReportDate.Date <= today).ToString();
-        _chaptersCard.Value = rows.Select(r => r.ChapterName.Trim()).Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Count().ToString();
-        _typesCard.Value = rows.Select(r => r.ReportType.Trim()).Where(t => t.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Count().ToString();
+        var filtersActive = HasActiveFilters();
+
+        _overviewCountTitle.Text = filtersActive ? "Matching Reports" : "Total Reports";
+        _overviewCountValue.Text = filtersActive ? $"{rows.Count} of {totalReportCount}" : totalReportCount.ToString();
+        _overviewCountCaption.Text = filtersActive ? "Reports matching the current filters" : "All recorded activity reports";
+
+        _overviewMonthValue.Text = rows
+            .Count(r => r.ReportDate.Date >= monthStart && r.ReportDate.Date <= today)
+            .ToString();
+
+        var latest = rows
+            .OrderByDescending(r => r.ReportDate.Date)
+            .ThenByDescending(r => r.ReportID)
+            .FirstOrDefault();
+
+        if (latest == null)
+        {
+            _overviewLatestValue.Text = "—";
+            _overviewLatestCaption.Text = filtersActive
+                ? "No report matches the current filters"
+                : "No reports recorded yet";
+        }
+        else
+        {
+            _overviewLatestValue.Text = latest.ReportDate.ToString(
+                "MMM d, yyyy",
+                System.Globalization.CultureInfo.InvariantCulture);
+            _overviewLatestCaption.Text = string.IsNullOrWhiteSpace(latest.Title)
+                ? "Untitled report"
+                : latest.Title.Trim();
+        }
 
         var anchor = rows.Count > 0 ? rows.Max(r => r.ReportDate.Date) : today;
         var anchorMonth = new DateTime(anchor.Year, anchor.Month, 1);
@@ -559,13 +639,6 @@ public sealed class ActivityReportsForm : Form
         return base.ProcessCmdKey(ref msg, keyData);
     }
 
-    private static StatCard CreateStatCard(string title, string caption, Color accent) => new()
-    {
-        Title = title,
-        Caption = caption,
-        Value = "0",
-        AccentColor = accent
-    };
 
     private sealed record ChapterFilterChoice(long? ChapterID, string Text);
     private sealed record ReportTypeFilterChoice(string? Value, string Text);

@@ -9,11 +9,11 @@ namespace MFCYouthAreaManagementSystem.Forms;
 
 public sealed class DashboardHomeForm : Form
 {
-    private readonly DashboardMetricCell _members = new("Total Members", "People currently on record", ThemeColors.Accent);
-    private readonly DashboardMetricCell _chapters = new("Chapters", "Registered chapters", Color.FromArgb(65, 125, 184));
-    private readonly DashboardMetricCell _services = new("Services", "Available service roles", Color.FromArgb(94, 117, 177));
-    private readonly DashboardMetricCell _reports = new("Activity Reports", "Reports currently filed", ThemeColors.Success);
-    private readonly DashboardMetricCell _events = new("Events", "Events currently recorded", ThemeColors.Warning);
+    private readonly DashboardMetricCell _members = new("M", "Total Members", "People currently on record", ThemeColors.Accent);
+    private readonly DashboardMetricCell _chapters = new("C", "Chapters", "Registered chapters", Color.FromArgb(65, 125, 184));
+    private readonly DashboardMetricCell _services = new("S", "Services", "Available service roles", Color.FromArgb(94, 117, 177));
+    private readonly DashboardMetricCell _reports = new("R", "Activity Reports", "Reports currently filed", ThemeColors.Success);
+    private readonly DashboardMetricCell _events = new("E", "Events", "Events currently recorded", ThemeColors.Warning);
     private readonly TableLayoutPanel _upcomingEventsList = CreateEventListHost();
     private readonly TableLayoutPanel _pastEventsList = CreateEventListHost();
     private TableLayoutPanel _summaryMetrics = null!;
@@ -51,14 +51,7 @@ public sealed class DashboardHomeForm : Form
         var eventOverview = BuildEventOverview();
         root.Controls.Add(eventOverview, 0, 2);
 
-        ResponsiveLayoutHelper.WireResponsiveTableLayout(
-            this,
-            _summaryMetrics,
-            root.RowStyles[1],
-            normalColumns: 5,
-            compactColumns: 2,
-            normalHeight: 232,
-            compactHeight: 410);
+        WireSummaryMetricsResponsive(root.RowStyles[1]);
         ResponsiveLayoutHelper.WireResponsiveTableLayout(
             this,
             eventOverview,
@@ -67,11 +60,70 @@ public sealed class DashboardHomeForm : Form
             compactColumns: 1,
             normalHeight: 330,
             compactHeight: 590);
-        UpdateSummaryDividers();
-        HandleCreated += (_, _) => UpdateSummaryDividers();
-        Resize += (_, _) => UpdateSummaryDividers();
-
         Shown += (_, _) => RefreshStats();
+    }
+
+    private void WireSummaryMetricsResponsive(RowStyle summaryRowStyle)
+    {
+        var controls = _summaryMetrics.Controls.Cast<Control>().ToArray();
+
+        void Apply()
+        {
+            var logicalWidth = ResponsiveLayoutHelper.LogicalClientWidth(this);
+            if (logicalWidth <= 0) logicalWidth = 1180;
+
+            // Five cards become too narrow well before the global compact breakpoint.
+            // Reflow earlier so card titles, trend labels, and captions remain readable.
+            var columns = logicalWidth >= 1180 ? 5 : logicalWidth >= 840 ? 3 : 2;
+            var summaryHeight = columns switch
+            {
+                5 => 232,
+                3 => 382,
+                _ => 548
+            };
+            var rows = Math.Max(1, (int)Math.Ceiling(controls.Length / (double)columns));
+
+            _summaryMetrics.SuspendLayout();
+            try
+            {
+                _summaryMetrics.Controls.Clear();
+                _summaryMetrics.ColumnStyles.Clear();
+                _summaryMetrics.RowStyles.Clear();
+                _summaryMetrics.ColumnCount = columns;
+                _summaryMetrics.RowCount = rows;
+
+                for (var column = 0; column < columns; column++)
+                    _summaryMetrics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / columns));
+                for (var row = 0; row < rows; row++)
+                    _summaryMetrics.RowStyles.Add(new RowStyle(SizeType.Percent, 100f / rows));
+
+                for (var i = 0; i < controls.Length; i++)
+                {
+                    var control = controls[i];
+                    var column = i % columns;
+                    var row = i / columns;
+                    control.Margin = ResponsiveLayoutHelper.ScaleLogical(
+                        this,
+                        new Padding(
+                            column == 0 ? 0 : 6,
+                            row == 0 ? 0 : 6,
+                            column == columns - 1 ? 0 : 6,
+                            row == rows - 1 ? 0 : 6));
+                    _summaryMetrics.Controls.Add(control, column, row);
+                }
+            }
+            finally
+            {
+                _summaryMetrics.ResumeLayout(true);
+            }
+
+            summaryRowStyle.SizeType = SizeType.Absolute;
+            summaryRowStyle.Height = ResponsiveLayoutHelper.ScaleLogical(this, summaryHeight);
+        }
+
+        Apply();
+        HandleCreated += (_, _) => Apply();
+        Resize += (_, _) => Apply();
     }
 
     private Control BuildSummary()
@@ -124,20 +176,14 @@ public sealed class DashboardHomeForm : Form
 
         section.Controls.Add(heading, 0, 0);
 
-        var surface = new DashboardSummarySurface
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty
-        };
-
         var metrics = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 5,
             RowCount = 1,
             Margin = Padding.Empty,
-            Padding = new Padding(2),
-            BackColor = Color.Transparent
+            Padding = Padding.Empty,
+            BackColor = ThemeColors.Background
         };
 
         _summaryMetrics = metrics;
@@ -150,13 +196,10 @@ public sealed class DashboardHomeForm : Form
         for (var i = 0; i < cells.Length; i++)
         {
             cells[i].Dock = DockStyle.Fill;
-            cells[i].Margin = Padding.Empty;
-            cells[i].ShowDivider = i < cells.Length - 1;
             metrics.Controls.Add(cells[i], i, 0);
         }
 
-        surface.Controls.Add(metrics);
-        section.Controls.Add(surface, 0, 1);
+        section.Controls.Add(metrics, 0, 1);
 
         return section;
     }
@@ -226,7 +269,7 @@ public sealed class DashboardHomeForm : Form
             Font = ThemeFonts.SectionTitle,
             ForeColor = ThemeColors.Primary,
             TextAlign = ContentAlignment.MiddleLeft,
-            AutoEllipsis = true,
+            AutoEllipsis = false,
             Margin = Padding.Empty
         }, 0, 0);
 
@@ -237,7 +280,7 @@ public sealed class DashboardHomeForm : Form
             Font = ThemeFonts.Small,
             ForeColor = ThemeColors.TextSecondary,
             TextAlign = ContentAlignment.TopLeft,
-            AutoEllipsis = true,
+            AutoEllipsis = false,
             Margin = Padding.Empty
         }, 0, 1);
 
@@ -280,7 +323,7 @@ public sealed class DashboardHomeForm : Form
             Font = ThemeFonts.BodyBold,
             ForeColor = ThemeColors.TextPrimary,
             TextAlign = ContentAlignment.BottomLeft,
-            AutoEllipsis = true,
+            AutoEllipsis = false,
             Margin = Padding.Empty
         }, 0, 0);
 
@@ -380,19 +423,6 @@ public sealed class DashboardHomeForm : Form
 
         PopulateEventList(_upcomingEventsList, upcoming, "No upcoming Events scheduled.");
         PopulateEventList(_pastEventsList, past, "No past Events recorded yet.");
-    }
-
-    private void UpdateSummaryDividers()
-    {
-        var columns = ResponsiveLayoutHelper.IsCompactModule(this) ? 2 : 5;
-        var cells = new[] { _members, _chapters, _services, _reports, _events };
-        for (var i = 0; i < cells.Length; i++)
-        {
-            var isLastItem = i == cells.Length - 1;
-            var isLastColumn = i % columns == columns - 1;
-            cells[i].ShowDivider = !isLastItem && !isLastColumn;
-            cells[i].Invalidate();
-        }
     }
 
     public void RefreshStats()
@@ -500,9 +530,8 @@ public sealed class DashboardHomeForm : Form
     {
         private readonly Label _value;
         private readonly Label _trend;
+        private readonly DashboardTrendRangeBar _range;
         private readonly Color _accentColor;
-
-        public bool ShowDivider { get; set; }
 
         public string Value
         {
@@ -514,92 +543,144 @@ public sealed class DashboardHomeForm : Form
         {
             if (!previousValue.HasValue)
             {
-                _trend.Text = "• Monthly tracking started";
+                _trend.Text = "Tracking";
                 _trend.ForeColor = ThemeColors.TextSecondary;
+                _range.SetProgress(0.12, _accentColor);
+                return;
+            }
+
+            if (previousValue.Value == 0)
+            {
+                if (currentValue > 0)
+                {
+                    _trend.Text = "▲ New";
+                    _trend.ForeColor = ThemeColors.Success;
+                    _range.SetProgress(1.0, ThemeColors.Success);
+                }
+                else
+                {
+                    _trend.Text = "• 0.0%";
+                    _trend.ForeColor = ThemeColors.TextSecondary;
+                    _range.SetProgress(0, _accentColor);
+                }
                 return;
             }
 
             var difference = currentValue - previousValue.Value;
-            if (difference > 0)
+            var percentChange = difference / (double)previousValue.Value * 100d;
+            var magnitude = Math.Min(1d, Math.Abs(percentChange) / 100d);
+            if (Math.Abs(percentChange) > 0.0001d)
+                magnitude = Math.Max(0.06d, magnitude);
+
+            if (percentChange > 0)
             {
-                _trend.Text = $"▲ +{difference:N0} vs last month";
+                _trend.Text = $"▲ +{percentChange:0.#}%";
                 _trend.ForeColor = ThemeColors.Success;
+                _range.SetProgress(magnitude, ThemeColors.Success);
             }
-            else if (difference < 0)
+            else if (percentChange < 0)
             {
-                _trend.Text = $"▼ {difference:N0} vs last month";
+                _trend.Text = $"▼ {percentChange:0.#}%";
                 _trend.ForeColor = ThemeColors.Danger;
+                _range.SetProgress(magnitude, ThemeColors.Danger);
             }
             else
             {
-                _trend.Text = "• No change vs last month";
+                _trend.Text = "• 0.0%";
                 _trend.ForeColor = ThemeColors.TextSecondary;
+                _range.SetProgress(0, _accentColor);
             }
         }
 
         public void ClearTrend()
         {
-            _trend.Text = "• Trend unavailable";
+            _trend.Text = "Unavailable";
             _trend.ForeColor = ThemeColors.TextSecondary;
+            _range.SetProgress(0.12, _accentColor);
         }
 
-        public DashboardMetricCell(string title, string caption, Color accentColor)
+        public DashboardMetricCell(string glyph, string title, string caption, Color accentColor)
         {
             _accentColor = accentColor;
             DoubleBuffered = true;
-            BackColor = Color.Transparent;
-            Padding = new Padding(20, 18, 16, 14);
+            BackColor = ThemeColors.Background;
+            Padding = new Padding(14, 12, 14, 14);
             Margin = Padding.Empty;
-            MinimumSize = new Size(150, 118);
+            MinimumSize = new Size(170, 138);
 
             var layout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 5,
+                RowCount = 4,
+                Margin = Padding.Empty,
+                Padding = new Padding(4, 2, 4, 4),
+                BackColor = Color.Transparent
+            };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            var titleRow = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 3,
+                RowCount = 1,
                 Margin = Padding.Empty,
                 Padding = Padding.Empty,
                 BackColor = Color.Transparent
             };
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 8));
-            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+            titleRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 34));
+            titleRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            titleRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            titleRow.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-            layout.Controls.Add(new Label
+            var badge = new DashboardMetricBadge(glyph, _accentColor)
+            {
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 1, 6, 1)
+            };
+            titleRow.Controls.Add(badge, 0, 0);
+
+            titleRow.Controls.Add(new Label
             {
                 Text = title,
                 Dock = DockStyle.Fill,
                 Font = ThemeFonts.BodyBold,
-                ForeColor = ThemeColors.TextSecondary,
+                ForeColor = Color.FromArgb(55, 65, 81),
                 TextAlign = ContentAlignment.MiddleLeft,
-                AutoEllipsis = true,
+                AutoEllipsis = false,
                 Margin = Padding.Empty
-            }, 0, 0);
+            }, 1, 0);
 
-            var marker = new Panel
+            _trend = new Label
             {
-                Width = 30,
-                Height = 3,
-                BackColor = _accentColor,
-                Anchor = AnchorStyles.Left,
-                Margin = new Padding(0, 2, 0, 3)
+                Text = "Tracking",
+                Dock = DockStyle.Fill,
+                Font = ThemeFonts.SmallBold,
+                ForeColor = ThemeColors.TextSecondary,
+                TextAlign = ContentAlignment.MiddleRight,
+                AutoEllipsis = false,
+                AutoSize = true,
+                Anchor = AnchorStyles.Right,
+                Margin = Padding.Empty
             };
-            layout.Controls.Add(marker, 0, 1);
+            titleRow.Controls.Add(_trend, 2, 0);
+            layout.Controls.Add(titleRow, 0, 0);
 
             _value = new Label
             {
                 Text = "0",
                 Dock = DockStyle.Fill,
                 Font = ThemeFonts.Stat,
-                ForeColor = ThemeColors.Primary,
+                ForeColor = Color.FromArgb(31, 41, 55),
                 TextAlign = ContentAlignment.MiddleLeft,
                 AutoEllipsis = true,
                 Margin = Padding.Empty
             };
-            layout.Controls.Add(_value, 0, 2);
+            layout.Controls.Add(_value, 0, 1);
 
             layout.Controls.Add(new Label
             {
@@ -608,21 +689,18 @@ public sealed class DashboardHomeForm : Form
                 Font = ThemeFonts.Small,
                 ForeColor = ThemeColors.TextSecondary,
                 TextAlign = ContentAlignment.TopLeft,
-                AutoEllipsis = true,
+                AutoEllipsis = false,
                 Margin = Padding.Empty
-            }, 0, 3);
+            }, 0, 2);
 
-            _trend = new Label
+            _range = new DashboardTrendRangeBar
             {
-                Text = "• Monthly tracking started",
-                Dock = DockStyle.Fill,
-                Font = ThemeFonts.SmallBold,
-                ForeColor = ThemeColors.TextSecondary,
-                TextAlign = ContentAlignment.MiddleLeft,
-                AutoEllipsis = true,
-                Margin = Padding.Empty
+                Dock = DockStyle.Top,
+                Height = 8,
+                Margin = new Padding(0, 8, 0, 0)
             };
-            layout.Controls.Add(_trend, 0, 4);
+            _range.SetProgress(0.12, _accentColor);
+            layout.Controls.Add(_range, 0, 3);
 
             Controls.Add(layout);
         }
@@ -630,12 +708,134 @@ public sealed class DashboardHomeForm : Form
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
-            if (ShowDivider)
-            {
-                using var divider = new Pen(ThemeColors.Border);
-                e.Graphics.DrawLine(divider, Width - 1, 18, Width - 1, Height - 18);
-            }
+            var radius = Math.Max(10, ResponsiveLayoutHelper.ScaleLogical(this, 20));
+            var cardBounds = new Rectangle(3, 2, Math.Max(1, Width - 10), Math.Max(1, Height - 10));
+            if (cardBounds.Width <= 2 || cardBounds.Height <= 2) return;
+
+            var shadowBounds = cardBounds;
+            shadowBounds.Offset(0, Math.Max(2, ResponsiveLayoutHelper.ScaleLogical(this, 4)));
+
+            using (var shadowPath = UiHelper.Rounded(shadowBounds, radius))
+            using (var shadowBrush = new SolidBrush(Color.FromArgb(22, 0, 0, 0)))
+                e.Graphics.FillPath(shadowBrush, shadowPath);
+
+            using (var cardPath = UiHelper.Rounded(cardBounds, radius))
+            using (var cardBrush = new SolidBrush(Color.White))
+                e.Graphics.FillPath(cardBrush, cardPath);
+
+            using (var cardPath = UiHelper.Rounded(cardBounds, radius))
+            using (var borderPen = new Pen(Color.FromArgb(235, 238, 242)))
+                e.Graphics.DrawPath(borderPen, cardPath);
         }
     }
+
+    private sealed class DashboardMetricBadge : Control
+    {
+        private readonly string _glyph;
+        private readonly Color _accentColor;
+
+        public DashboardMetricBadge(string glyph, Color accentColor)
+        {
+            _glyph = glyph;
+            _accentColor = accentColor;
+
+            // Custom WinForms controls must explicitly opt in to transparent
+            // backgrounds before Color.Transparent is assigned.
+            SetStyle(
+                ControlStyles.SupportsTransparentBackColor |
+                ControlStyles.UserPaint |
+                ControlStyles.AllPaintingInWmPaint |
+                ControlStyles.OptimizedDoubleBuffer,
+                true);
+
+            BackColor = Color.Transparent;
+            MinimumSize = new Size(28, 28);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            var size = Math.Min(Width, Height) - 2;
+            if (size <= 2) return;
+
+            var bounds = new Rectangle(
+                (Width - size) / 2,
+                (Height - size) / 2,
+                size,
+                size);
+
+            using var fill = new SolidBrush(_accentColor);
+            e.Graphics.FillEllipse(fill, bounds);
+
+            using var font = new Font(
+                ThemeFonts.SmallBold.FontFamily,
+                Math.Max(8f, ThemeFonts.SmallBold.Size),
+                FontStyle.Bold);
+            TextRenderer.DrawText(
+                e.Graphics,
+                _glyph,
+                font,
+                bounds,
+                Color.White,
+                TextFormatFlags.HorizontalCenter |
+                TextFormatFlags.VerticalCenter |
+                TextFormatFlags.NoPadding);
+        }
+    }
+
+    private sealed class DashboardTrendRangeBar : Control
+    {
+        private double _progress;
+        private Color _fillColor = ThemeColors.Success;
+
+        public DashboardTrendRangeBar()
+        {
+            // Custom WinForms controls must explicitly opt in to transparent
+            // backgrounds before Color.Transparent is assigned.
+            SetStyle(
+                ControlStyles.SupportsTransparentBackColor |
+                ControlStyles.UserPaint |
+                ControlStyles.AllPaintingInWmPaint |
+                ControlStyles.OptimizedDoubleBuffer,
+                true);
+
+            BackColor = Color.Transparent;
+            MinimumSize = new Size(30, 8);
+        }
+
+        public void SetProgress(double progress, Color fillColor)
+        {
+            _progress = Math.Clamp(progress, 0d, 1d);
+            _fillColor = fillColor;
+            Invalidate();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            var trackBounds = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
+            var radius = Math.Max(1, trackBounds.Height / 2);
+
+            using (var trackPath = UiHelper.Rounded(trackBounds, radius))
+            using (var trackBrush = new SolidBrush(Color.FromArgb(229, 231, 235)))
+                e.Graphics.FillPath(trackBrush, trackPath);
+
+            if (_progress <= 0d) return;
+
+            var fillWidth = Math.Max(trackBounds.Height, (int)Math.Round(trackBounds.Width * _progress));
+            fillWidth = Math.Min(trackBounds.Width, fillWidth);
+            var fillBounds = new Rectangle(trackBounds.Left, trackBounds.Top, fillWidth, trackBounds.Height);
+
+            using var fillPath = UiHelper.Rounded(fillBounds, radius);
+            using var fillBrush = new SolidBrush(_fillColor);
+            e.Graphics.FillPath(fillBrush, fillPath);
+        }
+    }
+
 }
