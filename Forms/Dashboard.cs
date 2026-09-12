@@ -330,15 +330,26 @@ public sealed class Dashboard : Form
         form.TopLevel = false;
         form.FormBorderStyle = FormBorderStyle.None;
         form.Dock = DockStyle.Fill;
+        form.Visible = false;
 
         _content.SuspendLayout();
         try
         {
             _content.Controls.Add(form);
+
+            // Give the embedded page its final host size before creating its
+            // handle. Responsive pages (especially DashboardHomeForm) can then
+            // calculate their very first layout using the real client width
+            // instead of the Form designer/default size.
+            form.Bounds = _content.DisplayRectangle;
+            form.CreateControl();
+            form.PerformLayout();
+
+            // Show while the host layout is suspended. Load/Shown logic can run,
+            // but Windows does not expose an intermediate half-laid-out frame.
             form.Show();
             form.BringToFront();
             form.PerformLayout();
-            form.Invalidate(true);
 
             _current = form;
             _pageLabel.Text = name;
@@ -364,7 +375,11 @@ public sealed class Dashboard : Form
             _content.Controls.Remove(form);
             form.Dispose();
             _current = previous;
-            if (previous != null && !previous.IsDisposed) previous.BringToFront();
+            if (previous != null && !previous.IsDisposed)
+            {
+                previous.Visible = true;
+                previous.BringToFront();
+            }
             throw;
         }
         finally
@@ -372,10 +387,11 @@ public sealed class Dashboard : Form
             _content.ResumeLayout(true);
         }
 
-        // Embedded WinForms pages can keep stale pixels in owner-drawn child
-        // controls when a page is removed and another one is shown. Force the
-        // newly visible page and its children to paint immediately instead of
-        // waiting for a mouse hover/expose event.
+        // Finish the page switch in one paint pass. This avoids stale pixels or
+        // the temporary compact/expanded Dashboard layout appearing first.
+        _content.PerformLayout();
+        form.PerformLayout();
+        form.Invalidate(true);
         _content.Invalidate(true);
         _content.Update();
     }

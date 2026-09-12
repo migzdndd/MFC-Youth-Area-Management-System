@@ -60,7 +60,10 @@ public sealed class DashboardHomeForm : Form
             compactColumns: 1,
             normalHeight: 330,
             compactHeight: 590);
-        Shown += (_, _) => RefreshStats();
+        // Load Dashboard data before the first visible paint. Using Shown here
+        // allowed a brief placeholder/zero-state frame whenever the user
+        // navigated back to Dashboard.
+        Load += (_, _) => RefreshStats();
     }
 
     private void WireSummaryMetricsResponsive(RowStyle summaryRowStyle)
@@ -121,7 +124,12 @@ public sealed class DashboardHomeForm : Form
             summaryRowStyle.Height = ResponsiveLayoutHelper.ScaleLogical(this, summaryHeight);
         }
 
-        Apply();
+        // Do not run Apply() during construction. At that point an embedded
+        // Form still has its temporary/default size, which caused the summary
+        // cards to build in the wrong column layout and visibly jump after the
+        // Dashboard host assigned its real bounds. The host creates/sizes the
+        // control before showing it, so HandleCreated now receives the correct
+        // client width for the first layout.
         HandleCreated += (_, _) => Apply();
         Resize += (_, _) => Apply();
     }

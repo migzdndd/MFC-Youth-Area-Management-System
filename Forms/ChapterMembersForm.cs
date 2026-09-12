@@ -33,7 +33,7 @@ public sealed class ChapterMembersForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Controls.Add(root);
 
-        _header = new PageHeader(chapter.ChapterName, $"{chapter.MemberCount} Member(s) assigned to this Chapter.");
+        _header = new PageHeader(chapter.ChapterName, ChapterSummary(chapter));
         root.Controls.Add(_header, 0, 0);
         _search.Dock = DockStyle.Fill;
         _search.Margin = new Padding(0, 6, 0, 6);
@@ -62,7 +62,17 @@ public sealed class ChapterMembersForm : Form
         try
         {
             var rows = new MemberRepository().GetByChapter(_chapterId, _search.TextValue);
-            _empty.ResetMessage();
+            if (rows.Count == 0 && !string.IsNullOrWhiteSpace(_search.TextValue))
+            {
+                _empty.ShowMessage(
+                    "No Members Match Your Search",
+                    "Try a different name, contact number, status, or Service, or clear the Search box.");
+            }
+            else
+            {
+                _empty.ResetMessage();
+            }
+
             _grid.DataSource = rows;
             _grid.Visible = rows.Count > 0;
             _empty.Visible = rows.Count == 0;
@@ -72,7 +82,7 @@ public sealed class ChapterMembersForm : Form
             if (chapter != null)
             {
                 _header.TitleText = chapter.ChapterName;
-                _header.DescriptionText = $"{chapter.MemberCount} Member(s) assigned to this Chapter.";
+                _header.DescriptionText = ChapterSummary(chapter);
                 Text = chapter.ChapterName;
             }
         }
@@ -86,6 +96,13 @@ public sealed class ChapterMembersForm : Form
             _empty.BringToFront();
             _dashboard.Notify("Could not load Chapter members.", true);
         }
+    }
+
+    private static string ChapterSummary(Chapter chapter)
+    {
+        var memberLabel = chapter.MemberCount == 1 ? "1 Member" : $"{chapter.MemberCount} Members";
+        var activeLabel = chapter.ActiveMemberCount == 1 ? "1 Active" : $"{chapter.ActiveMemberCount} Active";
+        return $"{memberLabel} assigned · {activeLabel}";
     }
 
     private void Open()

@@ -207,14 +207,16 @@ try {
 
     $Exe = Join-Path $PublishDir 'MFCYouthAreaManagementSystem.exe'
     $VersionInfo = (Get-Item -LiteralPath $Exe).VersionInfo
-    Write-Host "ProductVersion: $($VersionInfo.ProductVersion)"
-    Write-Host "FileVersion:    $($VersionInfo.FileVersion)"
+    $ActualProductVersion = ([string]$VersionInfo.ProductVersion).Trim()
+    $ActualFileVersion = ([string]$VersionInfo.FileVersion).Trim()
+    Write-Host "ProductVersion: $ActualProductVersion"
+    Write-Host "FileVersion:    $ActualFileVersion"
 
-    if ($VersionInfo.ProductVersion -ne $ExpectedProductVersion) {
-        throw "Unexpected ProductVersion. Expected '$ExpectedProductVersion' but got '$($VersionInfo.ProductVersion)'. This usually means the publish output is stale or the project version is inconsistent."
+    if ($ActualProductVersion -ne $ExpectedProductVersion) {
+        throw "Unexpected ProductVersion. Expected '$ExpectedProductVersion' but got '$ActualProductVersion'. This usually means the publish output is stale or the project version is inconsistent."
     }
-    if ($VersionInfo.FileVersion -ne $ExpectedFileVersion) {
-        throw "Unexpected FileVersion. Expected '$ExpectedFileVersion' but got '$($VersionInfo.FileVersion)'."
+    if ($ActualFileVersion -ne $ExpectedFileVersion) {
+        throw "Unexpected FileVersion. Expected '$ExpectedFileVersion' but got '$ActualFileVersion'."
     }
 
     $SQLiteInterop = Get-ChildItem -LiteralPath $PublishDir -Recurse -Filter 'SQLite.Interop.dll' -File -ErrorAction SilentlyContinue |
@@ -265,11 +267,12 @@ try {
             }
 
             $InstallerVersionInfo = $InstallerInfo.VersionInfo
-            if ($InstallerVersionInfo.FileVersion -ne $ExpectedFileVersion) {
-                throw "Installer FileVersion mismatch. Expected '$ExpectedFileVersion' but got '$($InstallerVersionInfo.FileVersion)'."
+            $ActualInstallerFileVersion = ([string]$InstallerVersionInfo.FileVersion).Trim()
+            if ($ActualInstallerFileVersion -ne $ExpectedFileVersion) {
+                throw "Installer FileVersion mismatch. Expected '$ExpectedFileVersion' but got '$ActualInstallerFileVersion'."
             }
 
-            Write-Host "Installer FileVersion: $($InstallerVersionInfo.FileVersion)"
+            Write-Host "Installer FileVersion: $ActualInstallerFileVersion"
             Write-Host "Installer ready: $InstallerExe" -ForegroundColor Green
         }
         else {

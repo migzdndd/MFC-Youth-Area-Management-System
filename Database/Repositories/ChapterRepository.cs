@@ -12,7 +12,13 @@ public sealed class ChapterRepository
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = @"
-SELECT c.ChapterID, c.ChapterName, COUNT(m.MemberID) AS MemberCount
+SELECT c.ChapterID,
+       c.ChapterName,
+       COUNT(m.MemberID) AS MemberCount,
+       SUM(CASE
+               WHEN LOWER(TRIM(IFNULL(m.Status, ''))) = 'active' THEN 1
+               ELSE 0
+           END) AS ActiveMemberCount
 FROM Chapter c
 LEFT JOIN Member m ON m.ChapterID = c.ChapterID
 WHERE @Search='' OR c.ChapterName LIKE @Like ESCAPE '\'
@@ -31,7 +37,13 @@ ORDER BY c.ChapterName COLLATE NOCASE, c.ChapterID;";
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = @"
-SELECT c.ChapterID, c.ChapterName, COUNT(m.MemberID) AS MemberCount
+SELECT c.ChapterID,
+       c.ChapterName,
+       COUNT(m.MemberID) AS MemberCount,
+       SUM(CASE
+               WHEN LOWER(TRIM(IFNULL(m.Status, ''))) = 'active' THEN 1
+               ELSE 0
+           END) AS ActiveMemberCount
 FROM Chapter c
 LEFT JOIN Member m ON m.ChapterID = c.ChapterID
 WHERE c.ChapterID = @Id
@@ -163,6 +175,7 @@ WHERE ChapterID=@Id;";
     {
         ChapterID = Convert.ToInt64(reader["ChapterID"]),
         ChapterName = Convert.ToString(reader["ChapterName"]) ?? string.Empty,
-        MemberCount = Convert.ToInt32(reader["MemberCount"])
+        MemberCount = Convert.ToInt32(reader["MemberCount"]),
+        ActiveMemberCount = Convert.ToInt32(reader["ActiveMemberCount"])
     };
 }

@@ -16,6 +16,11 @@ public sealed class MembersForm : Form
     private readonly ModernComboBox _chapterFilter = new();
     private readonly EmptyStatePanel _empty = new("No Members Yet", "Add the first MFC Youth Member to begin managing your Area.");
     private ModernButton? _clearFiltersButton;
+    private ModernButton? _viewButton;
+    private ModernButton? _editButton;
+    private ModernButton? _servicesButton;
+    private ModernButton? _gigButton;
+    private ModernButton? _deleteButton;
     private bool _suppressFilterReload;
 
     public MembersForm(Dashboard dashboard)
@@ -59,6 +64,7 @@ public sealed class MembersForm : Form
             new ResponsiveGridColumnRule("Contact", 700),
             new ResponsiveGridColumnRule("Status", 560));
         _grid.DoubleClick += (_, _) => OpenDetails();
+        _grid.SelectionChanged += (_, _) => UpdateActionState();
 
         var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
         content.Controls.Add(_grid);
@@ -114,6 +120,11 @@ public sealed class MembersForm : Form
         var refresh = Btn("Refresh", 88, ModernButtonStyle.Ghost);
         var clear = Btn("Clear Filters", 104, ModernButtonStyle.Ghost);
         _clearFiltersButton = clear;
+        _viewButton = view;
+        _editButton = edit;
+        _servicesButton = service;
+        _gigButton = gig;
+        _deleteButton = del;
 
         add.Click += (_, _) => AddMember();
         view.Click += (_, _) => OpenDetails();
@@ -124,7 +135,7 @@ public sealed class MembersForm : Form
         refresh.Click += (_, _) => LoadRows();
         clear.Click += (_, _) => ClearFilters();
         actions.Controls.AddRange(new Control[] { add, del, gig, service, edit, view, refresh, clear });
-        UpdateFilterActionState();
+        UpdateActionState();
         return actions;
     }
 
@@ -184,7 +195,7 @@ public sealed class MembersForm : Form
         {
             _suppressFilterReload = false;
         }
-        UpdateFilterActionState();
+        UpdateActionState();
     }
 
     private ModernButton Btn(string text, int width, ModernButtonStyle style) => new()
@@ -206,7 +217,7 @@ public sealed class MembersForm : Form
     private void ReloadFromFilterChange()
     {
         if (_suppressFilterReload || !IsHandleCreated) return;
-        UpdateFilterActionState();
+        UpdateActionState();
         LoadRows();
     }
 
@@ -215,8 +226,14 @@ public sealed class MembersForm : Form
         _statusFilter.SelectedIndex > 0 ||
         SelectedChapterId().HasValue;
 
-    private void UpdateFilterActionState()
+    private void UpdateActionState()
     {
+        var hasSelection = Selected() != null;
+        if (_viewButton != null) _viewButton.Enabled = hasSelection;
+        if (_editButton != null) _editButton.Enabled = hasSelection;
+        if (_servicesButton != null) _servicesButton.Enabled = hasSelection;
+        if (_gigButton != null) _gigButton.Enabled = hasSelection;
+        if (_deleteButton != null) _deleteButton.Enabled = hasSelection;
         if (_clearFiltersButton != null) _clearFiltersButton.Enabled = HasActiveFilters();
     }
 
@@ -234,7 +251,7 @@ public sealed class MembersForm : Form
             _suppressFilterReload = false;
         }
 
-        UpdateFilterActionState();
+        UpdateActionState();
         LoadRows();
     }
 
@@ -267,7 +284,7 @@ public sealed class MembersForm : Form
                 _empty.BringToFront();
             }
 
-            UpdateFilterActionState();
+            UpdateActionState();
         }
         catch (Exception ex)
         {
@@ -277,7 +294,7 @@ public sealed class MembersForm : Form
             _empty.ShowMessage("Members Could Not Load", "The Member list is temporarily unavailable. Try refreshing again.");
             _empty.Visible = true;
             _empty.BringToFront();
-            UpdateFilterActionState();
+            UpdateActionState();
             _dashboard.Notify("Could not load Members.", true);
         }
     }

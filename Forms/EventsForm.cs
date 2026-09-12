@@ -14,6 +14,9 @@ public sealed class EventsForm : Form
     private readonly ModernTextBox _search = new() { Placeholder = "Search events by name, venue, or description..." };
     private readonly ModernComboBox _timingFilter = new();
     private readonly EmptyStatePanel _empty = new("No Events Yet", "Create your first Event to begin managing registrations and participants.");
+    private ModernButton? _viewButton;
+    private ModernButton? _editButton;
+    private ModernButton? _deleteButton;
 
     public EventsForm(Dashboard dashboard)
     {
@@ -86,6 +89,9 @@ public sealed class EventsForm : Form
         var edit = Btn("Edit", 82, ModernButtonStyle.Secondary);
         var delete = Btn("Delete", 82, ModernButtonStyle.Danger);
         var refresh = Btn("Refresh", 86, ModernButtonStyle.Ghost);
+        _viewButton = view;
+        _editButton = edit;
+        _deleteButton = delete;
         add.Click += (_, _) => Add();
         view.Click += (_, _) => View();
         edit.Click += (_, _) => Edit();
@@ -118,6 +124,7 @@ public sealed class EventsForm : Form
             cellStyle.Font = ThemeFonts.SmallBold;
         };
         _grid.DoubleClick += (_, _) => View();
+        _grid.SelectionChanged += (_, _) => UpdateActionState();
 
         var content = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
         content.Controls.Add(_grid);
@@ -168,19 +175,29 @@ public sealed class EventsForm : Form
             };
 
             _empty.ResetMessage();
-            if (rows.Count == 0 && timing != "All Events")
+            if (rows.Count == 0)
             {
-                _empty.ShowMessage(
-                    timing == "Upcoming" ? "No Upcoming Events" : "No Past Events",
-                    timing == "Upcoming"
-                        ? "Future Events will appear here once they are scheduled."
-                        : "Completed or elapsed Events will appear here automatically.");
+                if (!string.IsNullOrWhiteSpace(_search.TextValue))
+                {
+                    _empty.ShowMessage(
+                        "No Events Match Your Search",
+                        "Try a different event name, venue, or description, or clear the Search box.");
+                }
+                else if (timing != "All Events")
+                {
+                    _empty.ShowMessage(
+                        timing == "Upcoming" ? "No Upcoming Events" : "No Past Events",
+                        timing == "Upcoming"
+                            ? "Future Events will appear here once they are scheduled."
+                            : "Completed or elapsed Events will appear here automatically.");
+                }
             }
 
             _grid.DataSource = rows;
             _grid.Visible = rows.Count > 0;
             _empty.Visible = rows.Count == 0;
             if (_grid.Visible) _grid.BringToFront(); else _empty.BringToFront();
+            UpdateActionState();
         }
         catch (Exception ex)
         {
@@ -190,8 +207,17 @@ public sealed class EventsForm : Form
             _empty.ShowMessage("Events Could Not Load", "The Event list is temporarily unavailable. Try refreshing again.");
             _empty.Visible = true;
             _empty.BringToFront();
+            UpdateActionState();
             _dashboard.Notify("Could not load Events.", true);
         }
+    }
+
+    private void UpdateActionState()
+    {
+        var hasSelection = Selected() != null;
+        if (_viewButton != null) _viewButton.Enabled = hasSelection;
+        if (_editButton != null) _editButton.Enabled = hasSelection;
+        if (_deleteButton != null) _deleteButton.Enabled = hasSelection;
     }
 
     private void Add()
