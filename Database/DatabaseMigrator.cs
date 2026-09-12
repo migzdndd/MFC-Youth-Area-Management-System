@@ -4,7 +4,7 @@ namespace MFCYouthAreaManagementSystem.Database;
 
 public static class DatabaseMigrator
 {
-    public const int CurrentVersion = 4;
+    public const int CurrentVersion = 5;
 
     public static void Apply(SQLiteConnection connection)
     {
@@ -12,10 +12,9 @@ public static class DatabaseMigrator
         versionCommand.CommandText = "PRAGMA user_version;";
         var version = Convert.ToInt32(versionCommand.ExecuteScalar());
 
-        // A short-lived dashboard-trend build used schema version 5 only to
-        // create DashboardMonthlySnapshot. That UI-only table is no longer
-        // needed. Repair it back to the stable v4 schema automatically so a
-        // user who launched that build is not locked out of the application.
+        // A short-lived dashboard-trend build also used schema version 5 only to
+        // create DashboardMonthlySnapshot. Detect that exact temporary shape,
+        // repair it back to v4, then apply the current legitimate v5 migration.
         if (version == 5 && IsTemporaryDashboardTrendV5(connection))
         {
             RepairDashboardTrendV5(connection);
@@ -44,7 +43,13 @@ public static class DatabaseMigrator
         }
 
         if (version < 4)
+        {
             ApplyV4(connection);
+            version = 4;
+        }
+
+        if (version < 5)
+            ApplyV5(connection);
     }
 
     private static void ApplyV1(SQLiteConnection connection)
@@ -291,10 +296,93 @@ PRAGMA user_version = 4;";
         tx.Commit();
     }
 
+    private static void ApplyV5(SQLiteConnection connection)
+    {
+        using var tx = connection.BeginTransaction();
+        using var command = connection.CreateCommand();
+        command.Transaction = tx;
+        command.CommandText = @"
+DROP VIEW IF EXISTS ServiceStatistics;
+DROP TABLE IF EXISTS MemberService_v5;
+DROP TABLE IF EXISTS GIGContribution_v5;
+DROP TABLE IF EXISTS Member_v5;
+
+CREATE TABLE Member_v5 (
+    MemberID INTEGER PRIMARY KEY AUTOINCREMENT,
+    LastName TEXT NOT NULL,
+    FirstName TEXT NOT NULL,
+    MiddleName TEXT NULL,
+    BirthDate TEXT NOT NULL,
+    ContactNumber TEXT NOT NULL,
+    Address TEXT NOT NULL,
+    EmailAddress TEXT NULL,
+    Status TEXT NOT NULL,
+    ChapterID INTEGER NULL,
+    CreatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ChapterID) REFERENCES Chapter(ChapterID) ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+INSERT INTO Member_v5(
+    MemberID, LastName, FirstName, MiddleName, BirthDate, ContactNumber, Address,
+    EmailAddress, Status, ChapterID, CreatedAt, UpdatedAt)
+SELECT
+    MemberID, LastName, FirstName, MiddleName, BirthDate, ContactNumber, Address,
+    EmailAddress, Status, ChapterID, CreatedAt, UpdatedAt
+FROM Member;
+
+CREATE TABLE MemberService_v5 (
+    MemberID INTEGER NOT NULL,
+    ServiceID INTEGER NOT NULL,
+    PRIMARY KEY (MemberID, ServiceID),
+    FOREIGN KEY (MemberID) REFERENCES Member_v5(MemberID) ON DELETE CASCADE,
+    FOREIGN KEY (ServiceID) REFERENCES Service(ServiceID) ON DELETE CASCADE
+);
+INSERT INTO MemberService_v5(MemberID, ServiceID)
+SELECT MemberID, ServiceID FROM MemberService;
+
+CREATE TABLE GIGContribution_v5 (
+    ContributionID INTEGER PRIMARY KEY AUTOINCREMENT,
+    MemberID INTEGER NOT NULL,
+    ContributionDate TEXT NOT NULL,
+    Amount NUMERIC NOT NULL CHECK (Amount > 0),
+    Remarks TEXT NULL,
+    CreatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (MemberID) REFERENCES Member_v5(MemberID) ON DELETE CASCADE
+);
+INSERT INTO GIGContribution_v5(ContributionID, MemberID, ContributionDate, Amount, Remarks, CreatedAt)
+SELECT ContributionID, MemberID, ContributionDate, Amount, Remarks, CreatedAt
+FROM GIGContribution;
+
+DROP TABLE MemberService;
+DROP TABLE GIGContribution;
+DROP TABLE Member;
+
+ALTER TABLE Member_v5 RENAME TO Member;
+ALTER TABLE MemberService_v5 RENAME TO MemberService;
+ALTER TABLE GIGContribution_v5 RENAME TO GIGContribution;
+
+CREATE INDEX IF NOT EXISTS IX_Member_ChapterID ON Member(ChapterID);
+CREATE INDEX IF NOT EXISTS IX_Member_LastName ON Member(LastName);
+CREATE INDEX IF NOT EXISTS IX_MemberService_MemberID ON MemberService(MemberID);
+CREATE INDEX IF NOT EXISTS IX_MemberService_ServiceID ON MemberService(ServiceID);
+CREATE INDEX IF NOT EXISTS IX_GIGContribution_MemberID ON GIGContribution(MemberID);
+
+CREATE VIEW ServiceStatistics AS
+SELECT s.ServiceID, s.ServiceName, s.DisplayOrder, COUNT(ms.MemberID) AS TotalMembers
+FROM Service s LEFT JOIN MemberService ms ON ms.ServiceID = s.ServiceID
+GROUP BY s.ServiceID, s.ServiceName, s.DisplayOrder;
+
+PRAGMA user_version = 5;";
+        command.ExecuteNonQuery();
+        tx.Commit();
+    }
+
     private static bool IsTemporaryDashboardTrendV5(SQLiteConnection connection)
     {
-        // Only repair the exact short-lived dashboard-only v5 schema. A future
-        // legitimate schema version 5 must be treated as newer and left untouched.
+        // Only repair the exact short-lived dashboard-only v5 schema. The current
+        // legitimate v5 schema does not contain DashboardMonthlySnapshot and must
+        // be left untouched.
         var expectedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Chapter", "Member", "Service", "MemberService", "ActivityReport",

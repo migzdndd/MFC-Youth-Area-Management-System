@@ -37,15 +37,17 @@ public sealed class ChaptersForm : Form
         var actions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = new Padding(0, 6, 0, 6), Margin = Padding.Empty, BackColor = ThemeColors.Background };
         var add = Btn("+ Add Chapter", 125, ModernButtonStyle.Primary);
         var rename = Btn("Rename", 88, ModernButtonStyle.Secondary);
+        var addMembers = Btn("+ Add Members", 120, ModernButtonStyle.Secondary);
         var view = Btn("View Members", 110, ModernButtonStyle.Secondary);
         var del = Btn("Delete", 82, ModernButtonStyle.Danger);
         var refresh = Btn("Refresh", 85, ModernButtonStyle.Ghost);
         add.Click += (_, _) => Add();
         rename.Click += (_, _) => Rename();
+        addMembers.Click += (_, _) => AddMembers();
         view.Click += (_, _) => View();
         del.Click += (_, _) => Delete();
         refresh.Click += (_, _) => LoadRows();
-        actions.Controls.AddRange(new Control[] { add, del, view, rename, refresh });
+        actions.Controls.AddRange(new Control[] { add, del, view, addMembers, rename, refresh });
         _search.Dock = DockStyle.Fill;
         _search.Margin = new Padding(0, 3, 0, 3);
         tools.Controls.Add(_search, 0, 0);
@@ -114,6 +116,15 @@ public sealed class ChaptersForm : Form
         if (chapter == null) return;
         ModalHelper.Show(this, () => new ChapterMembersForm(chapter.ChapterID, _dashboard), "Open Chapter Members");
         LoadRows();
+    }
+
+    private void AddMembers()
+    {
+        var chapter = Selected();
+        if (chapter == null) return;
+        if (ModalHelper.Show(this, () => new AddChapterMembersForm(chapter.ChapterID, chapter.ChapterName), "Open Add Chapter Members") != DialogResult.OK) return;
+        LoadRows();
+        _dashboard.Notify("Members added to Chapter.");
     }
 
     private void Delete()
