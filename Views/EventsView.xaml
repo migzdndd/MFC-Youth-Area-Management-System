@@ -1,0 +1,180 @@
+<UserControl x:Class="MFCYouthAreaManagementSystem.Views.EventsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="clr-namespace:MFCYouthAreaManagementSystem.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=viewmodels:EventsViewModel}">
+
+    <UserControl.InputBindings>
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding AddCommand}" />
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
+        <KeyBinding Key="Delete" Command="{Binding DeleteCommand}" />
+        <KeyBinding Key="Enter" Command="{Binding DetailsCommand}" />
+    </UserControl.InputBindings>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Page Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="Events" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="Coordinate youth events, manage attendee registrations, verify payments, and log event attendance."
+                           Style="{StaticResource PageSubtitle}" Margin="0,4,0,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="+ Add Event"
+                        Command="{Binding AddCommand}"
+                        Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="1" Background="{StaticResource Surface}"
+                BorderBrush="{StaticResource BorderBrushApp}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="12,10"
+                Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Search Input -->
+                <TextBox Width="280"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Search events by name or venue..." />
+
+                <!-- Action Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Event Details / Participants"
+                            Command="{Binding DetailsCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Padding="14,6" />
+
+                    <Button Content="Edit"
+                            Command="{Binding EditCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Padding="12,6" />
+
+                    <Button Content="Delete"
+                            Command="{Binding DeleteCommand}"
+                            Style="{StaticResource DangerButton}"
+                            Padding="12,6" />
+
+                    <Button Command="{Binding RefreshCommand}"
+                            Style="{StaticResource IconButton}"
+                            ToolTip="Refresh list (F5)">
+                        <Path Data="{StaticResource GeoRefresh}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="14" Height="14" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Events DataGrid with Empty State -->
+        <Grid Grid.Row="2">
+            <DataGrid ItemsSource="{Binding Events}"
+                      SelectedItem="{Binding SelectedEvent}"
+                      SelectionMode="Single">
+                <DataGrid.Columns>
+                    <!-- Event Name -->
+                    <DataGridTemplateColumn Header="Event Name" Width="2*" SortMemberPath="EventName">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Border Width="30" Height="30" CornerRadius="6" Background="{StaticResource WarningSoft}" Margin="0,0,10,0">
+                                        <Path Data="{StaticResource GeoEvents}" Fill="{StaticResource Warning}" Stretch="Uniform" Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{Binding EventName}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Date & Time -->
+                    <DataGridTemplateColumn Header="Date &amp; Time" Width="190" SortMemberPath="EventDateTime">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource GeoClock}" Fill="{StaticResource TextMuted}" Stretch="Uniform" Width="12" Height="12" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding EventDateTime, StringFormat={}{0:MMM d, yyyy • h:mm tt}}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Venue -->
+                    <DataGridTemplateColumn Header="Venue" Width="1.5*" SortMemberPath="Venue">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource GeoLocation}" Fill="{StaticResource TextMuted}" Stretch="Uniform" Width="12" Height="12" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Venue}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Registered -->
+                    <DataGridTemplateColumn Header="Registered" Width="105" SortMemberPath="RegisteredCount">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource NavySoft}" CornerRadius="12" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding RegisteredCount, StringFormat={}{0} seats}" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource Navy}" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Paid -->
+                    <DataGridTemplateColumn Header="Paid" Width="95" SortMemberPath="PaidCount">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource SuccessSoft}" CornerRadius="12" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding PaidCount, StringFormat={}{0} paid}" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource Success}" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Total Collected -->
+                    <DataGridTextColumn Header="Collected" Binding="{Binding TotalRegistrationFees, StringFormat=₱{0:N2}}" Width="120" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Empty State Overlay -->
+            <Border Visibility="{Binding Events, Converter={StaticResource EmptyToVis}}"
+                    Background="{StaticResource Surface}"
+                    BorderBrush="{StaticResource BorderBrushApp}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="32"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel HorizontalAlignment="Center">
+                    <Border Width="52" Height="52" CornerRadius="26" Background="{StaticResource WarningSoft}" HorizontalAlignment="Center" Margin="0,0,0,12">
+                        <Path Data="{StaticResource GeoEvents}" Fill="{StaticResource Warning}" Stretch="Uniform" Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="No Events Found" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Navy}" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                    <TextBlock Text="No events match your current search criteria." Foreground="{StaticResource TextMuted}" FontSize="12" HorizontalAlignment="Center" Margin="0,0,0,14" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+    </Grid>
+</UserControl>

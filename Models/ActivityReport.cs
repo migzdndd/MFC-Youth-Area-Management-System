@@ -5,6 +5,8 @@ public sealed class ActivityReport
     public string Title { get; set; } = "";
     public long? ChapterID { get; set; }
     public string ChapterName { get; set; } = "";
+    public long? EventID { get; set; }
+    public string EventName { get; set; } = "";
     public string ReportType { get; set; } = "";
     public string Activity { get; set; } = "";
     public DateTime ReportDate { get; set; }

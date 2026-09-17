@@ -1,3 +1,4 @@
+using System.Drawing;
 namespace MFCYouthAreaManagementSystem.UI.Theme;
 
 public static class ThemeColors

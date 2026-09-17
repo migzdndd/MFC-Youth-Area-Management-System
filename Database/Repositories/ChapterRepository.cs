@@ -55,17 +55,20 @@ GROUP BY c.ChapterID, c.ChapterName;";
 
     public long Add(string name)
     {
+        var cleanName = ValidateName(name);
         using var connection = DatabaseManager.OpenConnection();
+        EnsureUniqueName(connection, cleanName, null);
         using var command = connection.CreateCommand();
         command.CommandText = "INSERT INTO Chapter(ChapterName) VALUES(@Name); SELECT last_insert_rowid();";
-        command.Parameters.AddWithValue("@Name", name.Trim());
+        command.Parameters.AddWithValue("@Name", cleanName);
         return Convert.ToInt64(command.ExecuteScalar());
     }
 
     public void Rename(long id, string name)
     {
-        var cleanName = name.Trim();
+        var cleanName = ValidateName(name);
         using var connection = DatabaseManager.OpenConnection();
+        EnsureUniqueName(connection, cleanName, id);
         using var transaction = connection.BeginTransaction();
 
         using (var rename = connection.CreateCommand())
@@ -99,6 +102,32 @@ GROUP BY c.ChapterID, c.ChapterName;";
         }
 
         transaction.Commit();
+    }
+
+    private static string ValidateName(string? name)
+    {
+        var cleanName = ValidationHelper.Clean(name);
+        if (cleanName.Length == 0)
+            throw new InvalidOperationException("Chapter Name is required.");
+        if (cleanName.Length > 100)
+            throw new InvalidOperationException("Chapter Name must be 100 characters or fewer.");
+        return cleanName;
+    }
+
+    private static void EnsureUniqueName(System.Data.SQLite.SQLiteConnection connection, string name, long? excludeId)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+SELECT EXISTS(
+    SELECT 1
+    FROM Chapter
+    WHERE TRIM(ChapterName) = @Name COLLATE NOCASE
+      AND (@ExcludeID IS NULL OR ChapterID <> @ExcludeID)
+);";
+        command.Parameters.AddWithValue("@Name", name);
+        command.Parameters.AddWithValue("@ExcludeID", excludeId.HasValue ? excludeId.Value : DBNull.Value);
+        if (Convert.ToInt32(command.ExecuteScalar()) == 1)
+            throw new InvalidOperationException("A Chapter with this name already exists.");
     }
 
     public int GetMemberCount(long id)

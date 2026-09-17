@@ -14,6 +14,8 @@ public static class DatabaseInitializer
         VerifyIntegrity(connection);
         DatabaseMigrator.Apply(connection);
         VerifyForeignKeys(connection);
+        DatabaseDataIntegrityAuditor.AuditAndRepair(connection);
+        VerifyForeignKeys(connection);
         SeedServices(connection);
     }
 

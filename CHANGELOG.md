@@ -1,5 +1,53 @@
 # Changelog
 
+## v2.0.4-beta - Web → Offline Feature Parity & Data Integrity
+
+### WPF Conversion Completion
+- Completed and stabilized the desktop presentation conversion from WinForms to WPF.
+- Replaced the transitional read-only WPF shell with working Member, Chapter, Service, Activity Report, Event, participant, GIG, and Dashboard workflows.
+- Removed the legacy WinForms presentation tree and WinForms-only UI helpers after feature porting.
+- Preserved SQLite schema v6, repositories, migrations, validation, historical snapshots, PDF export, and offline-first behavior.
+- Cleaned stale generated build/publish output so old WinForms binaries cannot be mistaken for the converted WPF source.
+
+
+### Members & Chapters
+- Preserved the completed read-only Member Details, combined Member search/filtering, duplicate validation, nullable Chapter assignment, direct Chapter member assignment, and Chapter rename/delete safeguards.
+- Completed Chapter list improvements with Member Count, Active Member Count, and row-level management actions.
+
+### Activity Reports
+- Added current + historical Chapter filtering without rewriting old reports.
+- Added an optional Activity Report → Event relationship using `EventID`, with an Event-name snapshot so reports remain readable after Event deletion.
+- Added Linked Event visibility to the Activity Reports grid and detailed PDF output.
+- Preserved the responsive Dashboard-style report overview cards, analytics, filters, and PDF export.
+
+### Events & Participants
+- Added recorded participant attendance as a dedicated boolean state.
+- Added predefined payment-mode choices with backward-compatible handling for unchanged legacy values.
+- Strengthened participant validation at both form and repository layers.
+- Event rename/delete behavior now keeps linked Activity Report snapshots historically readable.
+
+### Dashboard
+- Added Active Members, Event Registrations, and Recorded Attendance summary statistics with monthly trend support.
+- Added a responsive Members-by-Chapter distribution overview sorted by Member count.
+- Preserved Upcoming/Past Events, compact layouts, and first-paint Dashboard rendering fixes.
+
+### GIG Tracker
+- Strengthened repository/form validation for required local contribution dates, non-future dates, and positive amounts.
+- Preserved contribution history, totals, edit/delete workflows, and delete confirmation.
+
+### Database & Integrity
+- Advanced SQLite schema from version 5 to version 6.
+- Added nullable `ActivityReport.EventID`, historical `EventNameSnapshot`, and `EventParticipant.Attended`.
+- Added a conservative startup data-integrity audit that repairs deterministic linked-name snapshots and logs legacy anomalies without deleting or guessing user data.
+- Removed the stale unused `DashboardSnapshotRepository` that referenced the retired dashboard snapshot table.
+- Preserved incremental migration, local data storage, foreign-key verification, and legacy database-path migration behavior.
+
+### UX & Release Readiness
+- Standardized action-button disabled states and clearer search/empty states across updated modules.
+- Moved list loading to `Load` where appropriate to reduce first-frame placeholder/flicker behavior.
+- Kept calendar-date operations local-date based while preserving Event times.
+- Synchronized release metadata for `v2.0.4-beta` / file version `2.0.4.0`.
+
 ## v2.0.3-beta.2 - Mobile Access & Member/Chapter Workflow Checkpoint
 
 ### Mobile Compatibility

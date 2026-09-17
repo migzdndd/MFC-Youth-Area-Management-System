@@ -1,0 +1,3 @@
+using System.Windows;using System.Windows.Controls;using MFCYouthAreaManagementSystem.Repositories;
+namespace MFCYouthAreaManagementSystem.Views.Dialogs;
+public partial class ServiceMembersWindow:Window{private readonly long _serviceId;private readonly MemberRepository _repo=new();public ServiceMembersWindow(long id,string name){InitializeComponent();_serviceId=id;Heading.Text=name;Reload();}private void Reload(){var rows=_repo.GetByService(_serviceId,SearchBox.Text??"");Grid.ItemsSource=rows;CountText.Text=$"{rows.Count} matching member(s)";}private void SearchBox_TextChanged(object s,TextChangedEventArgs e)=>Reload();private void Close_Click(object s,RoutedEventArgs e)=>Close();}

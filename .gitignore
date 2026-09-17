@@ -13,3 +13,14 @@ Logs/
 
 # Release output
 dist/
+
+# Source/release archives
+*.zip
+
+# .NET build output
+bin/
+obj/
+dist/
+
+# Visual Studio
+.vs/

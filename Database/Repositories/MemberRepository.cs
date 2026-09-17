@@ -253,6 +253,14 @@ WHERE MemberID=@MemberID;";
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
+    public int GetActiveCount()
+    {
+        using var connection = DatabaseManager.OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM Member WHERE LOWER(TRIM(IFNULL(Status, '')))='active';";
+        return Convert.ToInt32(command.ExecuteScalar());
+    }
+
     private static void ValidateForSave(Member member)
     {
         if (string.IsNullOrWhiteSpace(member.FirstName))

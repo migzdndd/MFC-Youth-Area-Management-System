@@ -56,6 +56,7 @@ GROUP BY e.EventID, e.EventName, e.EventDescription, e.RegistrationFee, e.People
 
     public long Add(AreaEvent areaEvent)
     {
+        ValidateForSave(areaEvent);
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -69,26 +70,67 @@ SELECT last_insert_rowid();";
 
     public void Update(AreaEvent areaEvent)
     {
+        ValidateForSave(areaEvent);
         using var connection = DatabaseManager.OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = @"
+        using var transaction = connection.BeginTransaction();
+
+        using (var command = connection.CreateCommand())
+        {
+            command.Transaction = transaction;
+            command.CommandText = @"
 UPDATE AreaEvent
 SET EventName=@Name, EventDescription=@Description, RegistrationFee=@Fee,
     PeopleAttended=@Attended, Venue=@Venue, EventDateTime=@DateTime, UpdatedAt=@Now
 WHERE EventID=@EventID;";
-        AddParameters(command, areaEvent);
-        command.Parameters.AddWithValue("@Now", DateTime.UtcNow.ToString("O"));
-        command.Parameters.AddWithValue("@EventID", areaEvent.EventID);
-        if (command.ExecuteNonQuery() != 1) throw new InvalidOperationException("Event was not found.");
+            AddParameters(command, areaEvent);
+            command.Parameters.AddWithValue("@Now", DateTime.UtcNow.ToString("O"));
+            command.Parameters.AddWithValue("@EventID", areaEvent.EventID);
+            if (command.ExecuteNonQuery() != 1) throw new InvalidOperationException("Event was not found.");
+        }
+
+        // Keep the snapshot current while the report is still linked. If this
+        // Event is later deleted, the latest visible name remains in history.
+        using (var reports = connection.CreateCommand())
+        {
+            reports.Transaction = transaction;
+            reports.CommandText = "UPDATE ActivityReport SET EventNameSnapshot=@Name WHERE EventID=@EventID;";
+            reports.Parameters.AddWithValue("@Name", areaEvent.EventName.Trim());
+            reports.Parameters.AddWithValue("@EventID", areaEvent.EventID);
+            reports.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
     }
 
     public void Delete(long eventId)
     {
         using var connection = DatabaseManager.OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM AreaEvent WHERE EventID=@EventID;";
-        command.Parameters.AddWithValue("@EventID", eventId);
-        if (command.ExecuteNonQuery() != 1) throw new InvalidOperationException("Event was not found.");
+        using var transaction = connection.BeginTransaction();
+
+        // Activity Reports are historical records and must survive Event
+        // deletion. Detach the FK while preserving the last known Event name.
+        using (var detachReports = connection.CreateCommand())
+        {
+            detachReports.Transaction = transaction;
+            detachReports.CommandText = @"
+UPDATE ActivityReport
+SET EventNameSnapshot = COALESCE(NULLIF(TRIM(EventNameSnapshot), ''),
+        (SELECT EventName FROM AreaEvent WHERE EventID=@EventID)),
+    EventID = NULL
+WHERE EventID=@EventID;";
+            detachReports.Parameters.AddWithValue("@EventID", eventId);
+            detachReports.ExecuteNonQuery();
+        }
+
+        using (var command = connection.CreateCommand())
+        {
+            command.Transaction = transaction;
+            command.CommandText = "DELETE FROM AreaEvent WHERE EventID=@EventID;";
+            command.Parameters.AddWithValue("@EventID", eventId);
+            if (command.ExecuteNonQuery() != 1) throw new InvalidOperationException("Event was not found.");
+        }
+
+        transaction.Commit();
     }
 
     public int GetTotalCount()
@@ -97,6 +139,22 @@ WHERE EventID=@EventID;";
         using var command = connection.CreateCommand();
         command.CommandText = "SELECT COUNT(*) FROM AreaEvent;";
         return Convert.ToInt32(command.ExecuteScalar());
+    }
+
+    private static void ValidateForSave(AreaEvent areaEvent)
+    {
+        if (string.IsNullOrWhiteSpace(areaEvent.EventName))
+            throw new InvalidOperationException("Event Name is required.");
+        if (string.IsNullOrWhiteSpace(areaEvent.EventDescription))
+            throw new InvalidOperationException("Event Description is required.");
+        if (string.IsNullOrWhiteSpace(areaEvent.Venue))
+            throw new InvalidOperationException("Venue is required.");
+        if (areaEvent.EventDateTime == default)
+            throw new InvalidOperationException("Event Date & Time is required.");
+        if (areaEvent.RegistrationFee.HasValue && areaEvent.RegistrationFee.Value <= 0)
+            throw new InvalidOperationException("Registration Fee must be greater than zero or left blank.");
+        if (areaEvent.PeopleAttended < 0)
+            throw new InvalidOperationException("People Attended cannot be negative.");
     }
 
     private static void AddParameters(SQLiteCommand command, AreaEvent areaEvent)

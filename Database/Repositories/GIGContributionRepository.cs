@@ -39,6 +39,7 @@ ORDER BY ContributionDate DESC, ContributionID DESC;";
 
     public long Add(GIGContribution contribution)
     {
+        ValidateForSave(contribution);
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -51,6 +52,7 @@ SELECT last_insert_rowid();";
 
     public void Update(GIGContribution contribution)
     {
+        ValidateForSave(contribution);
         using var connection = DatabaseManager.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = "UPDATE GIGContribution SET ContributionDate=@Date,Amount=@Amount,Remarks=@Remarks WHERE ContributionID=@Id AND MemberID=@MemberID;";
@@ -76,6 +78,18 @@ SELECT last_insert_rowid();";
         command.CommandText = "SELECT COALESCE(SUM(Amount),0) FROM GIGContribution WHERE MemberID=@MemberID;";
         command.Parameters.AddWithValue("@MemberID", memberId);
         return Convert.ToDecimal(command.ExecuteScalar());
+    }
+
+    private static void ValidateForSave(GIGContribution contribution)
+    {
+        if (contribution.MemberID <= 0)
+            throw new InvalidOperationException("A valid Member is required.");
+        if (contribution.ContributionDate == default)
+            throw new InvalidOperationException("Contribution Date is required.");
+        if (contribution.ContributionDate.Date > DateTime.Today)
+            throw new InvalidOperationException("Contribution Date cannot be in the future.");
+        if (contribution.Amount <= 0)
+            throw new InvalidOperationException("Amount must be greater than zero.");
     }
 
     private static void AddParams(SQLiteCommand command, GIGContribution contribution)

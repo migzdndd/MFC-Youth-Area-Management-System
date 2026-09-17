@@ -16,6 +16,7 @@ public sealed class EventParticipant
     public string ServiceName { get; set; } = string.Empty;
     public string? ModeOfPayment { get; set; }
     public string PaymentStatus { get; set; } = "Not Paid";
+    public bool Attended { get; set; }
 
     public string FullName
     {

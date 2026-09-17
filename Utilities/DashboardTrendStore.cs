@@ -10,7 +10,10 @@ public sealed record DashboardTrendSnapshot(
     int Chapters,
     int Services,
     int ActivityReports,
-    int Events);
+    int Events,
+    int? ActiveMembers = null,
+    int? EventRegistrations = null,
+    int? RecordedAttendances = null);
 
 public static class DashboardTrendStore
 {
@@ -30,13 +33,18 @@ public static class DashboardTrendStore
         {
             var now = DateTime.Now;
             var currentMonth = now.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+            var memberRepository = new MemberRepository();
+            var participantRepository = new EventParticipantRepository();
             Upsert(new DashboardTrendSnapshot(
                 currentMonth,
-                new MemberRepository().GetTotalCount(),
+                memberRepository.GetTotalCount(),
                 new ChapterRepository().GetTotalCount(),
                 new ServiceRepository().GetTotalCount(),
                 new ActivityReportRepository().GetTotalCount(),
-                new EventRepository().GetTotalCount()));
+                new EventRepository().GetTotalCount(),
+                memberRepository.GetActiveCount(),
+                participantRepository.GetTotalCount(),
+                participantRepository.GetAttendedCount()));
         }
         catch (Exception ex)
         {

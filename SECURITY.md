@@ -6,19 +6,20 @@ The following versions are currently supported with security updates and bug fix
 
 | Version | Supported |
 | ------- | --------- |
-| v2.0.3-beta.2 | ✅ |
+| v2.0.4-beta | ✅ |
+| v2.0.3-beta.2 | ❌ |
 | v2.0.3-beta.1 | ❌ |
 | v2.0.3-beta | ❌ |
-| v2.0.2 | ✅ |
-| v2.0.1-fixed | ✅ |
-| v2.0.0 | ✅ |
+| v2.0.2 | ❌ |
+| v2.0.1-fixed | ❌ |
+| v2.0.0 | ❌ |
 | v1.0.2 Public Beta | ❌ |
 | v1.0.1 Public Beta | ❌ |
 | v1.0.0 Public Beta | ❌ |
 
-Only the latest major release currently receives updates, bug fixes, and security-related improvements.
+Only the latest supported beta release currently receives updates, bug fixes, and security-related improvements.
 
-Users are strongly encouraged to upgrade to **Version 2.0.3-beta.2** to receive the latest fixes, improvements, and supported functionality.
+Users are strongly encouraged to upgrade to **Version 2.0.4-beta** to receive the latest fixes, improvements, and supported functionality.
 
 Older Public Beta releases are retained for historical purposes but are no longer actively maintained.
 

@@ -26,4 +26,25 @@ public static class AppLogger
             // Logging must never cause a second application failure.
         }
     }
+
+    public static void Warning(string operation, string message)
+    {
+        try
+        {
+            Directory.CreateDirectory(DatabaseConfiguration.LogDirectory);
+            var path = Path.Combine(DatabaseConfiguration.LogDirectory, $"{DateTime.Now:yyyy-MM-dd}.log");
+            var entry =
+                $"[{DateTimeOffset.Now:O}] WARNING {operation}{Environment.NewLine}" +
+                $"{message}{Environment.NewLine}{Environment.NewLine}";
+
+            lock (Sync)
+            {
+                File.AppendAllText(path, entry);
+            }
+        }
+        catch
+        {
+            // Logging must never cause an application failure.
+        }
+    }
 }

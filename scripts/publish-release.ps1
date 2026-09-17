@@ -6,9 +6,9 @@ $ErrorActionPreference = 'Stop'
 
 $Root = Split-Path -Parent $PSScriptRoot
 $Project = Join-Path $Root 'MFC Youth Area Management System.csproj'
-$ReleaseBaseVersion = '2.0.3'
-$ReleaseChannel = 'beta.2'
-$ReleaseRevision = '2'
+$ReleaseBaseVersion = '2.0.4'
+$ReleaseChannel = 'beta'
+$ReleaseRevision = '0'
 $ReleaseVersion = "$ReleaseBaseVersion-$ReleaseChannel"
 $ReleaseDisplayVersion = "v$ReleaseVersion"
 $PublishDir = Join-Path $Root 'dist\publish-win-x64'
@@ -89,11 +89,15 @@ if ($DatabaseInitializerText -notmatch [regex]::Escape('MigrateLegacyDatabaseIfN
 
 $DatabaseMigratorPath = Join-Path $Root 'Database\DatabaseMigrator.cs'
 $DatabaseMigratorText = Get-Content -LiteralPath $DatabaseMigratorPath -Raw
-if ($DatabaseMigratorText -notmatch [regex]::Escape('public const int CurrentVersion = 5;')) {
-    throw 'Database schema version mismatch. v2.0.3-beta.2 expects schema version 5.'
+if ($DatabaseMigratorText -notmatch [regex]::Escape('public const int CurrentVersion = 6;')) {
+    throw 'Database schema version mismatch. v2.0.4-beta expects schema version 6.'
 }
 if ($DatabaseMigratorText -notmatch [regex]::Escape('ChapterID INTEGER NULL')) {
-    throw 'Schema v5 nullable Member Chapter migration is missing.'
+    throw 'Nullable Member Chapter migration is missing.'
+}
+if ($DatabaseMigratorText -notmatch [regex]::Escape('EventID INTEGER NULL') -or
+    $DatabaseMigratorText -notmatch [regex]::Escape('Attended INTEGER NOT NULL DEFAULT 0')) {
+    throw 'Schema v6 Activity Report/Event relationship or participant attendance migration is missing.'
 }
 
 $InstallerText = Get-Content -LiteralPath $InstallerScript -Raw
@@ -167,7 +171,7 @@ try {
     Remove-Item $PublishDir -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $PublishDir -Force | Out-Null
     New-Item -ItemType Directory -Path $InstallerDir -Force | Out-Null
-    Get-ChildItem -LiteralPath $InstallerDir -Filter 'MFCYouthSetup_v2.0.3*.exe' -File -ErrorAction SilentlyContinue |
+    Get-ChildItem -LiteralPath $InstallerDir -Filter 'MFCYouthSetup_v2.0.4*.exe' -File -ErrorAction SilentlyContinue |
         Remove-Item -Force -ErrorAction SilentlyContinue
 
     & $Dotnet.Source restore $Project -r win-x64

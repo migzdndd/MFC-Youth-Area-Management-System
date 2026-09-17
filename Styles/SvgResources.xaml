@@ -1,0 +1,73 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        ========================================================================
+        MFC YOUTH AREA MANAGEMENT SYSTEM — SVG ASSET RESOURCE REGISTRY
+        ========================================================================
+        Designated injection slots for the 4 organizational SVG assets:
+        - SvgAsset1_SidebarLogo: Sidebar header branding & primary application logo
+        - SvgAsset2_DashboardHero: Dashboard hero/welcome banner illustration
+        - SvgAsset3_EmptyState: DataGrid / list empty state illustration
+        - SvgAsset4_WatermarkAccent: Decorative accent / card watermark
+        ========================================================================
+    -->
+
+    <!-- SVG Asset 1: Sidebar Logo / Emblem Vector (Cross and Dove motif) -->
+    <DrawingImage x:Key="SvgAsset1_SidebarLogo">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="{StaticResource Navy}">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry RadiusX="8" RadiusY="8" Rect="0,0,48,48" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Geometry="{StaticResource GeoServices}">
+                    <GeometryDrawing.Brush>
+                        <SolidColorBrush Color="{StaticResource GoldColor}" />
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- SVG Asset 2: Dashboard Artwork / Hero Illustration -->
+    <DrawingImage x:Key="SvgAsset2_DashboardHero">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Geometry="{StaticResource GeoTrend}">
+                    <GeometryDrawing.Brush>
+                        <SolidColorBrush Color="{StaticResource ActionBlueColor}" />
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- SVG Asset 3: Empty State Illustration -->
+    <DrawingImage x:Key="SvgAsset3_EmptyState">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Geometry="{StaticResource GeoEmptyState}">
+                    <GeometryDrawing.Brush>
+                        <SolidColorBrush Color="#94A3B8" />
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- SVG Asset 4: Decorative Watermark Accent -->
+    <DrawingImage x:Key="SvgAsset4_WatermarkAccent">
+        <DrawingImage.Drawing>
+            <DrawingGroup Opacity="0.05">
+                <GeometryDrawing Geometry="{StaticResource GeoChapters}">
+                    <GeometryDrawing.Brush>
+                        <SolidColorBrush Color="{StaticResource NavyColor}" />
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+</ResourceDictionary>

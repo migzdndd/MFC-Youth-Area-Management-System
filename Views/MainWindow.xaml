@@ -1,0 +1,220 @@
+<Window x:Class="MFCYouthAreaManagementSystem.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewmodels="clr-namespace:MFCYouthAreaManagementSystem.ViewModels"
+        mc:Ignorable="d"
+        Title="MFC Youth Area Management System"
+        Width="1200"
+        Height="780"
+        MinWidth="760"
+        MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource PageBackground}">
+
+    <Window.Resources>
+        <!-- Sidebar Navigation Button Style with Vector Icon -->
+        <Style x:Key="SidebarNavButton" TargetType="Button">
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#AFC0D6" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Margin" Value="10,2" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource SidebarHover}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource SidebarActive}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- Responsive Sidebar -->
+            <ColumnDefinition Width="230" MinWidth="180" MaxWidth="260" />
+            <!-- Main Content Area -->
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0"
+                Background="{StaticResource NavyDark}"
+                BorderBrush="#1B3250"
+                BorderThickness="0,0,1,0">
+            <DockPanel LastChildFill="True">
+
+                <!-- Sidebar Header / Branding -->
+                <StackPanel DockPanel.Dock="Top" Margin="18,22,18,16">
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Vector Logo / Monogram Shield -->
+                        <Border Width="38"
+                                Height="38"
+                                Background="{StaticResource Navy}"
+                                BorderBrush="{StaticResource Gold}"
+                                BorderThickness="2"
+                                CornerRadius="8"
+                                Margin="0,0,10,0">
+                            <Path Data="{StaticResource GeoServices}"
+                                  Fill="{StaticResource Gold}"
+                                  Stretch="Uniform"
+                                  Width="20"
+                                  Height="20"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="MFC YOUTH"
+                                       Foreground="{StaticResource Gold}"
+                                       FontSize="14"
+                                       FontWeight="Bold" />
+                            <TextBlock Text="NCR Central"
+                                       Foreground="#889BB5"
+                                       FontSize="11"
+                                       FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Area Management System"
+                               Foreground="White"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"
+                               Margin="2,0,0,12" />
+
+                    <Separator Background="#223956" Margin="0,0,0,14" />
+                </StackPanel>
+
+                <!-- Sidebar Footer -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="16,10,16,18">
+                    <Separator Background="#223956" Margin="0,0,0,12" />
+                    <Border Background="#142844"
+                            CornerRadius="6"
+                            Padding="10,8"
+                            Margin="0,0,0,6">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                                <Ellipse Width="7" Height="7" Fill="{StaticResource Success}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Offline • SQLite • WPF"
+                                           Foreground="#AFC0D6"
+                                           FontSize="11"
+                                           FontWeight="Medium" />
+                            </StackPanel>
+                            <TextBlock Text="System Version v2.0.4-beta"
+                                       Foreground="#657C9C"
+                                       FontSize="10" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Navigation Links -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="0,0,0,10">
+
+                        <!-- Dashboard -->
+                        <Button Command="{Binding NavigateToDashboardCommand}" Style="{StaticResource SidebarNavButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource GeoDashboard}"
+                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Stretch="Uniform" Width="16" Height="16" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Dashboard" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Members -->
+                        <Button Command="{Binding NavigateToMembersCommand}" Style="{StaticResource SidebarNavButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource GeoMembers}"
+                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Stretch="Uniform" Width="16" Height="16" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Members" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Chapters -->
+                        <Button Command="{Binding NavigateToChaptersCommand}" Style="{StaticResource SidebarNavButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource GeoChapters}"
+                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Stretch="Uniform" Width="16" Height="16" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Chapters" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Services -->
+                        <Button Command="{Binding NavigateToServicesCommand}" Style="{StaticResource SidebarNavButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource GeoServices}"
+                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Stretch="Uniform" Width="16" Height="16" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Services" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Activity Reports -->
+                        <Button Command="{Binding NavigateToReportsCommand}" Style="{StaticResource SidebarNavButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource GeoReports}"
+                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Stretch="Uniform" Width="16" Height="16" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Activity Reports" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Events -->
+                        <Button Command="{Binding NavigateToEventsCommand}" Style="{StaticResource SidebarNavButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource GeoEvents}"
+                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Stretch="Uniform" Width="16" Height="16" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Events" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+            </DockPanel>
+        </Border>
+
+        <!-- Main Workspace Area -->
+        <Grid Grid.Column="1">
+            <ContentControl Content="{Binding CurrentView}"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch" />
+        </Grid>
+
+    </Grid>
+</Window>

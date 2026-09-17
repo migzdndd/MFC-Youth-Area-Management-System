@@ -2,6 +2,7 @@ using System.Drawing.Printing;
 using MFCYouthAreaManagementSystem.Models;
 using MFCYouthAreaManagementSystem.UI.Theme;
 
+using System.Drawing;
 namespace MFCYouthAreaManagementSystem.Utilities;
 
 public sealed record ActivityReportPdfExportContext(
@@ -410,6 +411,13 @@ public static class ActivityReportPdfExporter
                                $"{DisplayValue(report.ReportType, "Unspecified")} | Prepared by: {DisplayValue(report.PreparedBy, "Unspecified")}";
                 foreach (var line in WrapText(graphics, metadata, _smallFont, textWidth))
                     _detailItems.Add(new DocumentItem(DocumentItemKind.Metadata, line));
+
+                if (!string.IsNullOrWhiteSpace(report.EventName))
+                {
+                    var linkedEvent = $"Linked Event: {report.EventName.Trim()}";
+                    foreach (var line in WrapText(graphics, linkedEvent, _smallFont, textWidth))
+                        _detailItems.Add(new DocumentItem(DocumentItemKind.Metadata, line));
+                }
 
                 _detailItems.Add(new DocumentItem(DocumentItemKind.Spacer, string.Empty));
                 _detailItems.Add(new DocumentItem(DocumentItemKind.Label, "Activity"));

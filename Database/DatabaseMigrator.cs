@@ -4,7 +4,7 @@ namespace MFCYouthAreaManagementSystem.Database;
 
 public static class DatabaseMigrator
 {
-    public const int CurrentVersion = 5;
+    public const int CurrentVersion = 6;
 
     public static void Apply(SQLiteConnection connection)
     {
@@ -49,7 +49,13 @@ public static class DatabaseMigrator
         }
 
         if (version < 5)
+        {
             ApplyV5(connection);
+            version = 5;
+        }
+
+        if (version < 6)
+            ApplyV6(connection);
     }
 
     private static void ApplyV1(SQLiteConnection connection)
@@ -374,6 +380,90 @@ FROM Service s LEFT JOIN MemberService ms ON ms.ServiceID = s.ServiceID
 GROUP BY s.ServiceID, s.ServiceName, s.DisplayOrder;
 
 PRAGMA user_version = 5;";
+        command.ExecuteNonQuery();
+        tx.Commit();
+    }
+
+    private static void ApplyV6(SQLiteConnection connection)
+    {
+        using var tx = connection.BeginTransaction();
+        using var command = connection.CreateCommand();
+        command.Transaction = tx;
+        command.CommandText = @"
+DROP TABLE IF EXISTS ActivityReport_v6;
+CREATE TABLE ActivityReport_v6 (
+    ReportID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Title TEXT NOT NULL,
+    ChapterID INTEGER NULL,
+    ChapterNameSnapshot TEXT NOT NULL,
+    EventID INTEGER NULL,
+    EventNameSnapshot TEXT NULL,
+    ReportType TEXT NOT NULL,
+    Activity TEXT NOT NULL,
+    ReportDate TEXT NOT NULL,
+    PreparedBy TEXT NOT NULL,
+    Description TEXT NOT NULL,
+    CreatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ChapterID) REFERENCES Chapter(ChapterID) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY (EventID) REFERENCES AreaEvent(EventID) ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+INSERT INTO ActivityReport_v6(
+    ReportID, Title, ChapterID, ChapterNameSnapshot, EventID, EventNameSnapshot,
+    ReportType, Activity, ReportDate, PreparedBy, Description, CreatedAt, UpdatedAt)
+SELECT
+    ReportID, Title, ChapterID, ChapterNameSnapshot, NULL, NULL,
+    ReportType, Activity, ReportDate, PreparedBy, Description, CreatedAt, UpdatedAt
+FROM ActivityReport;
+
+DROP TABLE ActivityReport;
+ALTER TABLE ActivityReport_v6 RENAME TO ActivityReport;
+CREATE INDEX IF NOT EXISTS IX_ActivityReport_ChapterID ON ActivityReport(ChapterID);
+CREATE INDEX IF NOT EXISTS IX_ActivityReport_EventID ON ActivityReport(EventID);
+
+DROP TABLE IF EXISTS EventParticipant_v6;
+CREATE TABLE EventParticipant_v6 (
+    ParticipantID INTEGER PRIMARY KEY AUTOINCREMENT,
+    EventID INTEGER NOT NULL,
+    FirstName TEXT NOT NULL,
+    LastName TEXT NOT NULL,
+    MiddleInitial TEXT NULL,
+    Age INTEGER NOT NULL CHECK (Age BETWEEN 1 AND 120),
+    ContactNumber TEXT NOT NULL,
+    Address TEXT NOT NULL,
+    ChapterID INTEGER NULL,
+    ChapterNameSnapshot TEXT NOT NULL,
+    ServiceID INTEGER NULL,
+    ServiceNameSnapshot TEXT NOT NULL,
+    ModeOfPayment TEXT NULL,
+    PaymentStatus TEXT NOT NULL CHECK (PaymentStatus IN ('Paid', 'Not Paid')),
+    Attended INTEGER NOT NULL DEFAULT 0 CHECK (Attended IN (0, 1)),
+    RegisteredAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (EventID) REFERENCES AreaEvent(EventID) ON DELETE CASCADE,
+    FOREIGN KEY (ChapterID) REFERENCES Chapter(ChapterID) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY (ServiceID) REFERENCES Service(ServiceID) ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+INSERT INTO EventParticipant_v6(
+    ParticipantID, EventID, FirstName, LastName, MiddleInitial, Age, ContactNumber, Address,
+    ChapterID, ChapterNameSnapshot, ServiceID, ServiceNameSnapshot, ModeOfPayment, PaymentStatus,
+    Attended, RegisteredAt, UpdatedAt)
+SELECT
+    ParticipantID, EventID, FirstName, LastName, MiddleInitial, Age, ContactNumber, Address,
+    ChapterID, ChapterNameSnapshot, ServiceID, ServiceNameSnapshot, ModeOfPayment, PaymentStatus,
+    0, RegisteredAt, UpdatedAt
+FROM EventParticipant;
+
+DROP TABLE EventParticipant;
+ALTER TABLE EventParticipant_v6 RENAME TO EventParticipant;
+CREATE INDEX IF NOT EXISTS IX_EventParticipant_EventID ON EventParticipant(EventID);
+CREATE INDEX IF NOT EXISTS IX_EventParticipant_ChapterID ON EventParticipant(ChapterID);
+CREATE INDEX IF NOT EXISTS IX_EventParticipant_ServiceID ON EventParticipant(ServiceID);
+CREATE INDEX IF NOT EXISTS IX_EventParticipant_Attended ON EventParticipant(Attended);
+
+PRAGMA user_version = 6;";
         command.ExecuteNonQuery();
         tx.Commit();
     }

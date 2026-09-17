@@ -1,292 +1,187 @@
 # MFC Youth Area Management System
 
-**Current release:** `v2.0.3-beta.2`
+**Current release:** `v2.0.4-beta`  
+**Desktop UI:** WPF / MVVM-oriented navigation  
+**Runtime:** .NET 8 Windows x64, self-contained  
+**Database:** SQLite schema `6`  
+**Mode:** Offline-first
 
-### v2.0.3-beta.2 release focus
+The MFC Youth Area Management System is a Windows desktop application for managing Area Members, Chapters, Services, Activity Reports, GIG contributions, Events, participant registration, payment status, and recorded attendance.
 
-- Includes the completed Windows-side Mobile Access Phases 1–4 with responsive, DPI-aware layouts.
-- Adds a dedicated read-only Member Details view with Services and GIG contribution history.
-- Improves Member search with combined Search, Status, and Chapter filters.
-- Strengthens Member validation, including duplicate Contact Number and case-insensitive duplicate Email checks.
-- Allows Members to exist without a Chapter and adds direct multi-member assignment from the Chapters page.
-- Advances the SQLite schema from version 4 to version 5 without intentionally deleting existing records.
-- Preserves installer database backup/migration safeguards and the existing offline-first Windows workflow.
-- Displays `v2.0.3-beta.2` in the permanent bottom-right application footer.
+## Current WPF Feature Set
 
-A custom-designed, fully offline Windows desktop management application for organizing MFC Youth Area records.
+### Dashboard
+- Total Members and Active Members
+- Chapters and Services
+- Activity Reports and Events
+- Event Registrations and Recorded Attendance
+- Recent/upcoming Events
+- Members-by-Chapter overview
+- Rolling monthly trend history stored separately from the SQLite database
 
-## Core Features
+### Members
+- Search, Status filtering, and Chapter filtering
+- Add and Edit Member
+- Read-only Member Details
+- Delete confirmation
+- Optional Chapter assignment / genuinely unassigned Members
+- Contact-number and email duplicate protection
+- Service assignment
+- GIG Tracker access
 
-- Member management with Birth Date, contact information, address, status, Chapter, and multiple Services
-- Chapter management with case-insensitive duplicate protection and safe delete rules
-- Seven system-defined MFC Youth Service roles with many-to-many Member assignments
-- Activity Reports with separate Activity and Description fields, combined filters, summary metrics, percentage-based visual analytics, polished empty/selection states, and professional filtered PDF export
-- GIG contribution tracking per Member with Philippine peso totals
-- Dashboard statistics and monthly trend indicators for Members, Chapters, Services, Activity Reports, and Events
-- Event management with participant registration, attendance counts, payment status, and registration-fee summaries
-- Local SQLite persistence under the signed-in Windows user's application-data folder
-- Custom navy/gold WinForms UI, reusable controls, custom dialogs, toast feedback, and styled DataGridViews
+### Chapters
+- Search Chapters
+- Add and Rename Chapter
+- Member Count and Active Member Count
+- Manage Chapter Members
+- Assign only currently-unassigned Members directly to a Chapter
+- Safe deletion with historical snapshot preservation
 
-## Mobile Compatibility
+### Services
+- Seven seeded MFC Youth Service roles
+- Assigned Member counts
+- Search and view Members assigned to a Service
+- Member-to-Service assignment from the Members workflow
 
-The Windows app now includes responsive layouts for smaller screens, compact forms, touch-friendly tables, and DPI-aware scaling.
+### Activity Reports
+- Add, Edit, Delete, Search, and filter
+- Current and historical Chapter filtering
+- Report Types: Core Household, Household, Assembly, Fellowship
+- Optional linked Event with historical Event-name snapshot preservation
+- Date filtering
+- Six-month report volume analytics
+- Report Type mix and Chapter activity analytics
+- Filtered PDF export through Microsoft Print to PDF
 
-Windows-side mobile readiness is complete. Actual Android/iPhone access will be added later through the planned web/PWA and hybrid online/offline system.
+### Events
+- Add, Edit, Delete, Search, and Event Details
+- Participant registration and editing
+- Chapter and Service snapshots
+- Payment Status and Mode of Payment
+- Recorded Attendance state
+- Registered / Attended / Paid / Collected summary totals
+
+### GIG Tracker
+- Contribution history
+- Add/Edit/Delete contributions
+- Total contribution amount
+- Non-future contribution dates
+- Positive-amount validation
+
+## Data and Migration Safety
+
+Runtime data is stored at:
+
+```text
+%LOCALAPPDATA%\MFCYouthAreaManagementSystem\mfcyouth.db
+```
+
+Logs are stored at:
+
+```text
+%LOCALAPPDATA%\MFCYouthAreaManagementSystem\Logs\
+```
+
+The app keeps the existing incremental migration chain through SQLite schema version `6`. Existing supported databases are migrated in place; startup also performs SQLite integrity checks, foreign-key checks, and the conservative data-integrity audit before normal use.
+
+Schema 6 includes:
+- nullable `Member.ChapterID`
+- optional Activity Report → Event relationship
+- Event name snapshots for historical Reports
+- recorded Event Participant attendance
+
+The local SQLite database is not claimed to be encrypted.
 
 ## Technology
 
-- C#
-- .NET 8 Windows Forms
-- System.Data.SQLite
-- SQLite
-- Parameterized SQL
+- C# 12
+- .NET 8 WPF
+- SQLite / `System.Data.SQLite.Core 1.0.119`
 - Repository-based data access
-- Programmatic custom WinForms UI
+- XAML views and reusable WPF resources
+- Offline PDF export using Windows Microsoft Print to PDF
 
-## Requirements
+## Project Structure
 
-### End Users
+```text
+Assets/                     Local assets
+Database/                   Database initialization, migration, integrity audit
+Database/Repositories/      SQLite repositories
+Installer/                  Inno Setup scripts and installer resources
+Models/                      Domain models
+Properties/                  App manifest and publish profiles
+Services/                    WPF/application services
+Styles/                      Shared WPF theme resources
+Utilities/                   Validation, logging, formatting, PDF and trend helpers
+ViewModels/                  WPF view models and commands
+Views/                       Primary WPF pages
+Views/Dialogs/               WPF editor/detail dialogs
+scripts/                     Release publishing automation
+App.xaml                     WPF application resources and DataTemplates
+App.xaml.cs                  WPF startup and database initialization
+```
 
-- Windows 10 64-bit or Windows 11 64-bit
-- No separate .NET installation is required for the release installer
-- No internet connection is required after the installer has been downloaded
-- The Activity Reports **Export PDF** feature uses the Windows built-in **Microsoft Print to PDF** optional feature
+The old WinForms presentation layer is no longer part of the source package. The WPF conversion is authoritative.
 
-The `win-x64` release is published **self-contained**, so the required .NET 8 runtime is bundled with the application.
+## Developer Requirements
 
-### Developers
+- Windows 10/11 x64
+- Visual Studio 2022 with **.NET desktop development**, or .NET 8 SDK
+- NuGet access for first restore unless dependencies are already cached
+- Inno Setup 6 only when compiling the installer
 
-- Visual Studio 2022 with the **.NET desktop development** workload and .NET 8 SDK, or the .NET 8 SDK from the command line
-- NuGet access for the first package restore, unless `System.Data.SQLite.Core` is already available in your local package cache
-
-## Updating the Existing Repository
-
-This package is arranged to replace the existing `MFC-Youth-Area-Management-System` repository more directly. Keep the repository's `.git` folder, remove old generated/legacy source files, then copy this package into the repository root. Visual Studio-generated `.vs`, `bin`, and `obj` folders should not be committed.
-
-## Open and Build
-
-1. Open `MFC Youth Database.sln` in Visual Studio 2022.
-2. Allow Visual Studio to restore NuGet packages.
-3. Select the `x64` solution platform.
-4. Select `Debug` or `Release`.
-5. Build the solution.
-6. Run the project.
-
-Command-line equivalent on a Windows development machine with the .NET 8 SDK:
+## Build
 
 ```powershell
 dotnet restore ".\MFC Youth Database.sln" -r win-x64
 dotnet build ".\MFC Youth Database.sln" -c Release -p:Platform=x64 -r win-x64 --no-restore
 ```
 
-## Publish the Release
+Expected release gate: **0 build errors**. Review meaningful warnings before publishing.
 
-The release configuration is intentionally **self-contained** and **not single-file**. This bundles the .NET 8 runtime while keeping native SQLite components in their normal published layout. The Inno Setup installer then packages the entire publish folder into one installer for users.
+## Publish
 
-Recommended release command:
+Recommended:
 
 ```powershell
 .\scripts\publish-release.ps1
 ```
 
-The script:
-
-1. Clears stale `bin`, `obj`, and release publish output.
-2. Restores packages for `win-x64`.
-3. Publishes a self-contained Windows x64 application.
-4. Verifies the executable reports `2.0.3-beta.2` and file version `2.0.3.2`.
-5. Verifies the .NET runtime is actually present in the publish folder.
-6. Compiles the Inno Setup installer automatically when Inno Setup 6 is installed.
-
-Manual publish equivalent:
+or:
 
 ```powershell
 dotnet publish ".\MFC Youth Area Management System.csproj" `
-    -c Release `
-    -r win-x64 `
-    --self-contained true `
-    -p:PublishSingleFile=false `
-    -p:PublishTrimmed=false `
-    -o ".\dist\publish-win-x64"
+  -c Release `
+  -r win-x64 `
+  --self-contained true `
+  -p:PublishSingleFile=false `
+  -p:PublishTrimmed=false `
+  -o ".\dist\publish-win-x64"
 ```
 
-Expected installer output:
+The release script verifies the expected version, schema level, self-contained runtime files, SQLite native runtime, installer resources, and the final installer when Inno Setup is available.
+
+## Release Packaging
+
+Generated folders are deliberately excluded from the clean source package:
 
 ```text
-dist\installer\MFCYouthSetup_v2.0.3-beta.2.exe
+bin/
+obj/
+dist/
 ```
 
-## Local Database
+This prevents stale WinForms binaries or old installers from being confused with the converted WPF source. Run the release script on the Windows development machine to create a fresh publish folder and installer from this source.
 
-The runtime database is created automatically at:
-
-```text
-%LOCALAPPDATA%\MFCYouthAreaManagementSystem\mfcyouth.db
-```
-
-Logs are written, when possible, to:
-
-```text
-%LOCALAPPDATA%\MFCYouthAreaManagementSystem\Logs\
-```
-
-The database is not stored beside the executable and should not be committed to source control.
-
-**Current database schema:** `5`
-
-Existing supported schema-v4 databases are migrated to schema v5 on startup. The v5 migration preserves existing Member IDs, Chapter assignments, Service assignments, GIG contributions, Reports, Events, and Event participants while making `Member.ChapterID` optional.
-
-## Database Overview
-
-### Chapter
-
-Stores unique Chapter names. Chapter names use case-insensitive uniqueness. A Chapter cannot be deleted while Members are assigned to it.
-
-### Member
-
-Stores Member identity and contact fields, Birth Date, Status, and an optional Chapter foreign key. Members may remain unassigned until they are added to a Chapter. Contact Number is stored as `TEXT` so leading zeroes are preserved.
-
-### Service
-
-Contains the seven system-defined Service types:
-
-1. Unit Servant
-2. Household Servant
-3. Chapter Servant
-4. Area Servant
-5. LIT Servant
-6. Campus Servant
-7. MFC High Servant
-
-They are seeded idempotently on startup.
-
-### MemberService
-
-Junction table implementing the many-to-many Member/Service relationship. A Member may have zero or more Services.
-
-### ActivityReport
-
-Stores Title, Chapter, Report Type, Activity, Report Date, Prepared By, and Description.
-
-### GIGContribution
-
-Stores each Member contribution Date, Amount, and optional Remarks. Totals are calculated dynamically with `SUM(Amount)`.
-
-### AreaEvent
-
-Stores Event Name, Event Description, optional per-person Registration Fee, People Attended, Venue, and Event Date/Time.
-
-### EventParticipant
-
-Stores Event registrations including name, optional Middle Initial, Age, Contact Number, Address, Chapter, Service, Mode of Payment, and Paid/Not Paid status. Chapter and Service selections are taken from the existing local database. Snapshot names are preserved so historical Event records remain readable if organizational records change later.
-
-The Event summary calculates:
-
-- Registered Participants
-- People Attended
-- Paid Participants
-- Total Registration Fees Collected
-
-Total Registration Fees Collected is the Event Registration Fee multiplied by the number of participants marked Paid. An Event with no Registration Fee displays a collected total of ₱0.00.
-
-## Schema Versioning
-
-The application uses `PRAGMA user_version` for schema versioning. Version 1 creates the original Member, Chapter, Service, Activity Report, and GIG schema. Version 2 adds Events and Event Participants. Version 3 introduces historical Chapter-name snapshots for Activity Reports and allows deleted Chapter references to become `NULL`. Version 4 hardens and repairs the Activity Report and Event Participant relationships so historical records survive Chapter deletion. Startup never intentionally deletes or replaces an existing database to perform a migration.
-
-## Validation Rules
-
-- First Name, Last Name, Birth Date, Contact Number, Address, Status, and Chapter are required for Members.
-- Contact Number must contain exactly 11 digits.
-- Email is optional and receives basic format validation when supplied.
-- Chapter names are required and case-insensitively unique.
-- All Activity Report fields are required.
-- GIG Amount must be numeric and greater than zero.
-- Event Name, Event Description, and Venue are required.
-- Event Registration Fee is optional; when supplied it must be greater than zero.
-- Participant First Name, Last Name, Age, Contact Number, Address, Chapter, Service, and Payment Status are required.
-- Participant Contact Number must contain exactly 11 digits.
-- Mode of Payment is required when Payment Status is Paid.
-- Required text is trimmed and whitespace-only values are rejected.
-
-## UI and Navigation
-
-The application uses one main shell with:
-
-- Custom title bar
-- Custom left navigation
-- Dashboard content area
-- Embedded primary pages
-- Modal detail/edit workflows
-
-Primary pages:
-
-- Dashboard
-- Members
-- Chapters
-- Services
-- Activity Reports
-- Events
-
-GIG tracking is opened from a selected Member.
-
-## Keyboard Shortcuts
-
-Where applicable:
-
-- `Ctrl+N` creates a new record
-- `F5` refreshes the current list
-- `Enter` opens/edits the selected record
-- `Delete` begins delete confirmation
-- `Ctrl+Shift+F` clears Activity Report filters
-- `Ctrl+Shift+E` exports the currently filtered Activity Reports to PDF
-
-## Project Structure
-
-```text
-Assets/                 Bundled local icons and assets
-Database/               SQLite connection, initialization, and migration
-Database/Repositories/  Parameterized data-access repositories
-Forms/                  Dashboard and feature pages/dialogs
-Forms/Controls/         Reusable custom WinForms controls and dialogs
-Models/                 Domain models
-Properties/             Application manifest and project properties
-Utilities/              Validation, formatting, logging, and UI helpers
-Utilities/Theme/        Centralized colors, fonts, and sizing
-```
-
-## Data Privacy and Storage
-
-This application stores personal information locally on the Windows computer. The SQLite database is **not claimed to be encrypted**. Anyone with sufficient access to the local Windows account or database file may be able to inspect it. Use normal Windows account security and file permissions appropriate to the organization's environment.
-
-## Offline Behavior
-
-No runtime web service, cloud database, external API, account sign-in, or internet connection is required. Core CRUD, search, reporting data, Activity Report PDF export, Service assignment, GIG tracking, Events, participant registration, attendance counts, and payment summaries operate locally without a web service or cloud dependency.
-
-## Current Scope and Limitations
+## Current Limitations / Future Work
 
 - No authentication or role-permission system yet
 - No database encryption yet
-- No Member photos
-- No Excel import/export yet; Activity Reports support filtered PDF export
-- No backup/restore UI yet
+- No Member photos yet
+- No Excel import/export yet
+- Backup/Restore UI remains deferred
+- Cloud synchronization / web-hybrid integration remains a later roadmap phase
 
-## Future Expansion
+## Privacy
 
-The current data/repository structure can be extended later for attendance history, Chapter transfer history, Service history, photos, accounts, permissions, backup/restore, spreadsheet import/export, printable/PDF exports for additional modules, and contribution reporting.
-
-
-## v2.0.2 Chapter deletion fix
-
-This package includes the v3/v4 Chapter-reference migrations. Activity Reports now preserve a Chapter name snapshot and use `ON DELETE SET NULL`, so an empty Chapter can be deleted even when historical Activity Reports or Event Participants reference it. Members must still be moved before deleting a Chapter.
-
-### v2.0.2 Chapter Delete Repair
-
-Release `v2.0.2` includes the hardened Chapter deletion repair for upgraded databases. Historical Activity Reports and Event participants keep their Chapter-name snapshots while their Chapter foreign keys are detached before a Chapter is removed. Database schema version 4 rebuilds the affected relationships with `ON DELETE SET NULL`.
-
-This package also fixes application version metadata and changes the Windows x64 release to a self-contained deployment so end users do not receive a separate .NET runtime installation prompt.
-
-## Guaranteed self-contained release path
-
-For the public installer, use `Build-Release.cmd` or `scripts\publish-release.ps1`. The release script forces `win-x64` self-contained publishing, verifies that the .NET runtime files are physically present in `dist\publish-win-x64`, verifies the native SQLite runtime, and only then compiles the Inno Setup installer. This prevents accidentally packaging a framework-dependent executable that asks end users to install .NET.
-
-The installer artwork is pinned to `installer\Resources\WizardImage.png` and `installer\Resources\WizardSmallImage.png`. The release script verifies the approved image hashes before building the installer.
+Member, Event, payment-status, and organizational data are stored locally. Protect the Windows account and database file appropriately, and never commit a real runtime database to a public repository.
