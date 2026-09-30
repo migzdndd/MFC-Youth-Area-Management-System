@@ -1,0 +1,153 @@
+<UserControl x:Class="MFCYouthAreaManagementSystem.Views.ChaptersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="clr-namespace:MFCYouthAreaManagementSystem.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=viewmodels:ChaptersViewModel}">
+
+    <UserControl.InputBindings>
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding AddCommand}" />
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
+        <KeyBinding Key="Delete" Command="{Binding DeleteCommand}" />
+        <KeyBinding Key="Enter" Command="{Binding ManageCommand}" />
+    </UserControl.InputBindings>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Page Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="Chapters" Style="{StaticResource PageTitle}" />
+                <TextBlock Text="Manage area chapter units, membership counts, and assign unassigned members."
+                           Style="{StaticResource PageSubtitle}" Margin="0,4,0,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="+ Add Chapter"
+                        Command="{Binding AddCommand}"
+                        Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="1" Background="{StaticResource Surface}"
+                BorderBrush="{StaticResource BorderBrushApp}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="12,10"
+                Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Search Input -->
+                <TextBox Width="260"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Search chapters by name..." />
+
+                <!-- Action Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="View Members"
+                            Command="{Binding ManageCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Padding="12,6" />
+
+                    <Button Content="Rename"
+                            Command="{Binding RenameCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Padding="12,6" />
+
+                    <Button Content="Delete"
+                            Command="{Binding DeleteCommand}"
+                            Style="{StaticResource DangerButton}"
+                            Padding="12,6" />
+
+                    <Button Command="{Binding RefreshCommand}"
+                            Style="{StaticResource IconButton}"
+                            ToolTip="Refresh list (F5)">
+                        <Path Data="{StaticResource GeoRefresh}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="14" Height="14" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Chapters DataGrid with Empty State -->
+        <Grid Grid.Row="2">
+            <DataGrid ItemsSource="{Binding Chapters}"
+                      SelectedItem="{Binding SelectedChapter}"
+                      SelectionMode="Single">
+                <DataGrid.Columns>
+                    <!-- Chapter Name -->
+                    <DataGridTemplateColumn Header="Chapter Name" Width="2*" SortMemberPath="ChapterName">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Border Width="30" Height="30" CornerRadius="6" Background="{StaticResource NavySoft}" Margin="0,0,10,0">
+                                        <Path Data="{StaticResource GeoChapters}" Fill="{StaticResource Navy}" Stretch="Uniform" Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{Binding ChapterName}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Total Members -->
+                    <DataGridTemplateColumn Header="Total Members" Width="150" SortMemberPath="MemberCount">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource NavySoft}" CornerRadius="12" Padding="10,3" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding MemberCount, StringFormat={}{0} members}" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource Navy}" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Active Members -->
+                    <DataGridTemplateColumn Header="Active Members" Width="150" SortMemberPath="ActiveMemberCount">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource SuccessSoft}" CornerRadius="12" Padding="10,3" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding ActiveMemberCount, StringFormat={}{0} active}" FontWeight="SemiBold" FontSize="11" Foreground="{StaticResource Success}" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Empty State Overlay -->
+            <Border Visibility="{Binding Chapters, Converter={StaticResource EmptyToVis}}"
+                    Background="{StaticResource Surface}"
+                    BorderBrush="{StaticResource BorderBrushApp}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="32"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel HorizontalAlignment="Center">
+                    <Border Width="52" Height="52" CornerRadius="26" Background="{StaticResource NavySoft}" HorizontalAlignment="Center" Margin="0,0,0,12">
+                        <Path Data="{StaticResource GeoChapters}" Fill="{StaticResource Navy}" Stretch="Uniform" Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="No Chapters Found" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Navy}" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                    <TextBlock Text="No chapters match your search query." Foreground="{StaticResource TextMuted}" FontSize="12" HorizontalAlignment="Center" Margin="0,0,0,14" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+    </Grid>
+</UserControl>

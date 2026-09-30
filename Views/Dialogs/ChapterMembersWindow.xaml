@@ -1,0 +1,104 @@
+<Window x:Class="MFCYouthAreaManagementSystem.Views.Dialogs.ChapterMembersWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Chapter Members"
+        Width="780"
+        Height="620"
+        MinWidth="640"
+        MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource PageBackground}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Style="{StaticResource DialogHeaderBorder}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="Heading" Style="{StaticResource PageTitle}" FontSize="20" />
+                    <TextBlock x:Name="CountText" Style="{StaticResource HelperText}" Margin="0,3,0,0" />
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="+ Add Unassigned Members"
+                        Style="{StaticResource PrimaryButton}"
+                        Click="Add_Click"
+                        VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <!-- Search Toolbar -->
+        <Border Grid.Row="1" Background="{StaticResource Surface}"
+                BorderBrush="{StaticResource BorderBrushApp}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10">
+            <TextBox x:Name="SearchBox"
+                     TextChanged="SearchBox_TextChanged"
+                     Width="280"
+                     HorizontalAlignment="Left"
+                     ToolTip="Search chapter members..." />
+        </Border>
+
+        <!-- DataGrid -->
+        <Grid Grid.Row="2" Margin="24,16">
+            <DataGrid x:Name="Grid" SelectionMode="Single">
+                <DataGrid.Columns>
+                    <!-- Member Name -->
+                    <DataGridTemplateColumn Header="Member Name" Width="2*" SortMemberPath="FullName">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding FullName}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Status Pill -->
+                    <DataGridTemplateColumn Header="Status" Width="110" SortMemberPath="Status">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="{Binding Status, Converter={StaticResource StatusToBg}}"
+                                        BorderBrush="{Binding Status, Converter={StaticResource StatusToBorder}}"
+                                        BorderThickness="1"
+                                        CornerRadius="12"
+                                        Padding="8,2"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Status}"
+                                               Foreground="{Binding Status, Converter={StaticResource StatusToFg}}"
+                                               FontSize="11"
+                                               FontWeight="SemiBold" />
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Contact -->
+                    <DataGridTextColumn Header="Contact Number" Binding="{Binding ContactNumber}" Width="140" />
+
+                    <!-- Services -->
+                    <DataGridTextColumn Header="Assigned Services" Binding="{Binding Services}" Width="2*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- Footer -->
+        <Border Grid.Row="3" Style="{StaticResource DialogFooterBorder}">
+            <Button Content="Close"
+                    HorizontalAlignment="Right"
+                    Style="{StaticResource SecondaryButton}"
+                    Click="Close_Click" />
+        </Border>
+
+    </Grid>
+</Window>

@@ -1,0 +1,99 @@
+<Window x:Class="MFCYouthAreaManagementSystem.Views.Dialogs.ReportEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Activity Report"
+        Width="750"
+        Height="740"
+        MinWidth="600"
+        MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource PageBackground}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Style="{StaticResource DialogHeaderBorder}">
+            <StackPanel>
+                <TextBlock x:Name="Heading" Text="Activity Report" Style="{StaticResource PageTitle}" FontSize="20" />
+                <TextBlock Text="Document household, assembly, or fellowship activities, link related events, and log notes."
+                           Style="{StaticResource HelperText}" Margin="0,3,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- Form Body -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24,18">
+
+                <!-- 1. Report Overview & Metadata -->
+                <Border Style="{StaticResource FormSectionCard}">
+                    <StackPanel>
+                        <TextBlock Text="Report Details &amp; Alignment" Style="{StaticResource SectionHeader}" FontSize="15" Margin="0,0,0,12" />
+
+                        <TextBlock Text="Report Title *" Style="{StaticResource FormLabel}" Margin="0,0,0,4" />
+                        <TextBox x:Name="TitleBox" />
+
+                        <Grid Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Margin="0,0,10,0">
+                                <TextBlock Text="Chapter *" Style="{StaticResource FormLabel}" />
+                                <ComboBox x:Name="ChapterCombo" DisplayMemberPath="ChapterName" />
+
+                                <TextBlock Text="Report Date *" Style="{StaticResource FormLabel}" />
+                                <DatePicker x:Name="DatePicker" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Text="Report Type *" Style="{StaticResource FormLabel}" />
+                                <ComboBox x:Name="TypeCombo" />
+
+                                <TextBlock Text="Prepared By *" Style="{StaticResource FormLabel}" />
+                                <TextBox x:Name="PreparedBox" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="Linked Area Event (Optional)" Style="{StaticResource FormLabel}" Margin="0,8,0,4" />
+                        <ComboBox x:Name="EventCombo" DisplayMemberPath="Name" />
+                    </StackPanel>
+                </Border>
+
+                <!-- 2. Content & Narrative -->
+                <Border Style="{StaticResource FormSectionCard}">
+                    <StackPanel>
+                        <TextBlock Text="Activity Summary &amp; Description" Style="{StaticResource SectionHeader}" FontSize="15" Margin="0,0,0,12" />
+
+                        <TextBlock Text="Activity Headline / Summary *" Style="{StaticResource FormLabel}" Margin="0,0,0,4" />
+                        <TextBox x:Name="ActivityBox" Height="70" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+
+                        <TextBlock Text="Detailed Narrative / Observations *" Style="{StaticResource FormLabel}" Margin="0,8,0,4" />
+                        <TextBox x:Name="DescriptionBox" Height="130" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer Actions -->
+        <Border Grid.Row="2" Style="{StaticResource DialogFooterBorder}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel"
+                        Style="{StaticResource SecondaryButton}"
+                        Click="Cancel_Click"
+                        Margin="0,0,8,0" />
+
+                <Button Content="Save Report"
+                        Style="{StaticResource PrimaryButton}"
+                        Click="Save_Click" />
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</Window>

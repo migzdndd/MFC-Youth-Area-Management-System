@@ -1,0 +1,30 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Form Section Group Box / Card -->
+    <Style TargetType="Border" x:Key="FormSectionCard">
+        <Setter Property="Background" Value="{StaticResource Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrushApp}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Margin" Value="0,0,0,14" />
+    </Style>
+
+    <!-- Dialog Header Style -->
+    <Style TargetType="Border" x:Key="DialogHeaderBorder">
+        <Setter Property="Background" Value="{StaticResource SurfaceSubtle}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrushApp}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="Padding" Value="24,18" />
+    </Style>
+
+    <!-- Dialog Footer Bar Style -->
+    <Style TargetType="Border" x:Key="DialogFooterBorder">
+        <Setter Property="Background" Value="{StaticResource SurfaceSubtle}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrushApp}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+        <Setter Property="Padding" Value="20,14" />
+    </Style>
+
+</ResourceDictionary>
