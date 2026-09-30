@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MFC Youth AMS</string>
+    <string name="title_activity_main">MFC Youth AMS</string>
+    <string name="package_name">com.mfcyouth.ams</string>
+    <string name="custom_url_scheme">com.mfcyouth.ams</string>
+</resources>

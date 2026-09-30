@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<!-- MFC Youth Area Management System: Registration form -->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#002847">
+  <meta name="description" content="MFC Youth first-time access and Servant Leader registration.">
+  <title>First-Time Access - MFC Youth Area Management System</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  </style>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/png" href="/img/logo-2.png">
+</head>
+
+<body class="auth-body auth-body-modern" data-allow-authenticated="true">
+  <!-- Main Authentication Container -->
+  <main class="auth-page auth-page-modern auth-access-page">
+    <div class="auth-access-layout">
+
+      <!-- Card 1: Member Account Access -->
+      <section class="auth-card-modern access-info-card" aria-labelledby="firstAccessTitle">
+        <div class="auth-card-header">
+          <div class="auth-card-brand">
+            <img src="/img/logo-2.png" alt="MFC Youth" class="auth-mini-logo">
+            <span class="auth-card-tag">Member Access</span>
+          </div>
+          <h1 id="firstAccessTitle">First-Time Member Access</h1>
+          <p>Set a password for your existing Member database record.</p>
+        </div>
+
+        <form class="auth-compact-form member-claim-form" id="memberClaimForm" novalidate>
+          <div id="memberClaimMessage"></div>
+
+          <div class="auth-form-row">
+            <label class="auth-control-label" for="memberClaimEmail">Member Email Address</label>
+            <div class="auth-compact-field">
+              <input class="auth-compact-input" id="memberClaimEmail" type="email"
+                placeholder="name@example.com" autocomplete="email" required>
+            </div>
+          </div>
+
+          <div class="auth-form-grid">
+            <div class="auth-form-row">
+              <label class="auth-control-label" for="memberClaimPassword">Create Password</label>
+              <div class="auth-compact-field">
+                <input class="auth-compact-input" id="memberClaimPassword" type="password"
+                  placeholder="Password" autocomplete="new-password" required>
+              </div>
+            </div>
+
+            <div class="auth-form-row">
+              <label class="auth-control-label" for="memberClaimPasswordConfirm">Confirm Password</label>
+              <div class="auth-compact-field">
+                <input class="auth-compact-input" id="memberClaimPasswordConfirm" type="password"
+                  placeholder="Confirm" autocomplete="new-password" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="auth-actions-group">
+            <button class="btn-auth auth-slide-button auth-slide-primary" id="memberClaimButton" type="submit">Create Account</button>
+            <button class="btn-auth auth-slide-button auth-slide-secondary" type="button" onclick="navigateWithLoader('/')">Back to Sign In</button>
+          </div>
+        </form>
+
+        <div class="auth-card-footer">
+          <span>Not in the database yet? Contact your Servant Leader.</span>
+        </div>
+      </section>
+
+      <!-- Card 2: Servant Leader / Admin Registration -->
+      <section class="auth-card-modern admin-registration-card" aria-labelledby="adminRegisterTitle">
+        <div class="auth-card-header">
+          <div class="auth-card-brand">
+            <span class="auth-card-tag">Servant Leader</span>
+            <span class="secure-login-badge">Leader Access</span>
+          </div>
+          <h1 id="adminRegisterTitle">Register Admin Account</h1>
+          <p>For Chapter, Area, and Ministry leadership accounts.</p>
+        </div>
+
+        <form class="auth-compact-form admin-registration-form" id="adminRegistrationForm" novalidate>
+          <div id="adminRegistrationMessage"></div>
+
+          <div class="auth-form-grid">
+            <div class="auth-form-row">
+              <label class="auth-control-label" for="adminDisplayName">Full Name</label>
+              <div class="auth-compact-field">
+                <input class="auth-compact-input" id="adminDisplayName" type="text"
+                  placeholder="First & Last Name" autocomplete="name" required>
+              </div>
+            </div>
+
+            <div class="auth-form-row">
+              <label class="auth-control-label" for="adminEmail">Email Address</label>
+              <div class="auth-compact-field">
+                <input class="auth-compact-input" id="adminEmail" type="email"
+                  placeholder="leader@example.com" autocomplete="email" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="auth-form-grid">
+            <div class="auth-form-row">
+              <label class="auth-control-label" for="adminRole">Access Role</label>
+              <div class="auth-compact-field">
+                <select class="auth-compact-input auth-select" id="adminRole" required>
+                  <option value="">Select Role</option>
+                  <option value="couple_coordinator">Couple Coordinator/s</option>
+                  <option value="area_servant">Area Servant</option>
+                  <option value="lit_servant">Area LIT Servant</option>
+                  <option value="campus_servant">Campus Servant</option>
+                  <option value="mfc_high_servant">MFC High Servant</option>
+                  <option value="area_kids_servant">Area Kids Servant</option>
+                  <option value="chapter_servant">Chapter Servant</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="auth-form-row">
+              <label class="auth-control-label" for="adminVerificationCode">Admin Passcode</label>
+              <div class="auth-compact-field">
+                <input class="auth-compact-input" id="adminVerificationCode" type="password"
+                  placeholder="Passcode" autocomplete="off" required>
+                <button class="password-toggle" type="button" data-password-toggle="adminVerificationCode"
+                  aria-label="Show passcode">Show</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="auth-form-grid">
+            <div class="auth-form-row">
+              <label class="auth-control-label" for="adminPassword">Account Password</label>
+              <div class="auth-compact-field">
+                <input class="auth-compact-input" id="adminPassword" type="password"
+                  placeholder="Password" autocomplete="new-password" required>
+                <button class="password-toggle" type="button" data-password-toggle="adminPassword"
+                  aria-label="Show password">Show</button>
+              </div>
+            </div>
+
+            <div class="auth-form-row">
+              <label class="auth-control-label" for="adminPasswordConfirm">Confirm Password</label>
+              <div class="auth-compact-field">
+                <input class="auth-compact-input" id="adminPasswordConfirm" type="password"
+                  placeholder="Confirm" autocomplete="new-password" required>
+                <button class="password-toggle" type="button" data-password-toggle="adminPasswordConfirm"
+                  aria-label="Show confirmed password">Show</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="auth-actions-group" style="grid-template-columns: 1fr;">
+            <button class="btn-auth auth-slide-button auth-slide-primary" id="adminRegisterButton" type="submit">Register Admin Account</button>
+          </div>
+        </form>
+
+        <div class="auth-card-footer">
+          <span>Area assignment takes place immediately after registration.</span>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Global Authentication Footer -->
+  <footer class="auth-footer">Visit the Official MFC Youth Page at <a href="https://mfcyouth.org" target="_blank"
+      rel="noopener noreferrer">mfcyouth.org</a> &middot; <a href="/changelogs">System Changelogs</a> &middot; Powered &amp; designed by <a
+      href="https://migzdndd.github.io/web-portfolio/" target="_blank" rel="noopener noreferrer">migz.dev</a></footer>
+  <script src="/js/loader.js"></script>
+  <script src="/js/auth.js"></script>
+</body>
+
+</html>
