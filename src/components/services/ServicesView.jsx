@@ -1,29 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { LoadingView, ErrorView } from '../common/StateViews';
-import { ServicesIcon, MembersIcon, SyncIcon } from '../icons/Icons';
-
-const OFFICIAL_SERVICES = [
-  { name: 'Unit Servant', category: 'Leadership', description: 'Leads unit level youth pastoral households and fellowships.' },
-  { name: 'Household Servant', category: 'Leadership', description: 'Pastors regular small group youth households and prayer meetings.' },
-  { name: 'Chapter Servant', category: 'Leadership', description: 'Coordinates chapter activities, youth camps, and parish engagement.' },
-  { name: 'Area Servant', category: 'Leadership', description: 'Oversees youth community growth and leadership across the Area.' },
-  { name: 'Area LIT Servant', category: 'Specialized', description: 'Leaders-in-Training program coordinator for servant formation.' },
-  { name: 'Campus Servant', category: 'Specialized', description: 'MFC Youth High School and University campus evangelization.' },
-  { name: 'Area Kids Servant', category: 'Specialized', description: 'Bridges transitions from MFC Kids to MFC Youth community.' },
-  { name: 'MFC High Servant', category: 'Specialized', description: 'Servants dedicated to secondary/high school youth pastoral care.' },
-  { name: 'Music', category: 'Creative & Liturgical', description: 'Worship leaders, instrumentalists, and music ministry servants.' },
-  { name: 'Dance', category: 'Creative & Liturgical', description: 'Liturgical and conference youth praise dance team.' },
-  { name: 'Creative Writing', category: 'Media & Arts', description: 'Newsletters, event scripts, reflections, and inspirational write-ups.' },
-  { name: 'Graphics & Promo', category: 'Media & Arts', description: 'Visual design, social media publicity, and conference branding.' },
-  { name: 'Photography & Videography', category: 'Media & Arts', description: 'Photo coverage, event recaps, and video testimonies.' }
-];
+import { SyncIcon, XIcon } from '../icons/Icons';
 
 export function ServicesView() {
+  const { role } = useAuth();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedService, setSelectedService] = useState(OFFICIAL_SERVICES[0].name);
+
+  // Service Members Modal State
+  const [activeServiceModal, setActiveServiceModal] = useState(null);
+  const [removingId, setRemovingId] = useState(null);
 
   useEffect(() => {
     loadMembers();
@@ -38,29 +27,89 @@ export function ServicesView() {
         setMembers(res.members || []);
       }
     } catch (err) {
-      setError(err.message || 'Failed loading ministries.');
+      setError(err.message || 'Failed loading service rosters.');
     } finally {
       setLoading(false);
     }
   };
 
-  const assignedMembers = members.filter((m) => {
-    const srv = Array.isArray(m.services) ? m.services : [];
-    return srv.includes(selectedService);
-  });
+  // Role-tailored headers
+  let pageTitle = 'Service Directory';
+  let pageSubtitle = 'Manage ministry roles and member assignments.';
 
-  const activeServiceInfo = OFFICIAL_SERVICES.find(s => s.name === selectedService) || OFFICIAL_SERVICES[0];
+  if (role === 'lit_servant') {
+    pageTitle = 'LIT Creative Ministries';
+    pageSubtitle = 'Music, Dance, Creative Writing, Graphics & Promo, and Photography & Videography.';
+  } else if (role === 'campus_servant') {
+    pageTitle = 'Campus Ministry Directory';
+    pageSubtitle = 'Campus youth members, coordinators, and schools.';
+  } else if (role === 'area_kids_servant') {
+    pageTitle = 'MFC Kids Service Directory';
+    pageSubtitle = 'MFC Kids ministry servant assignments.';
+  }
+
+  // Core Creative Ministries + Roles
+  const serviceCards = [
+    { id: 'Music', title: 'Music', description: 'Worship leaders, instrumentalists, and music ministry servants.' },
+    { id: 'Dance', title: 'Dance', description: 'Liturgical and conference youth praise dance team.' },
+    { id: 'Creative Writing', title: 'Creative Writing', description: 'Newsletters, event scripts, reflections, and inspirational write-ups.' },
+    { id: 'Graphics & Promo', title: 'Graphics & Promo', description: 'Visual design, social media publicity, and conference branding.' },
+    { id: 'Photography & Videography', title: 'Photography & Videography', description: 'Photo coverage, event recaps, and video testimonies.' }
+  ];
+
+  const getServiceMembers = (serviceId) => {
+    return members.filter(m => {
+      const srvList = Array.isArray(m.services) ? m.services : [];
+      return srvList.includes(serviceId);
+    });
+  };
+
+  const handleRemoveAssignment = async (memberId, serviceName) => {
+    if (!confirm(`Remove "${serviceName}" assignment from this member?`)) return;
+
+    setRemovingId(memberId);
+    try {
+      const target = members.find(m => String(m.id) === String(memberId));
+      if (!target) return;
+
+      const currentServices = Array.isArray(target.services) ? target.services : [];
+      const updatedServices = currentServices.filter(s => s !== serviceName);
+
+      const res = await apiRequest('/api/members', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          id: memberId,
+          services: updatedServices
+        })
+      });
+
+      if (res?.ok) {
+        setMembers(prev =>
+          prev.map(m => (m.id === memberId ? { ...m, services: updatedServices } : m))
+        );
+      }
+    } catch (err) {
+      alert(`Could not remove assignment: ${err.message}`);
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   if (loading) return <LoadingView message="Loading Area Ministries & Servants..." />;
   if (error && members.length === 0) return <ErrorView title="Ministries Error" error={error} onRetry={loadMembers} />;
 
+  const modalMembers = activeServiceModal ? getServiceMembers(activeServiceModal.id) : [];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Role-Tailored Header (H1) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h2 style={{ fontSize: '1.35rem' }}>Ministries & Service Directory</h2>
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-            Official youth community service roles and assigned servants
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-main)' }}>
+            {pageTitle}
+          </h1>
+          <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', margin: 0 }}>
+            {pageSubtitle}
           </p>
         </div>
 
@@ -70,114 +119,116 @@ export function ServicesView() {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 300px) 1fr', gap: '20px', alignItems: 'start' }}>
-        {/* Ministry Selector Column */}
-        <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <div style={{ padding: '8px 12px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Service Ministries ({OFFICIAL_SERVICES.length})
-          </div>
-          {OFFICIAL_SERVICES.map((srv) => {
-            const isSelected = selectedService === srv.name;
-            const count = members.filter(m => (Array.isArray(m.services) ? m.services : []).includes(srv.name)).length;
+      {/* Service Cards Grid */}
+      <div className="service-grid">
+        {serviceCards.map((service) => {
+          const assignedList = getServiceMembers(service.id);
+          const count = assignedList.length;
 
-            return (
+          return (
+            <section className="card service-card" key={service.id}>
+              <h3>{service.title}</h3>
+              <div className="count">{count}</div>
+              <p>{count === 1 ? '1 Assigned member' : `${count} Assigned members`}</p>
               <button
-                key={srv.name}
+                className="btn"
                 type="button"
-                className={`nav-item ${isSelected ? 'active' : ''}`}
-                style={{
-                  color: isSelected ? '#ffffff' : 'var(--text-main)',
-                  backgroundColor: isSelected ? 'var(--mfc-blue)' : 'transparent',
-                  justifyContent: 'space-between'
-                }}
-                onClick={() => setSelectedService(srv.name)}
+                onClick={() => setActiveServiceModal(service)}
+                style={{ width: '100%', minHeight: '44px', justifyContent: 'center' }}
               >
-                <span>{srv.name}</span>
-                <span
-                  style={{
-                    backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : 'var(--border-subtle)',
-                    color: isSelected ? '#ffffff' : 'var(--text-main)',
-                    borderRadius: '10px',
-                    padding: '1px 7px',
-                    fontSize: '0.75rem',
-                    fontWeight: 600
-                  }}
-                >
-                  {count}
-                </span>
+                View Members
               </button>
-            );
-          })}
-        </div>
-
-        {/* Assigned Servants Details Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-              <div>
-                <span className="badge badge-info">{activeServiceInfo.category}</span>
-                <h3 style={{ fontSize: '1.3rem', color: 'var(--text-main)', marginTop: '4px' }}>
-                  {activeServiceInfo.name}
-                </h3>
-              </div>
-              <span className="badge badge-success">
-                {assignedMembers.length} Servant{assignedMembers.length === 1 ? '' : 's'}
-              </span>
-            </div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              {activeServiceInfo.description}
-            </p>
-          </div>
-
-          <div className="card">
-            <div className="card-header">
-              <h3 className="card-title">Assigned Servants</h3>
-            </div>
-
-            {assignedMembers.length === 0 ? (
-              <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No servants currently assigned to {activeServiceInfo.name}.
-                <div style={{ marginTop: '8px', fontSize: '0.85rem' }}>
-                  Assign this ministry role by editing a member's profile in the Members directory.
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {assignedMembers.map((m) => {
-                  const name = `${m.first_name || m.firstName || ''} ${m.last_name || m.lastName || ''}`;
-                  return (
-                    <div
-                      key={m.id}
-                      style={{
-                        padding: '12px 16px',
-                        borderRadius: 'var(--radius-sm)',
-                        border: '1px solid var(--border-subtle)',
-                        backgroundColor: 'var(--bg-surface-secondary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.95rem' }}>
-                          {name}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          {m.school || m.email || ''} {m.contact_number || m.contact ? `• ${m.contact_number || m.contact}` : ''}
-                        </div>
-                      </div>
-
-                      <span className="badge badge-success">
-                        Active Servant
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+            </section>
+          );
+        })}
       </div>
+
+      {/* Service Members Modal */}
+      {activeServiceModal && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="service-modal-title"
+          onClick={() => setActiveServiceModal(null)}
+        >
+          <div className="modal-content" style={{ maxWidth: '520px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 id="service-modal-title" style={{ fontSize: '1.2rem', margin: 0 }}>
+                {activeServiceModal.title} Members
+              </h2>
+              <button
+                type="button"
+                className="btn btn-secondary btn-icon"
+                onClick={() => setActiveServiceModal(null)}
+                aria-label="Close dialog"
+              >
+                <XIcon size={18} />
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ overflowY: 'auto' }}>
+              {modalMembers.length > 0 ? (
+                <div className="mini-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {modalMembers.map((m) => {
+                    const name = `${m.first_name || m.firstName || ''} ${m.last_name || m.lastName || ''}`.trim() || 'Youth Member';
+                    const isRemoving = removingId === m.id;
+
+                    return (
+                      <div
+                        key={m.id}
+                        className="mini-row"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          background: 'var(--bg-surface-secondary)',
+                          border: '1px solid var(--border-subtle)'
+                        }}
+                      >
+                        <div>
+                          <strong>{name}</strong>
+                          <div className="muted" style={{ fontSize: '0.78rem' }}>
+                            {m.chapterName || m.chapter_name || 'No Chapter'}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="btn red btn-sm"
+                          disabled={isRemoving}
+                          onClick={() => handleRemoveAssignment(m.id, activeServiceModal.id)}
+                          style={{ fontSize: '0.76rem', minHeight: '36px' }}
+                        >
+                          {isRemoving ? 'Removing...' : 'Remove assignment'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  No members assigned to {activeServiceModal.title} yet.
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setActiveServiceModal(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+export default ServicesView;

@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../../services/api';
-import { ChangelogIcon, BookIcon, CheckIcon } from '../icons/Icons';
-import { LoadingState, ErrorState } from '../common/StateViews';
+import { ChangelogIcon, SearchIcon, SyncIcon } from '../icons/Icons';
+import { LoadingView, EmptyView, ErrorView } from '../common/StateViews';
+
+const CATEGORIES = ['All', 'Security', 'Features', 'Database', 'UI/UX'];
 
 export function ChangelogView() {
-  const [activeTab, setActiveTab] = useState('changelog'); // 'changelog' | 'guide'
   const [commits, setCommits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
     loadChangelogs();
@@ -20,6 +24,8 @@ export function ChangelogView() {
       const res = await apiRequest('/api/changelogs');
       if (res?.ok && Array.isArray(res.commits)) {
         setCommits(res.commits);
+      } else if (res?.ok && Array.isArray(res.changelogs)) {
+        setCommits(res.changelogs);
       }
     } catch (err) {
       console.warn('[ChangelogView] Error loading changelogs:', err);
@@ -29,144 +35,173 @@ export function ChangelogView() {
     }
   };
 
+  const detectCategory = (message = '') => {
+    const lower = message.toLowerCase();
+    if (lower.includes('sec') || lower.includes('auth') || lower.includes('mfa') || lower.includes('pass') || lower.includes('protect')) return 'Security';
+    if (lower.includes('feat') || lower.includes('add') || lower.includes('new') || lower.includes('portal')) return 'Features';
+    if (lower.includes('db') || lower.includes('schema') || lower.includes('sql') || lower.includes('supabase') || lower.includes('migrate')) return 'Database';
+    if (lower.includes('ui') || lower.includes('style') || lower.includes('css') || lower.includes('layout') || lower.includes('theme') || lower.includes('mobile')) return 'UI/UX';
+    return 'Features';
+  };
+
+  const filteredCommits = commits.filter(c => {
+    const message = c.commit?.message || c.title || c.description || '';
+    const author = c.commit?.author?.name || c.author || '';
+    const sha = c.sha || '';
+    const textMatch = `${message} ${author} ${sha}`.toLowerCase().includes(search.toLowerCase());
+    if (!textMatch) return false;
+
+    if (selectedCategory !== 'All') {
+      const cat = c.category || detectCategory(message);
+      if (cat !== selectedCategory) return false;
+    }
+
+    return true;
+  });
+
+  const getCategoryCount = (cat) => {
+    if (cat === 'All') return commits.length;
+    return commits.filter(c => {
+      const msg = c.commit?.message || c.title || c.description || '';
+      return (c.category || detectCategory(msg)) === cat;
+    }).length;
+  };
+
   return (
-    <div className="view-container">
-      <div className="view-header">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Page Header */}
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
         <div>
-          <h1 className="view-title">System Transparency & Guide</h1>
-          <p className="view-subtitle">
-            Release changelogs, security audit updates, and servant leader onboarding documentation
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 700, margin: 0 }}>System Changelogs</h1>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+            Version release history, security patches, and deployment logs.
           </p>
+        </div>
+
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={loadChangelogs}
+          style={{ minHeight: '44px' }}
+        >
+          <SyncIcon size={14} />
+          Sync Logs
+        </button>
+      </div>
+
+      {/* Control Deck: Search & Category Pills */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ position: 'relative' }}>
+          <SearchIcon size={16} style={{ position: 'absolute', left: '14px', top: '14px', color: 'var(--text-muted)' }} />
+          <input
+            type="search"
+            className="search-input"
+            style={{ width: '100%', paddingLeft: '38px', minHeight: '44px' }}
+            placeholder="Search commits by message, author, or SHA..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Filter Pills */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {CATEGORIES.map(cat => {
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ minHeight: '44px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                <span>{cat}</span>
+                <span style={{
+                  padding: '2px 6px',
+                  borderRadius: '999px',
+                  fontSize: '0.72rem',
+                  backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : 'var(--bg-subtle, #f1f5f9)'
+                }}>
+                  {getCategoryCount(cat)}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Segmented Tab Navigation */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-        <button
-          type="button"
-          className={`btn ${activeTab === 'changelog' ? 'btn-primary' : 'btn-secondary'}`}
-          onClick={() => setActiveTab('changelog')}
-          style={{ minHeight: '44px' }}
-        >
-          <ChangelogIcon size={18} />
-          <span>Release Notes & Changelog</span>
-        </button>
-        <button
-          type="button"
-          className={`btn ${activeTab === 'guide' ? 'btn-primary' : 'btn-secondary'}`}
-          onClick={() => setActiveTab('guide')}
-          style={{ minHeight: '44px' }}
-        >
-          <BookIcon size={18} />
-          <span>Servant Leader Guide</span>
-        </button>
-      </div>
-
-      {activeTab === 'changelog' ? (
-        loading ? (
-          <LoadingState message="Loading release history..." />
-        ) : error ? (
-          <ErrorState message={error} onRetry={loadChangelogs} />
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {commits.map((c, idx) => {
-              const messageLines = (c.commit?.message || 'Update').split('\n');
-              const title = messageLines[0];
-              const desc = messageLines.slice(1).join('\n').trim();
-              const dateStr = c.commit?.author?.date
-                ? new Date(c.commit.author.date).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })
-                : 'Recent';
-
-              return (
-                <div key={c.sha || idx} className="card" style={{ padding: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
-                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-main)' }}>
-                      {title}
-                    </div>
-                    <span className="badge badge-info" style={{ whiteSpace: 'nowrap' }}>
-                      {dateStr}
-                    </span>
-                  </div>
-
-                  {desc && (
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', whiteSpace: 'pre-line', margin: '8px 0' }}>
-                      {desc}
-                    </p>
-                  )}
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    <span style={{ fontFamily: 'monospace', backgroundColor: 'var(--bg-surface-secondary)', padding: '2px 6px', borderRadius: '4px' }}>
-                      {(c.sha || '').slice(0, 7)}
-                    </span>
-                    <span>by {c.commit?.author?.name || 'MFC Tech Team'}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )
+      {/* Content */}
+      {loading ? (
+        <LoadingView message="Loading release history..." />
+      ) : error && commits.length === 0 ? (
+        <ErrorView title="Changelogs" error={error} onRetry={loadChangelogs} />
+      ) : filteredCommits.length === 0 ? (
+        <EmptyView
+          icon={ChangelogIcon}
+          title="No matching logs"
+          description={commits.length ? 'Try changing your search terms or category filter.' : 'No commits recorded yet.'}
+          actionLabel="Clear Filters"
+          onAction={() => {
+            setSearch('');
+            setSelectedCategory('All');
+          }}
+        />
       ) : (
-        /* Servant Leader Onboarding Guide */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="card" style={{ padding: '24px' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-main)' }}>
-              1. Pastoral Mission & Purpose
-            </h2>
-            <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '14px' }}>
-              The MFC Youth Area Management System is designed to support the evangelistic mission of Missionary Families for Christ. It enables coordinators and servant leaders to steward youth demographic profiles, track attendance, and log activities with transparency and security.
-            </p>
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {filteredCommits.map((c, idx) => {
+            const rawMessage = c.commit?.message || c.title || c.description || 'System Update';
+            const messageLines = rawMessage.split('\n');
+            const title = messageLines[0];
+            const desc = messageLines.slice(1).join('\n').trim();
+            const cat = c.category || detectCategory(rawMessage);
+            const dateStr = c.commit?.author?.date || c.date
+              ? new Date(c.commit?.author?.date || c.date).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
+              : 'Recent';
 
-          <div className="card" style={{ padding: '24px' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-main)' }}>
-              2. Roles and Permissions (RBAC)
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-              <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-surface-secondary)' }}>
-                <div style={{ fontWeight: 700, color: 'var(--mfc-blue)', marginBottom: '6px' }}>Area Administrators</div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  Includes <strong>National Coordinators</strong>, <strong>Couple Coordinators</strong>, <strong>Area Servants</strong>, and Ministry Servants. Full oversight of area members, chapters, events, GIG records, and reporting.
-                </p>
+            const badgeVariant =
+              cat === 'Security' ? 'badge-danger' :
+              cat === 'Database' ? 'badge-warning' :
+              cat === 'UI/UX' ? 'badge-info' : 'badge-success';
+
+            return (
+              <div key={c.sha || idx} className="card" style={{ padding: '20px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span className={`badge ${badgeVariant}`} style={{ fontSize: '0.72rem' }}>
+                      {cat}
+                    </span>
+                    <strong style={{ fontSize: '1rem', color: 'var(--text-main)' }}>
+                      {title}
+                    </strong>
+                  </div>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    {dateStr}
+                  </span>
+                </div>
+
+                {desc && (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', whiteSpace: 'pre-line', margin: '8px 0', lineHeight: 1.5 }}>
+                    {desc}
+                  </p>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {c.sha && (
+                    <span style={{ fontFamily: 'monospace', backgroundColor: 'var(--bg-subtle, #f1f5f9)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border-subtle)' }}>
+                      {c.sha.slice(0, 7)}
+                    </span>
+                  )}
+                  <span>by {c.commit?.author?.name || c.author || 'MFC Tech Team'}</span>
+                </div>
               </div>
-
-              <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-surface-secondary)' }}>
-                <div style={{ fontWeight: 700, color: 'var(--mfc-blue)', marginBottom: '6px' }}>Chapter Servants</div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  Scoped strictly to their assigned Chapter. Can manage members, take event attendance, and file chapter activity reports without accessing other chapters.
-                </p>
-              </div>
-
-              <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-surface-secondary)' }}>
-                <div style={{ fontWeight: 700, color: 'var(--mfc-blue)', marginBottom: '6px' }}>Youth Members</div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  Self-service portal access to view their own profile, household information, event history, payment statuses, and GIG donation records.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card" style={{ padding: '24px' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-main)' }}>
-              3. Data Privacy and Pastoral Ethics
-            </h2>
-            <ul style={{ paddingLeft: '20px', fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              <li style={{ marginBottom: '8px' }}>
-                All personal information (contact numbers, home addresses, family details) is confidential and may only be used for direct pastoral care.
-              </li>
-              <li style={{ marginBottom: '8px' }}>
-                Servant leaders must not share access passwords or export member data to unauthorized personal storage or social media.
-              </li>
-              <li style={{ marginBottom: '8px' }}>
-                Enable Two-Factor Authentication (MFA) in Settings to safeguard leadership access.
-              </li>
-            </ul>
-          </div>
+            );
+          })}
         </div>
       )}
     </div>

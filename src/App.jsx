@@ -81,13 +81,39 @@ export function AppContent() {
   };
 
   const canSwitchArea = role === 'national_coordinator' || role === 'couple_coordinator';
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   return (
     <div className="app-container">
-      {/* Desktop Navigation Sidebar */}
+      {/* Mobile Top App Bar */}
+      <div className="mobile-topbar">
+        <strong>MFC Youth AMS</strong>
+        <button
+          id="menuBtn"
+          type="button"
+          aria-label="Toggle navigation menu"
+          onClick={() => setIsMobileDrawerOpen(prev => !prev)}
+        >
+          Menu
+        </button>
+      </div>
+
+      {/* Backdrop Scrim for Mobile Sidebar Drawer */}
+      <div
+        className={`sidebar-scrim ${isMobileDrawerOpen ? 'show' : ''}`}
+        aria-hidden="true"
+        onClick={() => setIsMobileDrawerOpen(false)}
+      />
+
+      {/* Navigation Sidebar (Persistent on Desktop, Slide-over Drawer on Mobile) */}
       <Sidebar
         currentView={currentView}
-        onNavigate={setCurrentView}
+        onNavigate={(view) => {
+          setCurrentView(view);
+          setIsMobileDrawerOpen(false);
+        }}
+        isOpen={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
       />
 
       <div className="main-content">
@@ -177,7 +203,10 @@ export function AppContent() {
         {/* Mobile View Bottom Navigation Bar */}
         <MobileNavBar
           currentView={currentView}
-          onNavigate={setCurrentView}
+          onNavigate={(view) => {
+            setCurrentView(view);
+            setIsMobileDrawerOpen(false);
+          }}
         />
       </div>
 

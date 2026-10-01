@@ -1,93 +1,97 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import {
-  DashboardIcon,
-  MembersIcon,
-  ChaptersIcon,
-  EventsIcon,
-  ReportsIcon,
-  ServicesIcon,
-  ScriptureIcon,
-  SettingsIcon,
-  LogoutIcon,
-  GigIcon,
-  ChangelogIcon
-} from '../icons/Icons';
 
-export function Sidebar({ currentView, onNavigate }) {
-  const { user, role, areaName, logout } = useAuth();
+export function Sidebar({ currentView, onNavigate, isOpen = false, onClose }) {
+  const { role, logout } = useAuth();
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
-    { id: 'members', label: 'Members', icon: MembersIcon },
-    { id: 'chapters', label: 'Chapters', icon: ChaptersIcon },
-    { id: 'events', label: 'Events & Attendance', icon: EventsIcon },
-    { id: 'gig', label: 'GIG Stewardship', icon: GigIcon },
-    { id: 'reports', label: 'Activity Reports', icon: ReportsIcon },
-    { id: 'services', label: 'Ministries & Services', icon: ServicesIcon },
-    { id: 'readings', label: 'Daily Readings', icon: ScriptureIcon },
-    { id: 'changelogs', label: 'Release Notes & Guide', icon: ChangelogIcon },
-    { id: 'settings', label: 'Settings', icon: SettingsIcon }
+  const isChapterServant = role === 'chapter_servant';
+
+  const allNavItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: '/Icons/dashboard.png' },
+    { id: 'members', label: 'Members', icon: '/Icons/members.png', hideForChapterServant: true },
+    { id: 'chapters', label: isChapterServant ? 'Chapter' : 'Chapters', icon: '/Icons/chapters.png' },
+    { id: 'services', label: 'Services', icon: '/Icons/services.png', hideForChapterServant: true },
+    { id: 'reports', label: 'Activity Reports', icon: '/Icons/reports.png' },
+    { id: 'events', label: 'Events', icon: '/Icons/events.png' }
   ];
 
-  const formatRole = (r) => {
-    if (!r) return 'Servant';
-    return r.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const navItems = isChapterServant
+    ? allNavItems.filter(item => !item.hideForChapterServant)
+    : allNavItems;
+
+  const handleNavClick = (id) => {
+    onNavigate(id);
+    if (onClose) onClose();
   };
 
   return (
-    <aside className="sidebar" aria-label="Main Navigation">
-      <div className="sidebar-header">
-        <img
-          src="/logo.png"
-          alt="MFC Youth Logo"
-          className="sidebar-logo"
-        />
+    <aside
+      className={`sidebar ${isOpen ? 'open is-open' : ''}`}
+      id="sidebar"
+      aria-label="Main navigation"
+    >
+      <div className="sidebar-brand">
+        <img src="/img/logo-2.png" className="sidebar-logo" alt="MFC Youth Logo" />
         <div>
-          <div className="sidebar-brand-title">MFC Youth</div>
-          <div className="sidebar-brand-sub">Area Management</div>
+          <h2>MFC YOUTH</h2>
+          <p>AREA MANAGEMENT SYSTEM</p>
         </div>
       </div>
 
       <nav className="sidebar-nav">
         {navItems.map((item) => {
-          const Icon = item.icon;
           const isActive = currentView === item.id;
           return (
             <button
               key={item.id}
               type="button"
-              className={`nav-item ${isActive ? 'active' : ''}`}
-              onClick={() => onNavigate(item.id)}
+              className={`nav-link ${isActive ? 'active' : ''}`}
+              onClick={() => handleNavClick(item.id)}
               aria-current={isActive ? 'page' : undefined}
             >
-              <Icon size={18} />
+              <img src={item.icon} className="nav-icon" alt="" aria-hidden="true" />
               <span>{item.label}</span>
             </button>
           );
         })}
       </nav>
 
-      <div className="sidebar-footer">
-        <div style={{ padding: '8px 4px', fontSize: '0.85rem' }}>
-          <div style={{ fontWeight: 600, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {user?.first_name ? `${user.first_name} ${user.last_name || ''}` : (user?.email || 'Leader')}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.70)' }}>
-            {formatRole(role)} {areaName ? `• ${areaName}` : ''}
+      <div className="sidebar-bottom">
+        <button
+          className="logout-link"
+          id="logoutBtn"
+          type="button"
+          onClick={() => {
+            if (onClose) onClose();
+            logout();
+          }}
+        >
+          Logout
+        </button>
+        <div className="sidebar-footer">
+          Powered &amp; designed by <br />
+          <a href="https://migzdndd.github.io/web-portfolio/" target="_blank" rel="noopener noreferrer">migz.dev</a>
+          <div style={{ marginTop: '6px' }}>
+            <button
+              type="button"
+              onClick={() => handleNavClick('changelogs')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: 0,
+                color: '#38bdf8',
+                fontSize: '0.74rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              System Changelogs &rarr;
+            </button>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={logout}
-          className="nav-item"
-          style={{ color: '#fca5a5', padding: '8px 12px', minHeight: '38px' }}
-        >
-          <LogoutIcon size={16} />
-          <span>Sign Out</span>
-        </button>
       </div>
     </aside>
   );
 }
+

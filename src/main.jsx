@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { OfflineProvider } from './context/OfflineContext';
 import { AuthProvider } from './context/AuthContext';
 import { platform } from './services/platform';
+import './web-style.css';
 import './index.css';
 
 // Initialize native platform bridge (Capacitor/Tauri/Electron)
