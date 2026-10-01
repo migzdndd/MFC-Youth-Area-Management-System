@@ -13,7 +13,7 @@
  * ============================================================================
  */
 
-const SHELL_CACHE = 'mfc-ams-shell-v3';
+const SHELL_CACHE = 'mfc-ams-shell-v4';
 const API_CACHE = 'mfc-ams-api-v1';
 
 const APP_SHELL_URLS = [
@@ -35,6 +35,18 @@ const APP_SHELL_URLS = [
   '/member.html',
   '/changelogs',
   '/changelogs.html',
+  '/register',
+  '/register.html',
+  '/forgot-password',
+  '/forgot-password.html',
+  '/reset-password',
+  '/reset-password.html',
+  '/change-password',
+  '/change-password.html',
+  '/mfa-setup',
+  '/mfa-setup.html',
+  '/mfa-verify',
+  '/mfa-verify.html',
   '/manifest.webmanifest',
   '/css/fonts.css',
   '/css/style.css',
@@ -47,6 +59,7 @@ const APP_SHELL_URLS = [
   '/js/api.js',
   '/js/store.js',
   '/js/ui.js',
+  '/js/auth.js',
   '/js/app.js',
   '/js/member.js',
   '/js/vendor/alpine.min.js',

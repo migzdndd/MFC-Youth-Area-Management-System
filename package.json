@@ -7,6 +7,7 @@
     "dev:web": "serve Frontend -p 5500",
     "mobile:sync": "cap sync",
     "mobile:android": "cap open android",
+    "mobile:build:apk": "cap sync android && cd android && .\\gradlew.bat assembleRelease",
     "mobile:ios": "cap open ios",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build"
