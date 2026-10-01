@@ -20,6 +20,17 @@ export default defineConfig({
       }
     }
   },
+  preview: {
+    port: 5173,
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'https://mfc-youth-area-management-web.vercel.app',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true

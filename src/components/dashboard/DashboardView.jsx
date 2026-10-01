@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { LoadingView, ErrorView } from '../common/StateViews';
+import { LoadingView, ErrorView, DashboardSkeleton } from '../common/StateViews';
 
 const ROLE_LABELS = {
   national_coordinator: 'National Coordinator',
@@ -71,7 +71,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
   };
 
   if (loading) {
-    return <LoadingView message="Loading Area Dashboard metrics..." />;
+    return <DashboardSkeleton />;
   }
 
   if (error && members.length === 0) {

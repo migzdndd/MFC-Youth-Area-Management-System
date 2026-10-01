@@ -98,6 +98,9 @@ function normalizeRoute(value) {
  */
 export default async function handler(req, res) {
   applySecurityHeaders(res);
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
   try {
     const route = normalizeRoute(req.query?.route);
     const routeHandler = ROUTES.get(route);

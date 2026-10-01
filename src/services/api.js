@@ -78,11 +78,15 @@ export async function apiRequest(endpoint, options = {}) {
   const token = session?.accessToken || '';
   const areaId = session?.areaId || null;
 
-  const isMutation = method !== 'GET';
+  // Offline mutation queueing only applies to operational records (participants and reports)
+  const isOfflineMutationTarget =
+    method !== 'GET' &&
+    ['/api/participants', '/api/reports'].some(prefix => fullPath.startsWith(prefix));
+
   const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 
-  // If known offline and attempting a mutation, queue immediately
-  if (!isOnline && isMutation) {
+  // If known offline and attempting a supported mutation, queue immediately
+  if (!isOnline && isOfflineMutationTarget) {
     let payload = options.body;
     if (typeof payload === 'string') {
       try { payload = JSON.parse(payload); } catch { /* leave as string */ }
@@ -105,7 +109,7 @@ export async function apiRequest(endpoint, options = {}) {
   }
 
   // If known offline and making a GET request, return cached data
-  if (!isOnline && !isMutation) {
+  if (!isOnline && method === 'GET') {
     const cached = await offlineStore.getReadCache(fullPath);
     if (cached) {
       return { ok: true, offline: true, ...cached };
@@ -204,8 +208,8 @@ export async function apiRequest(endpoint, options = {}) {
 
       return data;
     } catch (err) {
-      // If network failure or abort on a mutation, queue offline
-      if ((err instanceof TypeError || err?.name === 'AbortError') && isMutation) {
+      // If network failure or abort on a supported mutation, queue offline
+      if ((err instanceof TypeError || err?.name === 'AbortError') && isOfflineMutationTarget) {
         let payload = options.body;
         if (typeof payload === 'string') {
           try { payload = JSON.parse(payload); } catch { /* leave as string */ }
@@ -228,7 +232,7 @@ export async function apiRequest(endpoint, options = {}) {
       }
 
       // If network failure on a GET, try returning cached data
-      if (!isMutation) {
+      if (method === 'GET') {
         const cached = await offlineStore.getReadCache(fullPath);
         if (cached) {
           return { ok: true, offline: true, ...cached };

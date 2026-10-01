@@ -24,6 +24,7 @@ import { SettingsView } from './components/settings/SettingsView';
 import { GigView } from './components/gig/GigView';
 import { ChangelogView } from './components/changelogs/ChangelogView';
 import { MemberPortalView } from './components/member/MemberPortalView';
+import { AppLoadingWireframe } from './components/common/StateViews';
 
 export function AppContent() {
   const { isAuthenticated, loading, role, needsAreaSetup } = useAuth();
@@ -38,11 +39,7 @@ export function AppContent() {
   const [triggerNewGig, setTriggerNewGig] = useState(false);
 
   if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)' }}>
-        <div className="spinner" />
-      </div>
-    );
+    return <AppLoadingWireframe />;
   }
 
   // Not logged in -> Show Auth Screens

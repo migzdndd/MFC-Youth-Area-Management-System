@@ -221,6 +221,7 @@ export function LoginView({ onSwitchView }) {
                   className="form-input"
                   style={{ minHeight: '44px' }}
                   value={email}
+                  disabled={loading}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
@@ -231,6 +232,7 @@ export function LoginView({ onSwitchView }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
                     style={{ background: 'none', border: 'none', fontSize: '0.78rem', color: 'var(--mfc-blue)', cursor: 'pointer', padding: 0 }}
                   >
                     {showPassword ? 'Hide' : 'Show'}
@@ -245,6 +247,7 @@ export function LoginView({ onSwitchView }) {
                   className="form-input"
                   style={{ minHeight: '44px' }}
                   value={password}
+                  disabled={loading}
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
@@ -254,6 +257,7 @@ export function LoginView({ onSwitchView }) {
                   <input
                     type="checkbox"
                     checked={rememberMe}
+                    disabled={loading}
                     onChange={(e) => setRememberMe(e.target.checked)}
                     style={{ width: '16px', height: '16px' }}
                   />

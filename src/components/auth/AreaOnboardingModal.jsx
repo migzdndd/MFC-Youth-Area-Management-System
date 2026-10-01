@@ -20,8 +20,32 @@ export function AreaOnboardingModal() {
   const loadAreas = async () => {
     setLoadingAreas(true);
     try {
-      const res = await apiRequest('/api/areas');
-      const list = Array.isArray(res?.areas) ? res.areas : [];
+      let list = [];
+      try {
+        const res = await apiRequest('/api/areas');
+        list = Array.isArray(res?.areas) ? res.areas : [];
+      } catch (apiErr) {
+        console.warn('[AreaOnboarding] API areas fetch notice:', apiErr);
+      }
+
+      if (list.length === 0) {
+        try {
+          const supUrl = import.meta.env.VITE_SUPABASE_URL || 'https://desmhxtmnmfybrsdwhwz.supabase.co';
+          const supKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_rUW_5JS39kngwMT6bY5b4w_Se_Lo3eT';
+          const headers = { 'apikey': supKey };
+          if (session?.accessToken) {
+            headers['Authorization'] = `Bearer ${session.accessToken}`;
+          }
+          const sRes = await fetch(`${supUrl}/rest/v1/areas?select=id,name,code`, { headers });
+          if (sRes.ok) {
+            const raw = await sRes.json();
+            if (Array.isArray(raw)) list = raw;
+          }
+        } catch (supErr) {
+          console.warn('[AreaOnboarding] Supabase direct areas notice:', supErr);
+        }
+      }
+
       setAreas(list);
       if (list.length > 0) {
         setSelectedAreaId(list[0].id);

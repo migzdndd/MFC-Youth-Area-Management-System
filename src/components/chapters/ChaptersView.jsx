@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ChapterModal } from './ChapterModal';
 import { AssignMembersModal } from './AssignMembersModal';
 import { MemberDetailModal } from '../members/MemberDetailModal';
-import { LoadingView, EmptyView, ErrorView } from '../common/StateViews';
+import { LoadingView, EmptyView, ErrorView, TableSkeleton } from '../common/StateViews';
 import {
   PlusIcon,
   EditIcon,
@@ -114,7 +114,7 @@ export function ChaptersView() {
     }
   };
 
-  if (loading) return <LoadingView message="Loading Area Chapters..." />;
+  if (loading) return <TableSkeleton rows={4} columns={5} title="Loading Area Chapters..." />;
   if (error && chapters.length === 0) return <ErrorView title="Chapters Error" error={error} onRetry={loadData} />;
 
   // CHAPTER SERVANT SCOPED VIEW

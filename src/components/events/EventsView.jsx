@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { EventModal } from './EventModal';
 import { EventDetailModal } from './EventDetailModal';
 import { ParticipantModal } from './ParticipantModal';
-import { LoadingView, EmptyView, ErrorView } from '../common/StateViews';
+import { LoadingView, EmptyView, ErrorView, TableSkeleton } from '../common/StateViews';
 import {
   EventsIcon,
   PlusIcon,
@@ -204,7 +204,7 @@ export function EventsView({ modalOpen, onCloseModal }) {
     return eventParts.length ? attended : Number(event.peopleAttended || 0);
   };
 
-  if (loading) return <LoadingView message="Loading Area Youth Events..." />;
+  if (loading) return <TableSkeleton rows={5} columns={5} title="Loading Area Youth Events..." />;
   if (error && events.length === 0) return <ErrorView title="Events Error" error={error} onRetry={loadAllData} />;
 
   return (

@@ -3,7 +3,7 @@ import { apiRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { MemberModal } from './MemberModal';
 import { MemberDetailModal } from './MemberDetailModal';
-import { LoadingView, EmptyView, ErrorView } from '../common/StateViews';
+import { LoadingView, EmptyView, ErrorView, TableSkeleton } from '../common/StateViews';
 import {
   SearchIcon,
   PlusIcon,
@@ -203,7 +203,7 @@ export function MembersView({ modalOpen, onCloseModal }) {
     return Array.from(set);
   }, [members]);
 
-  if (loading) return <LoadingView message="Loading Area Youth Member Roster..." />;
+  if (loading) return <TableSkeleton rows={6} columns={6} title="Loading Area Youth Member Roster..." />;
   if (error && members.length === 0) return <ErrorView title="Members Roster Error" error={error} onRetry={loadData} />;
 
   // Empty state if Chapter Servant has no assigned chapter

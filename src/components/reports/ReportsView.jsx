@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { apiRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { ReportModal } from './ReportModal';
-import { LoadingView, EmptyView, ErrorView } from '../common/StateViews';
+import { LoadingView, EmptyView, ErrorView, TableSkeleton } from '../common/StateViews';
 import {
   ReportsIcon,
   PlusIcon,
@@ -190,7 +190,7 @@ export function ReportsView({ modalOpen, onCloseModal }) {
 
   const maxMonthCount = Math.max(...months.map(m => m.count), 1);
 
-  if (loading) return <LoadingView message="Loading Area Activity Reports..." />;
+  if (loading) return <TableSkeleton rows={5} columns={6} title="Loading Area Activity Reports..." />;
   if (error && reports.length === 0) return <ErrorView title="Reports Error" error={error} onRetry={loadData} />;
 
   return (

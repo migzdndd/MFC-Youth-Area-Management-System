@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { LoadingView, ErrorView } from '../common/StateViews';
+import { LoadingView, ErrorView, CardsSkeleton } from '../common/StateViews';
 import { SyncIcon, XIcon } from '../icons/Icons';
 
 export function ServicesView() {
@@ -95,7 +95,7 @@ export function ServicesView() {
     }
   };
 
-  if (loading) return <LoadingView message="Loading Area Ministries & Servants..." />;
+  if (loading) return <CardsSkeleton count={8} />;
   if (error && members.length === 0) return <ErrorView title="Ministries Error" error={error} onRetry={loadMembers} />;
 
   const modalMembers = activeServiceModal ? getServiceMembers(activeServiceModal.id) : [];
