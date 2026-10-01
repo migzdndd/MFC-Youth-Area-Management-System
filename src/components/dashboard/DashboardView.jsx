@@ -9,11 +9,12 @@ import {
   ReportsIcon,
   ScriptureIcon,
   PlusIcon,
-  SyncIcon
+  SyncIcon,
+  GigIcon
 } from '../icons/Icons';
 import { LoadingView, ErrorView } from '../common/StateViews';
 
-export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onOpenNewReport }) {
+export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onOpenNewReport, onOpenNewGig }) {
   const { role, areaId, areaName } = useAuth();
   const { isOnline } = useOffline();
 
@@ -21,9 +22,13 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     membersCount: 0,
+    youthCount: 0,
+    kidsCount: 0,
     chaptersCount: 0,
     eventsCount: 0,
-    reportsCount: 0
+    reportsCount: 0,
+    ytdGig: 0,
+    mtdGig: 0
   });
   const [reading, setReading] = useState(null);
   const [readingLoading, setReadingLoading] = useState(false);
@@ -38,23 +43,64 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
     setError(null);
     try {
       // Parallel fetch with offline caching support in apiRequest
-      const [membersRes, chaptersRes, eventsRes, reportsRes] = await Promise.allSettled([
+      const [membersRes, chaptersRes, eventsRes, reportsRes, gigRes] = await Promise.allSettled([
         apiRequest('/api/members'),
         apiRequest('/api/chapters'),
         apiRequest('/api/events'),
-        apiRequest('/api/reports')
+        apiRequest('/api/reports'),
+        apiRequest('/api/gig')
       ]);
 
       const members = membersRes.status === 'fulfilled' && membersRes.value?.ok ? (membersRes.value.members || []) : [];
       const chapters = chaptersRes.status === 'fulfilled' && chaptersRes.value?.ok ? (chaptersRes.value.chapters || []) : [];
       const events = eventsRes.status === 'fulfilled' && eventsRes.value?.ok ? (eventsRes.value.events || []) : [];
       const reports = reportsRes.status === 'fulfilled' && reportsRes.value?.ok ? (reportsRes.value.reports || []) : [];
+      const gig = gigRes.status === 'fulfilled' && gigRes.value?.ok ? (gigRes.value.gig || []) : [];
+
+      // Calculate Youth vs Kids breakdown by age or category
+      let youth = 0;
+      let kids = 0;
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+
+      members.forEach(m => {
+        const cat = String(m.category || m.ministry_branch || '').toLowerCase();
+        if (cat.includes('kid')) {
+          kids++;
+        } else if (m.birth_date) {
+          const birthYear = new Date(m.birth_date).getFullYear();
+          const age = currentYear - birthYear;
+          if (age < 13) kids++;
+          else youth++;
+        } else {
+          youth++;
+        }
+      });
+
+      // Calculate GIG YTD and MTD
+      let ytd = 0;
+      let mtd = 0;
+      gig.forEach(g => {
+        const amt = parseFloat(g.amount) || 0;
+        if (g.contribution_date) {
+          const [y, m] = g.contribution_date.split('-');
+          if (parseInt(y, 10) === currentYear) {
+            ytd += amt;
+            if (m === currentMonth) mtd += amt;
+          }
+        }
+      });
 
       setStats({
         membersCount: members.length,
+        youthCount: youth,
+        kidsCount: kids,
         chaptersCount: chapters.length,
         eventsCount: events.length,
-        reportsCount: reports.length
+        reportsCount: reports.length,
+        ytdGig: ytd,
+        mtdGig: mtd
       });
     } catch (err) {
       console.warn('[Dashboard] Error fetching stats:', err);
@@ -72,10 +118,19 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
         setReading(res.readings);
       }
     } catch {
-      // If offline reading unavailable, graceful fallback
+      // Graceful fallback if offline
     } finally {
       setReadingLoading(false);
     }
+  };
+
+  const formatPhp = (val) => {
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(val);
   };
 
   if (loading) {
@@ -100,13 +155,13 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--mfc-cyan)', fontWeight: 600 }}>
-              Missionary Families of Christ - Youth
+              Missionary Families of Christ - Youth & Kids Ministries
             </span>
             <h2 style={{ color: '#ffffff', fontSize: '1.5rem', marginTop: '4px' }}>
               {areaName ? `${areaName} Area Portal` : 'Area Youth Management'}
             </h2>
             <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.92rem', marginTop: '4px' }}>
-              Servant leadership hub for youth membership, community events, and mission reports.
+              Servant leadership hub for youth membership, community events, GIG stewardship, and pastoral reports.
             </p>
           </div>
 
@@ -133,7 +188,10 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
           </div>
           <div>
             <div className="stat-number">{stats.membersCount}</div>
-            <div className="stat-label">Active Members</div>
+            <div className="stat-label">Total Members</div>
+            <div className="stat-sub" style={{ marginTop: '4px' }}>
+              {stats.youthCount} Youth · {stats.kidsCount} Kids
+            </div>
           </div>
         </div>
 
@@ -144,6 +202,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
           <div>
             <div className="stat-number">{stats.chaptersCount}</div>
             <div className="stat-label">Chapters & Units</div>
+            <div className="stat-sub" style={{ marginTop: '4px' }}>Active Area Units</div>
           </div>
         </div>
 
@@ -153,17 +212,19 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
           </div>
           <div>
             <div className="stat-number">{stats.eventsCount}</div>
-            <div className="stat-label">Youth Events</div>
+            <div className="stat-label">Upcoming Events</div>
+            <div className="stat-sub" style={{ marginTop: '4px' }}>Camps & Assemblies</div>
           </div>
         </div>
 
-        <div className="stat-card" style={{ cursor: 'pointer' }} onClick={() => onNavigate('reports')}>
+        <div className="stat-card" style={{ cursor: 'pointer' }} onClick={() => onNavigate('gig')}>
           <div className="stat-icon" style={{ backgroundColor: 'rgba(14, 165, 233, 0.12)', color: 'var(--color-info)' }}>
-            <ReportsIcon size={24} />
+            <GigIcon size={24} />
           </div>
           <div>
-            <div className="stat-number">{stats.reportsCount}</div>
-            <div className="stat-label">Activity Reports</div>
+            <div className="stat-number" style={{ color: 'var(--color-success)' }}>{formatPhp(stats.ytdGig)}</div>
+            <div className="stat-label">YTD GIG Stewardship</div>
+            <div className="stat-sub" style={{ marginTop: '4px' }}>MTD: {formatPhp(stats.mtdGig)}</div>
           </div>
         </div>
       </div>
@@ -173,7 +234,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
         {/* Quick Actions Card */}
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Quick Actions</h3>
+            <h3 className="card-title">Role-Based Quick Actions</h3>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <button
@@ -183,7 +244,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
               onClick={onOpenNewMember}
             >
               <PlusIcon size={18} />
-              <span>Register New Member</span>
+              <span>Register New Youth / Kid Member</span>
             </button>
 
             <button
@@ -210,10 +271,10 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
               type="button"
               className="btn btn-secondary"
               style={{ justifyContent: 'flex-start', padding: '12px 16px' }}
-              onClick={() => onNavigate('events')}
+              onClick={onOpenNewGig}
             >
-              <MembersIcon size={18} />
-              <span>Track Event Attendance & Payments</span>
+              <GigIcon size={18} />
+              <span>Record GIG Stewardship / Tithes</span>
             </button>
           </div>
         </div>

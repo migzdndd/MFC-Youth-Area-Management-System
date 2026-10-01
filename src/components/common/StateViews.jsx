@@ -67,3 +67,8 @@ export function ErrorView({
     </div>
   );
 }
+
+export const LoadingState = LoadingView;
+export const EmptyState = EmptyView;
+export const ErrorState = ErrorView;
+

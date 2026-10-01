@@ -21,6 +21,7 @@ export function MembersView({ modalOpen, onCloseModal }) {
   const [selectedChapter, setSelectedChapter] = useState('');
   const [selectedService, setSelectedService] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
+  const [categorySegment, setCategorySegment] = useState('ALL'); // 'ALL' | 'YOUTH' | 'KIDS'
 
   const [activeModalMember, setActiveModalMember] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,9 +61,30 @@ export function MembersView({ modalOpen, onCloseModal }) {
     }
   };
 
+  const getMemberCategory = (m) => {
+    const raw = String(m.category || m.ministry_branch || '').toLowerCase();
+    if (raw.includes('kid')) return 'KIDS';
+    if (raw.includes('youth')) return 'YOUTH';
+    if (m.birth_date || m.birthDate) {
+      const bYear = new Date(m.birth_date || m.birthDate).getFullYear();
+      const age = new Date().getFullYear() - bYear;
+      if (age < 13) return 'KIDS';
+      return 'YOUTH';
+    }
+    return 'YOUTH';
+  };
+
+  const youthCount = useMemo(() => {
+    return members.filter(m => getMemberCategory(m) === 'YOUTH').length;
+  }, [members]);
+
+  const kidsCount = useMemo(() => {
+    return members.filter(m => getMemberCategory(m) === 'KIDS').length;
+  }, [members]);
+
   const handleSaveMember = async (formData) => {
     const isEdit = !!formData.id;
-    const endpoint = isEdit ? '/api/members' : '/api/members';
+    const endpoint = '/api/members';
     const method = isEdit ? 'PATCH' : 'POST';
 
     const payload = {
@@ -70,6 +92,10 @@ export function MembersView({ modalOpen, onCloseModal }) {
       first_name: formData.firstName,
       middle_name: formData.middleName,
       last_name: formData.lastName,
+      nickname: formData.nickname,
+      gender: formData.gender,
+      category: formData.category,
+      ministry_branch: formData.category,
       email: formData.email,
       contact_number: formData.contact,
       birth_date: formData.birthDate,
@@ -77,6 +103,9 @@ export function MembersView({ modalOpen, onCloseModal }) {
       academic_track: formData.academicTrack,
       grade_level: formData.gradeLevel,
       address: formData.address,
+      household_head: formData.householdHead,
+      emergency_contact_person: formData.emergencyContactPerson,
+      emergency_contact_number: formData.emergencyContactNumber,
       chapter_id: formData.chapterId || null,
       access_level: formData.accessLevel,
       status: formData.status,
@@ -138,9 +167,12 @@ export function MembersView({ modalOpen, onCloseModal }) {
       const mStatus = m.status || 'Active';
       const matchesStatus = selectedStatus === 'All' || mStatus === selectedStatus;
 
-      return matchesSearch && matchesChapter && matchesService && matchesStatus;
+      const cat = getMemberCategory(m);
+      const matchesCategory = categorySegment === 'ALL' || cat === categorySegment;
+
+      return matchesSearch && matchesChapter && matchesService && matchesStatus && matchesCategory;
     });
-  }, [members, search, selectedChapter, selectedService, selectedStatus]);
+  }, [members, search, selectedChapter, selectedService, selectedStatus, categorySegment]);
 
   const getChapterName = (chapterId) => {
     if (!chapterId) return 'Unassigned';
@@ -184,6 +216,34 @@ export function MembersView({ modalOpen, onCloseModal }) {
             Register Member
           </button>
         </div>
+      </div>
+
+      {/* Category Segmented Tabs (Youth vs Kids) */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <button
+          type="button"
+          className={`btn btn-sm ${categorySegment === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ minHeight: '38px', padding: '6px 14px' }}
+          onClick={() => setCategorySegment('ALL')}
+        >
+          All Members ({members.length})
+        </button>
+        <button
+          type="button"
+          className={`btn btn-sm ${categorySegment === 'YOUTH' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ minHeight: '38px', padding: '6px 14px' }}
+          onClick={() => setCategorySegment('YOUTH')}
+        >
+          MFC Youth (13–21) ({youthCount})
+        </button>
+        <button
+          type="button"
+          className={`btn btn-sm ${categorySegment === 'KIDS' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ minHeight: '38px', padding: '6px 14px' }}
+          onClick={() => setCategorySegment('KIDS')}
+        >
+          MFC Kids (4–12) ({kidsCount})
+        </button>
       </div>
 
       {/* Filter and Search Bar */}
@@ -270,12 +330,21 @@ export function MembersView({ modalOpen, onCloseModal }) {
                 const name = `${m.first_name || m.firstName || ''} ${m.last_name || m.lastName || ''}`;
                 const mServices = Array.isArray(m.services) ? m.services : [];
                 const isActive = (m.status || 'Active') === 'Active';
+                const cat = getMemberCategory(m);
 
                 return (
                   <tr key={m.id}>
                     <td>
-                      <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{name}</div>
-                      {m.school && <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{m.school}</div>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{name}</span>
+                        {m.nickname && (
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>"{m.nickname}"</span>
+                        )}
+                        <span className={`badge ${cat === 'KIDS' ? 'badge-warning' : 'badge-info'}`} style={{ fontSize: '0.68rem', padding: '2px 6px' }}>
+                          {cat === 'KIDS' ? 'MFC Kids' : 'MFC Youth'}
+                        </span>
+                      </div>
+                      {m.school && <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{m.school}</div>}
                     </td>
                     <td>
                       <span className="badge badge-info" style={{ backgroundColor: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--text-main)' }}>

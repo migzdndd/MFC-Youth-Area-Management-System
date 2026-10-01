@@ -21,6 +21,9 @@ import { ReportsView } from './components/reports/ReportsView';
 import { ServicesView } from './components/services/ServicesView';
 import { ReadingsView } from './components/readings/ReadingsView';
 import { SettingsView } from './components/settings/SettingsView';
+import { GigView } from './components/gig/GigView';
+import { ChangelogView } from './components/changelogs/ChangelogView';
+import { MemberPortalView } from './components/member/MemberPortalView';
 
 export function AppContent() {
   const { isAuthenticated, loading, role, needsAreaSetup } = useAuth();
@@ -32,6 +35,7 @@ export function AppContent() {
   const [triggerNewMember, setTriggerNewMember] = useState(false);
   const [triggerNewEvent, setTriggerNewEvent] = useState(false);
   const [triggerNewReport, setTriggerNewReport] = useState(false);
+  const [triggerNewGig, setTriggerNewGig] = useState(false);
 
   if (loading) {
     return (
@@ -53,14 +57,26 @@ export function AppContent() {
     );
   }
 
+  // Self-Service Member Portal Role
+  if (role === 'member') {
+    return (
+      <>
+        <MemberPortalView />
+        <MfaVerifyModal />
+      </>
+    );
+  }
+
   const viewTitles = {
     dashboard: 'Area Dashboard',
     members: 'Members Directory',
     chapters: 'Chapters & Units',
     events: 'Events & Attendance',
+    gig: 'GIG Stewardship & Tithes',
     reports: 'Activity Reports',
     services: 'Ministries & Services',
     readings: 'Daily Liturgical Scripture',
+    changelogs: 'System Transparency & Guide',
     settings: 'Settings & Security'
   };
 
@@ -102,6 +118,10 @@ export function AppContent() {
                 setCurrentView('reports');
                 setTriggerNewReport(true);
               }}
+              onOpenNewGig={() => {
+                setCurrentView('gig');
+                setTriggerNewGig(true);
+              }}
             />
           )}
 
@@ -123,6 +143,13 @@ export function AppContent() {
             />
           )}
 
+          {currentView === 'gig' && (
+            <GigView
+              modalOpen={triggerNewGig}
+              onCloseModal={() => setTriggerNewGig(false)}
+            />
+          )}
+
           {currentView === 'reports' && (
             <ReportsView
               modalOpen={triggerNewReport}
@@ -136,6 +163,10 @@ export function AppContent() {
 
           {currentView === 'readings' && (
             <ReadingsView />
+          )}
+
+          {currentView === 'changelogs' && (
+            <ChangelogView />
           )}
 
           {currentView === 'settings' && (

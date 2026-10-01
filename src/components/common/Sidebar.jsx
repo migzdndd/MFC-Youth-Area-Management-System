@@ -9,7 +9,9 @@ import {
   ServicesIcon,
   ScriptureIcon,
   SettingsIcon,
-  LogoutIcon
+  LogoutIcon,
+  GigIcon,
+  ChangelogIcon
 } from '../icons/Icons';
 
 export function Sidebar({ currentView, onNavigate }) {
@@ -20,9 +22,11 @@ export function Sidebar({ currentView, onNavigate }) {
     { id: 'members', label: 'Members', icon: MembersIcon },
     { id: 'chapters', label: 'Chapters', icon: ChaptersIcon },
     { id: 'events', label: 'Events & Attendance', icon: EventsIcon },
+    { id: 'gig', label: 'GIG Stewardship', icon: GigIcon },
     { id: 'reports', label: 'Activity Reports', icon: ReportsIcon },
     { id: 'services', label: 'Ministries & Services', icon: ServicesIcon },
     { id: 'readings', label: 'Daily Readings', icon: ScriptureIcon },
+    { id: 'changelogs', label: 'Release Notes & Guide', icon: ChangelogIcon },
     { id: 'settings', label: 'Settings', icon: SettingsIcon }
   ];
 

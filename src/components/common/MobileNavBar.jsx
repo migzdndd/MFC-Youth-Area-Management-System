@@ -3,6 +3,7 @@ import {
   DashboardIcon,
   MembersIcon,
   EventsIcon,
+  GigIcon,
   ReportsIcon,
   SettingsIcon
 } from '../icons/Icons';
@@ -12,6 +13,7 @@ export function MobileNavBar({ currentView, onNavigate }) {
     { id: 'dashboard', label: 'Home', icon: DashboardIcon },
     { id: 'members', label: 'Members', icon: MembersIcon },
     { id: 'events', label: 'Events', icon: EventsIcon },
+    { id: 'gig', label: 'GIG', icon: GigIcon },
     { id: 'reports', label: 'Reports', icon: ReportsIcon },
     { id: 'settings', label: 'Settings', icon: SettingsIcon }
   ];

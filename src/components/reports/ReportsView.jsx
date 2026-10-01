@@ -7,7 +7,8 @@ import {
   PlusIcon,
   EditIcon,
   TrashIcon,
-  SyncIcon
+  SyncIcon,
+  PrintIcon
 } from '../icons/Icons';
 
 export function ReportsView({ modalOpen, onCloseModal }) {
@@ -82,6 +83,72 @@ export function ReportsView({ modalOpen, onCloseModal }) {
       alert(`Could not delete report: ${err.message}`);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handlePrintReport = (rep) => {
+    if (!rep) return;
+    const printWindow = window.open('', '_blank');
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>MFC Youth Activity Report - ${rep.title}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1e293b; max-width: 800px; margin: 0 auto; line-height: 1.5; }
+            .header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
+            .title { font-size: 24px; font-weight: bold; margin: 0 0 6px 0; color: #0f172a; }
+            .subtitle { font-size: 14px; color: #64748b; }
+            .badge { display: inline-block; padding: 4px 10px; background: #e0f2fe; color: #0369a1; border-radius: 4px; font-weight: 600; font-size: 12px; margin-bottom: 10px; }
+            .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; padding: 14px; background: #f8fafc; border-radius: 6px; }
+            .meta-item { font-size: 13px; }
+            .meta-label { font-weight: 600; color: #475569; }
+            .section { margin-bottom: 24px; }
+            .section-title { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+            .content { font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #334155; }
+            .footer { margin-top: 40px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <span class="badge">${rep.category || 'Activity Report'}</span>
+            <h1 class="title">${rep.title}</h1>
+            <div class="subtitle">Missionary Families of Christ - Youth & Kids Ministries</div>
+          </div>
+          <div class="meta-grid">
+            <div class="meta-item"><span class="meta-label">Activity Date:</span> ${rep.activity_date || rep.activityDate || 'N/A'}</div>
+            <div class="meta-item"><span class="meta-label">Attendees Count:</span> ${rep.attendance_count ?? rep.attendanceCount ?? 'N/A'}</div>
+            <div class="meta-item"><span class="meta-label">Location / Venue:</span> ${rep.location || 'N/A'}</div>
+            <div class="meta-item"><span class="meta-label">Prepared By:</span> ${rep.prepared_by || 'Servant Leader'}</div>
+          </div>
+          <div class="section">
+            <div class="section-title">Highlights & Pastoral Fruit</div>
+            <div class="content">${rep.highlights || 'No highlights provided.'}</div>
+          </div>
+          ${rep.financial_notes ? `
+          <div class="section">
+            <div class="section-title">Financial Summary & Stewardship</div>
+            <div class="content">${rep.financial_notes}</div>
+          </div>` : ''}
+          ${rep.concerns ? `
+          <div class="section">
+            <div class="section-title">Prayer Intentions & Pastoral Concerns</div>
+            <div class="content">${rep.concerns}</div>
+          </div>` : ''}
+          <div class="footer">
+            MFC Youth Area Management System • Generated on ${new Date().toLocaleDateString()}
+          </div>
+          <script>
+            window.onload = function() { window.print(); };
+          </script>
+        </body>
+      </html>
+    `;
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+    } else {
+      window.print();
     }
   };
 
@@ -176,6 +243,19 @@ export function ReportsView({ modalOpen, onCloseModal }) {
                       type="button"
                       className="btn btn-secondary btn-icon"
                       style={{ width: '34px', height: '34px', padding: '6px' }}
+                      title="Print / Export Report"
+                      aria-label={`Print ${rep.title}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePrintReport(rep);
+                      }}
+                    >
+                      <PrintIcon size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-icon"
+                      style={{ width: '34px', height: '34px', padding: '6px' }}
                       title="Edit Report"
                       aria-label={`Edit ${rep.title}`}
                       onClick={() => {
@@ -263,9 +343,17 @@ export function ReportsView({ modalOpen, onCloseModal }) {
               )}
             </div>
 
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setViewReport(null)}>
-                Close
+            <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => handlePrintReport(viewReport)}
+              >
+                <PrintIcon size={16} />
+                <span>Print / Export PDF</span>
+              </button>
+              <button type="button" className="btn btn-primary" onClick={() => setViewReport(null)}>
+                Done
               </button>
             </div>
           </div>

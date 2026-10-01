@@ -40,7 +40,8 @@ export function AttendanceTrackerModal({ isOpen, onClose, event }) {
           name: `${m.first_name || m.firstName || ''} ${m.last_name || m.lastName || ''}`,
           school: m.school || '',
           attended: existing ? (existing.attended || existing.status === 'Attended') : false,
-          paid: existing ? !!existing.paid : false,
+          paymentMode: existing?.mode_of_payment || 'Cash',
+          paymentStatus: existing?.payment_status || (existing?.paid ? 'Paid' : 'Pending'),
           notes: existing?.notes || ''
         };
       });
@@ -63,15 +64,31 @@ export function AttendanceTrackerModal({ isOpen, onClose, event }) {
     setParticipants(prev => prev.map(p => p.memberId === item.memberId ? { ...p, attended: nextAttended } : p));
 
     try {
-      await apiRequest('/api/participants', {
-        method: 'POST',
-        body: JSON.stringify({
-          eventId: event.id,
-          memberId: item.memberId,
-          attended: nextAttended,
-          paid: item.paid
-        })
-      });
+      if (item.participantId) {
+        await apiRequest('/api/participants', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            id: item.participantId,
+            attended: nextAttended,
+            paymentMode: item.paymentMode,
+            paymentStatus: item.paymentStatus
+          })
+        });
+      } else {
+        const res = await apiRequest('/api/participants', {
+          method: 'POST',
+          body: JSON.stringify({
+            eventId: event.id,
+            memberId: item.memberId,
+            attended: nextAttended,
+            paymentMode: item.paymentMode,
+            paymentStatus: item.paymentStatus
+          })
+        });
+        if (res?.participant?.id) {
+          setParticipants(prev => prev.map(p => p.memberId === item.memberId ? { ...p, participantId: res.participant.id } : p));
+        }
+      }
     } catch (err) {
       console.warn('[Attendance] Sync error on attendance toggle:', err);
     } finally {
@@ -79,67 +96,120 @@ export function AttendanceTrackerModal({ isOpen, onClose, event }) {
     }
   };
 
-  const handleTogglePayment = async (item) => {
-    const nextPaid = !item.paid;
+  const handleUpdatePaymentStatus = async (item, newStatus) => {
     setTogglingId(`pay_${item.memberId}`);
 
     // Optimistic instant update
-    setParticipants(prev => prev.map(p => p.memberId === item.memberId ? { ...p, paid: nextPaid } : p));
+    setParticipants(prev => prev.map(p => p.memberId === item.memberId ? { ...p, paymentStatus: newStatus } : p));
 
     try {
-      await apiRequest('/api/participants', {
-        method: 'POST',
-        body: JSON.stringify({
-          eventId: event.id,
-          memberId: item.memberId,
-          attended: item.attended,
-          paid: nextPaid
-        })
-      });
+      if (item.participantId) {
+        await apiRequest('/api/participants', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            id: item.participantId,
+            attended: item.attended,
+            paymentMode: item.paymentMode,
+            paymentStatus: newStatus
+          })
+        });
+      } else {
+        const res = await apiRequest('/api/participants', {
+          method: 'POST',
+          body: JSON.stringify({
+            eventId: event.id,
+            memberId: item.memberId,
+            attended: item.attended,
+            paymentMode: item.paymentMode,
+            paymentStatus: newStatus
+          })
+        });
+        if (res?.participant?.id) {
+          setParticipants(prev => prev.map(p => p.memberId === item.memberId ? { ...p, participantId: res.participant.id } : p));
+        }
+      }
     } catch (err) {
-      console.warn('[Attendance] Sync error on payment toggle:', err);
+      console.warn('[Attendance] Sync error on payment update:', err);
     } finally {
       setTogglingId(null);
     }
   };
 
-  const filtered = participants.filter(p => {
-    const matchesSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
-    if (statusFilter === 'Present') return matchesSearch && p.attended;
-    if (statusFilter === 'Absent') return matchesSearch && !p.attended;
-    if (statusFilter === 'Paid') return matchesSearch && p.paid;
-    if (statusFilter === 'Unpaid') return matchesSearch && !p.paid;
-    return matchesSearch;
-  });
+  const handleUpdatePaymentMode = async (item, newMode) => {
+    setParticipants(prev => prev.map(p => p.memberId === item.memberId ? { ...p, paymentMode: newMode } : p));
+
+    if (item.participantId) {
+      try {
+        await apiRequest('/api/participants', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            id: item.participantId,
+            attended: item.attended,
+            paymentMode: newMode,
+            paymentStatus: item.paymentStatus
+          })
+        });
+      } catch (err) {
+        console.warn('[Attendance] Sync error on payment mode update:', err);
+      }
+    }
+  };
 
   const presentCount = participants.filter(p => p.attended).length;
-  const paidCount = participants.filter(p => p.paid).length;
+  const paidCount = participants.filter(p => p.paymentStatus === 'Paid').length;
+  const pendingCount = participants.filter(p => p.paymentStatus === 'Pending').length;
+
+  const filtered = participants.filter(p => {
+    const matchesSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.school.toLowerCase().includes(search.toLowerCase());
+    if (!matchesSearch) return false;
+
+    if (statusFilter === 'Present') return p.attended;
+    if (statusFilter === 'Absent') return !p.attended;
+    if (statusFilter === 'Paid') return p.paymentStatus === 'Paid';
+    if (statusFilter === 'Pending') return p.paymentStatus === 'Pending';
+    if (statusFilter === 'Waived') return p.paymentStatus === 'Waived';
+
+    return true;
+  });
 
   return (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tracker-modal-title" onClick={onClose}>
-      <div className="modal-content" style={{ maxWidth: '780px', height: '90vh' }} onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tracker-title" onClick={onClose}>
+      <div className="modal-content" style={{ maxWidth: '780px', width: '95%' }} onClick={e => e.stopPropagation()}>
+        {/* Header */}
         <div className="modal-header">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 id="tracker-modal-title" style={{ fontSize: '1.25rem' }}>
-                Attendance & Payment Tracker
-              </h2>
-              {!isOnline && (
-                <span className="badge badge-warning" style={{ fontSize: '0.72rem' }}>
-                  Offline Ready
-                </span>
-              )}
-            </div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              {event.title || event.name} • {event.event_date || event.eventDate} {event.location ? `• ${event.location}` : ''}
+            <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--mfc-blue)', fontWeight: 600 }}>
+              Live Event Check-in & Payments
+            </span>
+            <h2 id="tracker-title" style={{ fontSize: '1.25rem', marginTop: '2px' }}>
+              {event.title}
+            </h2>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              {event.venue ? `${event.venue} · ` : ''}{event.event_date || 'Upcoming'}
             </div>
           </div>
-          <button type="button" className="btn btn-secondary btn-icon" onClick={onClose} aria-label="Close tracker">
-            <XIcon size={18} />
-          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-icon"
+              onClick={loadEventData}
+              title="Refresh roster"
+            >
+              <SyncIcon size={16} />
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-icon"
+              onClick={onClose}
+              aria-label="Close dialog"
+            >
+              <XIcon size={18} />
+            </button>
+          </div>
         </div>
 
-        {/* Quick Metrics Bar */}
+        {/* Counter Summary Bar */}
         <div
           style={{
             padding: '12px 24px',
@@ -153,10 +223,11 @@ export function AttendanceTrackerModal({ isOpen, onClose, event }) {
             fontSize: '0.88rem'
           }}
         >
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
             <span>Total: <strong>{participants.length}</strong></span>
             <span style={{ color: 'var(--color-success)' }}>Present: <strong>{presentCount}</strong></span>
             <span style={{ color: 'var(--mfc-blue)' }}>Paid: <strong>{paidCount}</strong></span>
+            <span style={{ color: 'var(--color-warning)' }}>Pending: <strong>{pendingCount}</strong></span>
             {event.fee > 0 && (
               <span style={{ color: 'var(--text-muted)' }}>
                 Fee: ₱{event.fee} (Collected: ₱{paidCount * event.fee})
@@ -181,7 +252,7 @@ export function AttendanceTrackerModal({ isOpen, onClose, event }) {
 
             <select
               className="form-select"
-              style={{ minHeight: '34px', fontSize: '0.82rem', width: '120px' }}
+              style={{ minHeight: '34px', fontSize: '0.82rem', width: '130px' }}
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
             >
@@ -189,13 +260,14 @@ export function AttendanceTrackerModal({ isOpen, onClose, event }) {
               <option value="Present">Present ({presentCount})</option>
               <option value="Absent">Absent ({participants.length - presentCount})</option>
               <option value="Paid">Paid ({paidCount})</option>
-              <option value="Unpaid">Unpaid ({participants.length - paidCount})</option>
+              <option value="Pending">Pending ({pendingCount})</option>
+              <option value="Waived">Waived</option>
             </select>
           </div>
         </div>
 
         {/* Participant Attendance Checklist */}
-        <div className="modal-body" style={{ padding: '12px 24px' }}>
+        <div className="modal-body" style={{ padding: '12px 24px', maxHeight: '420px', overflowY: 'auto' }}>
           {loading ? (
             <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
               Loading participants roster...
@@ -217,11 +289,12 @@ export function AttendanceTrackerModal({ isOpen, onClose, event }) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '12px'
+                    flexWrap: 'wrap',
+                    gap: '10px'
                   }}
                 >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ flex: 1, minWidth: '160px' }}>
+                    <div style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.92rem' }}>
                       {item.name}
                     </div>
                     {item.school && (
@@ -231,7 +304,43 @@ export function AttendanceTrackerModal({ isOpen, onClose, event }) {
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {/* Payment Mode Selector */}
+                    {event.fee > 0 && (
+                      <select
+                        className="form-select"
+                        style={{ minHeight: '32px', fontSize: '0.78rem', width: '100px' }}
+                        value={item.paymentMode}
+                        onChange={e => handleUpdatePaymentMode(item, e.target.value)}
+                        aria-label="Payment Mode"
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="GCash">GCash</option>
+                        <option value="Bank">Bank</option>
+                      </select>
+                    )}
+
+                    {/* Payment Status Selector */}
+                    {event.fee > 0 && (
+                      <select
+                        className="form-select"
+                        style={{
+                          minHeight: '32px',
+                          fontSize: '0.78rem',
+                          width: '100px',
+                          color: item.paymentStatus === 'Paid' ? 'var(--color-success)' : item.paymentStatus === 'Waived' ? 'var(--mfc-blue)' : 'var(--color-warning)',
+                          fontWeight: 600
+                        }}
+                        value={item.paymentStatus}
+                        onChange={e => handleUpdatePaymentStatus(item, e.target.value)}
+                        aria-label="Payment Status"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Waived">Waived</option>
+                      </select>
+                    )}
+
                     {/* Attendance Toggle */}
                     <button
                       type="button"
@@ -241,25 +350,11 @@ export function AttendanceTrackerModal({ isOpen, onClose, event }) {
                         backgroundColor: item.attended ? 'var(--color-success)' : undefined,
                         borderColor: item.attended ? 'var(--color-success)' : undefined,
                         color: item.attended ? '#ffffff' : undefined,
-                        minWidth: '95px'
+                        minWidth: '105px',
+                        minHeight: '34px'
                       }}
                     >
-                      {item.attended ? '✓ Present' : 'Mark Present'}
-                    </button>
-
-                    {/* Payment Toggle (if applicable) */}
-                    <button
-                      type="button"
-                      onClick={() => handleTogglePayment(item)}
-                      className={`btn btn-sm ${item.paid ? 'btn-primary' : 'btn-secondary'}`}
-                      style={{
-                        minWidth: '85px',
-                        backgroundColor: item.paid ? 'var(--mfc-blue)' : undefined,
-                        borderColor: item.paid ? 'var(--mfc-blue)' : undefined,
-                        color: item.paid ? '#ffffff' : undefined
-                      }}
-                    >
-                      {item.paid ? '✓ Paid' : 'Unpaid'}
+                      {item.attended ? '✓ Attended' : 'Mark Attended'}
                     </button>
                   </div>
                 </div>
@@ -268,9 +363,13 @@ export function AttendanceTrackerModal({ isOpen, onClose, event }) {
           )}
         </div>
 
-        <div className="modal-footer">
-          <button type="button" className="btn btn-primary" onClick={onClose}>
-            Done Tracking
+        {/* Footer */}
+        <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            Attendance & payment updates synchronize automatically when connected.
+          </div>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Done
           </button>
         </div>
       </div>
