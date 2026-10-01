@@ -113,7 +113,7 @@ export function ReportsView({ modalOpen, onCloseModal }) {
           <div class="header">
             <span class="badge">${rep.category || 'Activity Report'}</span>
             <h1 class="title">${rep.title}</h1>
-            <div class="subtitle">Missionary Families of Christ - Youth & Kids Ministries</div>
+            <div class="subtitle">Missionary Families of Christ - Youth Ministry</div>
           </div>
           <div class="meta-grid">
             <div class="meta-item"><span class="meta-label">Activity Date:</span> ${rep.activity_date || rep.activityDate || 'N/A'}</div>

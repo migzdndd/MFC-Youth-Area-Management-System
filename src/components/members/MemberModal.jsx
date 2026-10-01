@@ -51,7 +51,7 @@ export function MemberModal({ isOpen, onClose, onSave, member, chapters = [] }) 
         lastName: member.lastName || member.last_name || '',
         nickname: member.nickname || '',
         gender: member.gender || 'Male',
-        category: member.category || (String(member.ministry_branch || '').toLowerCase().includes('kid') ? 'Kids' : 'Youth'),
+        category: 'Youth',
         email: member.email || '',
         contact: member.contact || member.contact_number || '',
         birthDate: member.birthDate || member.birth_date || '',
@@ -153,39 +153,6 @@ export function MemberModal({ isOpen, onClose, onSave, member, chapters = [] }) 
               </div>
             )}
 
-            {/* Category / Branch & Chapter Selection */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="category">Ministry Category *</label>
-                <select
-                  id="category"
-                  name="category"
-                  className="form-select"
-                  value={formData.category}
-                  onChange={handleChange}
-                >
-                  <option value="Youth">MFC Youth (Ages 13-21)</option>
-                  <option value="Kids">MFC Kids (Ages 4-12)</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="chapterId">Chapter</label>
-                <select
-                  id="chapterId"
-                  name="chapterId"
-                  className="form-select"
-                  value={formData.chapterId}
-                  onChange={handleChange}
-                >
-                  <option value="">No Chapter (Unassigned)</option>
-                  {chapters.map(c => (
-                    <option key={c.id} value={c.id}>{c.name || c.chapter_name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
             {/* Name Fields */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div className="form-group">
@@ -256,17 +223,22 @@ export function MemberModal({ isOpen, onClose, onSave, member, chapters = [] }) 
               </div>
             </div>
 
+            {/* Chapter & Membership Status */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div className="form-group">
-                <label className="form-label" htmlFor="birthDate">Birth Date</label>
-                <input
-                  id="birthDate"
-                  name="birthDate"
-                  type="date"
-                  className="form-input"
-                  value={formData.birthDate}
+                <label className="form-label" htmlFor="chapterId">Chapter</label>
+                <select
+                  id="chapterId"
+                  name="chapterId"
+                  className="form-select"
+                  value={formData.chapterId}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">No Chapter (Unassigned)</option>
+                  {chapters.map(c => (
+                    <option key={c.id} value={c.id}>{c.name || c.chapter_name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">
@@ -284,16 +256,15 @@ export function MemberModal({ isOpen, onClose, onSave, member, chapters = [] }) 
               </div>
             </div>
 
-            {/* Contact Details */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div className="form-group">
-                <label className="form-label" htmlFor="email">Email Address</label>
+                <label className="form-label" htmlFor="birthDate">Birth Date</label>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
+                  id="birthDate"
+                  name="birthDate"
+                  type="date"
                   className="form-input"
-                  value={formData.email}
+                  value={formData.birthDate}
                   onChange={handleChange}
                 />
               </div>
@@ -310,6 +281,18 @@ export function MemberModal({ isOpen, onClose, onSave, member, chapters = [] }) 
                   onChange={handleChange}
                 />
               </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="email">Email Address</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                className="form-input"
+                value={formData.email}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">

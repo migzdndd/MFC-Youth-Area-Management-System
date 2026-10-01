@@ -143,7 +143,7 @@ export function ChangelogView() {
               </div>
 
               <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-surface-secondary)' }}>
-                <div style={{ fontWeight: 700, color: 'var(--mfc-blue)', marginBottom: '6px' }}>Youth & Kids Members</div>
+                <div style={{ fontWeight: 700, color: 'var(--mfc-blue)', marginBottom: '6px' }}>Youth Members</div>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                   Self-service portal access to view their own profile, household information, event history, payment statuses, and GIG donation records.
                 </p>

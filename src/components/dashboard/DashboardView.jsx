@@ -22,8 +22,6 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     membersCount: 0,
-    youthCount: 0,
-    kidsCount: 0,
     chaptersCount: 0,
     eventsCount: 0,
     reportsCount: 0,
@@ -57,26 +55,9 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
       const reports = reportsRes.status === 'fulfilled' && reportsRes.value?.ok ? (reportsRes.value.reports || []) : [];
       const gig = gigRes.status === 'fulfilled' && gigRes.value?.ok ? (gigRes.value.gig || []) : [];
 
-      // Calculate Youth vs Kids breakdown by age or category
-      let youth = 0;
-      let kids = 0;
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-
-      members.forEach(m => {
-        const cat = String(m.category || m.ministry_branch || '').toLowerCase();
-        if (cat.includes('kid')) {
-          kids++;
-        } else if (m.birth_date) {
-          const birthYear = new Date(m.birth_date).getFullYear();
-          const age = currentYear - birthYear;
-          if (age < 13) kids++;
-          else youth++;
-        } else {
-          youth++;
-        }
-      });
 
       // Calculate GIG YTD and MTD
       let ytd = 0;
@@ -94,8 +75,6 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
 
       setStats({
         membersCount: members.length,
-        youthCount: youth,
-        kidsCount: kids,
         chaptersCount: chapters.length,
         eventsCount: events.length,
         reportsCount: reports.length,
@@ -155,7 +134,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--mfc-cyan)', fontWeight: 600 }}>
-              Missionary Families of Christ - Youth & Kids Ministries
+              Missionary Families of Christ - Youth Ministry
             </span>
             <h2 style={{ color: '#ffffff', fontSize: '1.5rem', marginTop: '4px' }}>
               {areaName ? `${areaName} Area Portal` : 'Area Youth Management'}
@@ -188,9 +167,9 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
           </div>
           <div>
             <div className="stat-number">{stats.membersCount}</div>
-            <div className="stat-label">Total Members</div>
+            <div className="stat-label">Total Youth Members</div>
             <div className="stat-sub" style={{ marginTop: '4px' }}>
-              {stats.youthCount} Youth · {stats.kidsCount} Kids
+              Active Youth Roster
             </div>
           </div>
         </div>
@@ -244,7 +223,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
               onClick={onOpenNewMember}
             >
               <PlusIcon size={18} />
-              <span>Register New Youth / Kid Member</span>
+              <span>Register New Youth Member</span>
             </button>
 
             <button
