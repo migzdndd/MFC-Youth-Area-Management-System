@@ -4,9 +4,10 @@
   "version": "1.0.1",
   "identifier": "com.mfcyouth.ams",
   "build": {
-    "beforeDevCommand": "npm run dev:web",
-    "devUrl": "http://localhost:5500",
-    "frontendDist": "../Frontend"
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [

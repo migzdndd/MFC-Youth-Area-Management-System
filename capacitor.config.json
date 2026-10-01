@@ -1,7 +1,7 @@
 {
   "appId": "org.mfc.youth.management",
   "appName": "MFC Youth Portal",
-  "webDir": "Frontend",
+  "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https"

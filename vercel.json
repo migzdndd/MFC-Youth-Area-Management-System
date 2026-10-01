@@ -64,8 +64,11 @@
       "use": "@vercel/node"
     },
     {
-      "src": "Frontend/**",
-      "use": "@vercel/static"
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "routes": [
@@ -74,8 +77,11 @@
       "dest": "/Backend/api/router.js?route=$1"
     },
     {
+      "handle": "filesystem"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/Frontend/$1"
+      "dest": "/index.html"
     }
   ]
 }
