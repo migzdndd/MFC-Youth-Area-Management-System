@@ -7,6 +7,7 @@ import { OfflineBanner } from './components/common/OfflineBanner';
 import { SyncCenterModal } from './components/common/SyncCenterModal';
 import { MfaVerifyModal } from './components/auth/MfaVerifyModal';
 import { AreaSelectorModal } from './components/dashboard/AreaSelectorModal';
+import { AreaOnboardingModal } from './components/auth/AreaOnboardingModal';
 
 import { LoginView } from './components/auth/LoginView';
 import { RegisterView } from './components/auth/RegisterView';
@@ -22,7 +23,7 @@ import { ReadingsView } from './components/readings/ReadingsView';
 import { SettingsView } from './components/settings/SettingsView';
 
 export function AppContent() {
-  const { isAuthenticated, loading, role } = useAuth();
+  const { isAuthenticated, loading, role, needsAreaSetup } = useAuth();
   const [authView, setAuthView] = useState('login'); // 'login' | 'register' | 'claim'
   const [currentView, setCurrentView] = useState('dashboard');
   const [isAreaSelectorOpen, setIsAreaSelectorOpen] = useState(false);
@@ -150,6 +151,7 @@ export function AppContent() {
       </div>
 
       {/* Global Modals */}
+      {needsAreaSetup && <AreaOnboardingModal />}
       <SyncCenterModal />
       <AreaSelectorModal
         isOpen={isAreaSelectorOpen}

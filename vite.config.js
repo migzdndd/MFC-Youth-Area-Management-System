@@ -14,8 +14,9 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true
+        target: process.env.VITE_API_URL || 'https://mfc-youth-area-management-web.vercel.app',
+        changeOrigin: true,
+        secure: false
       }
     }
   },

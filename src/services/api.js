@@ -1,11 +1,7 @@
-/**
- * MFC Youth Area Management System - Smart Native API Client
- * Seamlessly manages online cloud calls, automatic caching, and offline outbox queuing.
- */
-
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { offlineStore } from './offlineStore';
 
-const DEFAULT_SERVER_URL = 'http://localhost:3001';
+const DEFAULT_SERVER_URL = 'https://mfc-youth-area-management-web.vercel.app';
 
 export function getApiBaseUrl() {
   if (typeof window === 'undefined') return '';
@@ -13,14 +9,21 @@ export function getApiBaseUrl() {
   const custom = localStorage.getItem('mfc_custom_api_url');
   if (custom && custom.trim()) return custom.trim().replace(/\/+$/, '');
 
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && envUrl.trim()) return envUrl.trim().replace(/\/+$/, '');
+  // Native Mobile (Capacitor) communicates directly with cloud backend via native HTTP
+  if (Capacitor.isNativePlatform()) {
+    const envUrl = import.meta.env.VITE_API_URL;
+    if (envUrl && envUrl.trim()) return envUrl.trim().replace(/\/+$/, '');
+    return DEFAULT_SERVER_URL;
+  }
 
-  // If in web browser on a production domain, use relative requests
-  const host = window.location.hostname;
-  if (host && host !== 'localhost' && host !== '127.0.0.1' && !window.Capacitor?.isNativePlatform() && !window.__TAURI__) {
+  // When running in desktop or web, if relative requests are used (e.g. Vite proxy), return empty string
+  const isBrowser = typeof window !== 'undefined' && !window.__TAURI__ && !window.MFCDesktop;
+  if (isBrowser) {
     return '';
   }
+
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && envUrl.trim()) return envUrl.trim().replace(/\/+$/, '');
 
   return DEFAULT_SERVER_URL;
 }
@@ -126,6 +129,47 @@ export async function apiRequest(endpoint, options = {}) {
         ...(areaId ? { 'X-MFC-Area-ID': areaId } : {}),
         ...(options.headers || {})
       };
+
+      // If running on native Android / iOS, use native CapacitorHttp
+      if (Capacitor.isNativePlatform()) {
+        let capData = options.body;
+        if (typeof capData === 'string') {
+          try { capData = JSON.parse(capData); } catch { /* leave as string */ }
+        }
+
+        const capRes = await CapacitorHttp.request({
+          url: targetUrl,
+          method,
+          headers,
+          data: capData,
+          connectTimeout: options.timeoutMs || 10000,
+          readTimeout: options.timeoutMs || 10000
+        });
+
+        let data = capRes.data;
+        if (typeof data === 'string') {
+          try { data = JSON.parse(data); } catch { /* keep as string */ }
+        }
+
+        const isOk = capRes.status >= 200 && capRes.status < 300;
+        if (!isOk) {
+          if (capRes.status === 401 && (data?.code === 'INVALID_SESSION' || data?.code === 'AUTH_REQUIRED')) {
+            clearStoredSession();
+            window.dispatchEvent(new CustomEvent('mfc:auth-expired'));
+          }
+          const err = new Error(data?.error || `Request failed with status ${capRes.status}`);
+          err.status = capRes.status;
+          err.code = data?.code;
+          err.data = data;
+          throw err;
+        }
+
+        if (method === 'GET' && data) {
+          offlineStore.setReadCache(fullPath, data);
+        }
+
+        return data;
+      }
 
       const response = await fetch(targetUrl, {
         ...options,
