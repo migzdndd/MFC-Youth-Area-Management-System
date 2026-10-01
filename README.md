@@ -1,286 +1,207 @@
 # MFC Youth Area Management System
 
-<<<<<<< HEAD
-A cloud-based web application and management platform engineered for **Missionary Families for Christ (MFC) Youth & Kids Ministries**. The system streamlines youth membership tracking, household pastoral groupings, chapter administration, event registrations, service cataloging, and ministry analytics.
+A standalone native **Cross-Platform Application** engineered for **Missionary Families for Christ (MFC) Youth & Kids Ministries**. Built with Flutter and Dart, the application delivers installable native clients for **Android**, **iOS**, **Windows Desktop**, and **macOS/Linux** to empower servant leaders, chapter heads, and area coordinators with real-time membership tracking, pastoral groupings, event registrations, service cataloging, GIG stewardship, and ministry analytics.
 
 ---
 
-## Executive Summary
+## Native Architecture
 
-The **MFC Youth Area Management System** serves as a central operational platform for servant leaders, chapter heads, and area coordinators. Designed around Christian community governance and statutory data privacy compliance, the application enables secure pastoral tracking, event management, and ministry record-keeping across chapters and areas.
+```
++-----------------------------------------------------------------------------------+
+|               MFC Youth Area Management System - Native Application               |
+|                                 (Flutter / Dart)                                  |
++--------------------+---------------------+--------------------+-------------------+
+|   Android (.apk)   |     iOS (.ipa)      |   Windows (.exe)   |   macOS / Linux   |
++--------------------+---------------------+--------------------+-------------------+
+                                         |
+                                         | Secure HTTPS / REST / WebSockets
+                                         v
++-----------------------------------------------------------------------------------+
+|                             Supabase Cloud Backend                                |
+|  - PostgreSQL Database with Row Level Security (RLS)                              |
+|  - Encrypted Authentication & Session Management                                  |
+|  - Role-Based Access Control (RBAC) & Automated Audit Logs                        |
++-----------------------------------------------------------------------------------+
+```
+
+### Core Architectural Principles
+* **True Native Executables**: Compiles down to native machine code on mobile and desktop devices without requiring a web browser or WebView wrapper.
+* **Offline-Resilient Caching**: Local preferences and secure storage ensure servant leaders have access to critical pastoral and contact records even in low-connectivity ministry areas.
+* **Direct Cloud Synchronization**: Real-time two-way synchronization with Supabase PostgreSQL via authorized Row-Level Security (RLS).
+* **Minimalist & Accessible UI**: Clean visual hierarchy adhering to antislop principles—zero cluttered subheadings, high-contrast typography, $\ge 48\times 48\text{px}$ touch targets, and wireframe shimmer skeleton loaders.
+* **Official Branding**: Official MFC Youth flame emblem (`logo-2.png`) integrated as the primary brand asset and native application launcher icon.
 
 ---
 
 ## Key Features & Capabilities
 
 ### Member & Pastoral Profile Management
-- **Youth & Kids Directory**: Complete records for MFC Kids (ages 4–12) and MFC Youth (ages 13–21), including contact details, residential addresses, emergency contacts, and chapter assignments.
-- **Pastoral Grouping & Households**: Track household membership, household heads, and pastoral growth milestones across area chapters.
-- **Extended Ministry Attributes**: Comprehensive support for school/campus fields, LIT (Leaders in Training), Creative Ministries, and High Servant designations.
+* **Youth & Kids Directory**: Complete profiles for MFC Kids (ages 4–12) and MFC Youth (ages 13–21), including contact info, residential details, emergency contacts, and chapter assignments.
+* **Pastoral Grouping & Households**: Track household membership, household heads, and pastoral growth milestones across area chapters.
+* **Extended Ministry Attributes**: Comprehensive tracking for campus/school info, Leaders in Training (LIT), Creative Ministries, and High Servant designations.
 
 ### Servant Leader Portal & Role-Based Access Control (RBAC)
-- **Role-Based Permissions**: Granular authorization levels for Chapter Servants, Area Coordinators, High Servants, LIT Ministry Heads, and Campus Admins.
-- **Secure Authentication**: Built on Supabase Auth with encrypted sessions, servant leader registration passcodes, and Multi-Factor Authentication (MFA) enforcement options.
-- **Interactive Dashboards**: Role-tailored dashboards providing area-wide member stats, chapter breakdowns, and quick action shortcuts.
+* **Granular Authorization**: Role-based permissions for Chapter Servants, Area Coordinators, High Servants, LIT Ministry Heads, and Campus Admins.
+* **Secure Authentication**: Built on Supabase Auth with encrypted sessions, servant leader registration passcodes, and role verification.
+* **Adaptive Dashboard**: Real-time stats, chapter distribution summaries, upcoming schedules, and quick action shortcuts. Automatically adapts between desktop sidebars and mobile navigation bars.
 
 ### Event & Activity Management
-- **Event Registrations**: Manage youth camps, conferences, household assemblies, and leadership training events.
-- **Attendance & Fee Tracking**: Record event participation, fee statuses (free vs paid), and activity logs.
+* **Event Registrations**: Manage youth camps, conferences, household assemblies, and leadership training sessions.
+* **Attendance & Payment Tracking**: Record participant attendance, fee collection (free vs. paid), and activity logs.
 
-### GIG (God Is Generous) & Financial Service Catalog
-- **Service & Resource Tracking**: Log community contributions, service catalog items, and financial stewardship records.
-- **Pastoral Analytics**: Generate area reports and summary metrics for community coordination.
+### GIG (God Is Generous) & Services Catalog
+* **Stewardship & Resource Tracking**: Log community contributions, service catalog items, and financial stewardship records.
+* **Ministry Roles**: Dedicated catalog of MFC Youth service roles with member-to-service assignments.
 
-### System Transparency & Maintenance
-- **Interactive Changelogs**: Built-in release notes and system update timeline.
-- **Access & Help System**: Integrated floating access guide for servant leader onboarding.
-- **Automated Security Updates**: Managed dependency updates via GitHub Dependabot for root, frontend, backend, and CI workflows.
+### Daily Readings & Prayer Guides
+* **Scripture & Liturgical Feasts**: Built-in daily Catholic Mass readings, gospel reflections, and prayer intentions.
 
----
-
-## Technical Architecture
-
-```
-                                +-----------------------------------+
-                                |     Client Browser (Web App)      |
-                                |  Vanilla HTML5 / CSS3 / Alpine.js |
-                                +-----------------+-----------------+
-                                                  |
-                                                  | HTTPS / REST
-                                                  v
-                                +-----------------+-----------------+
-                                |  Vercel Serverless Functions API  |
-                                |       Node.js 24.x (/api/*)       |
-                                +-----------------+-----------------+
-                                                  |
-                                                  | Service Role / RLS
-                                                  v
-                                +-----------------+-----------------+
-                                |        Supabase Cloud DB          |
-                                |   PostgreSQL + Security Rules     |
-                                +-----------------------------------+
-```
-
-### Technology Stack
-- **Frontend**: Standard HTML5, modular CSS3 (using modern design tokens, custom properties, and optimized responsive media query layers), Vanilla JavaScript (ES Modules), and Alpine.js for lightweight UI reactivity.
-- **Backend API**: Node.js (Vercel Serverless Functions running on Node 24.x runtime).
-- **Database & Auth**: Supabase PostgreSQL with Row Level Security (RLS) policies, multi-stage schema migrations, and encrypted session handling.
-- **Deployment & Routing**: Single-project monorepo architecture configured via `vercel.json` for unified static asset delivery and serverless API execution.
+### Wireframe Skeleton Loaders
+* Smooth loading skeletons provide instant visual feedback during data queries, eliminating blank or flickering screens.
 
 ---
 
-## Repository Architecture
+## Repository Structure
 
-```
-MFC-Youth-Area-Management-System-Web/
-├── .github/                  # GitHub configuration & Dependabot security updates
-│   └── dependabot.yml
-├── Backend/                  # Vercel Serverless API functions & Supabase migrations
-│   ├── api/                  # API endpoints (Auth, Members, Chapters, Events, Reports)
-│   ├── supabase/             # SQL schema migrations (001_initial_schema to 011_...)
-│   └── package.json
-├── Frontend/                 # Web application assets & page views
-│   ├── css/                  # Global stylesheet (style.css design system)
-│   ├── js/                   # Core application logic, auth handlers, & UI modules
-│   ├── index.html            # Main login & authentication portal
-│   ├── dashboard.html        # Area management dashboard
-│   ├── members.html          # Youth directory & pastoral profiles
-│   ├── chapters.html         # Chapter & household administration
-│   ├── events.html           # Event registration & activity tracking
-│   ├── services.html         # Service catalog & GIG contribution logs
-│   ├── reports.html          # Analytics & reporting interface
-│   ├── changelogs.html       # System release notes & update logs
-│   └── package.json
+```text
+MFC-Youth-Area-Management-System/
+├── mfc_youth_flutter/        # Main Cross-Platform Native Flutter Application
+│   ├── android/              # Native Android runner, manifest, & Gradle config
+│   ├── ios/                  # Native iOS runner & Xcode project
+│   ├── windows/              # Native Windows C++ desktop runner & window configuration
+│   ├── macos/                # Native macOS desktop runner
+│   ├── linux/                # Native Linux desktop runner
+│   ├── assets/               # High-resolution logos & icons (logo-2.png)
+│   ├── lib/                  # Application source code
+│   │   ├── constants/        # Design system palette, typography, & API credentials
+│   │   ├── models/           # Domain models (Member, Chapter, Event, Report, GIG)
+│   │   ├── providers/        # State management (Auth, Theme, Dashboard, Members)
+│   │   ├── services/         # Supabase client, API, & local storage services
+│   │   ├── widgets/          # Skeleton loaders, custom app drawer, stat cards
+│   │   └── views/            # Adaptive screen views (Dashboard, Members, Events, etc.)
+│   └── pubspec.yaml          # Flutter dependencies & launcher icon definitions
+├── Backend/                  # Cloud Backend & Database Migrations
+│   ├── api/                  # Backend endpoints & router
+│   └── supabase/             # SQL schema migrations (001_initial_schema to 011_...)
 ├── docs/                     # Technical, architectural, & deployment documentation
-├── .env.example              # Environment variable template
-├── SETUP_AND_DEPLOYMENT_GUIDE.md # Complete deployment walkthrough
-├── vercel.json               # Monorepo rewrite rules & single-project routing
-└── package.json              # Root package metadata
+├── NATIVE_SETUP.md           # Deep-dive native mobile and desktop packaging guide
+├── CHANGELOG.md              # Version release history and migration notes
+└── SECURITY.md               # Security policy & vulnerability reporting
 ```
-=======
-**Current release:** `v2.0.4-beta`  
-**Desktop UI:** WPF / MVVM-oriented navigation  
-**Runtime:** .NET 8 Windows x64, self-contained  
-**Database:** SQLite schema `6`  
-**Mode:** Offline-first
 
-The MFC Youth Area Management System is a Windows desktop application for managing Area Members, Chapters, Services, Activity Reports, GIG contributions, Events, participant registration, payment status, and recorded attendance.
+---
 
-## Current WPF Feature Set
+## Installation & Build Instructions
 
-### Dashboard
-- Total Members and Active Members
-- Chapters and Services
-- Activity Reports and Events
-- Event Registrations and Recorded Attendance
-- Recent/upcoming Events
-- Members-by-Chapter overview
-- Rolling monthly trend history stored separately from the SQLite database
+### Prerequisites
+* **Flutter SDK**: `3.x` or higher (Channel stable)
+* **Dart SDK**: `3.x` or higher
+* **Android SDK / Command-line Tools**: For Android compilation
+* **Visual Studio 2022**: With **Desktop development with C++** workload (for Windows builds)
+* **Xcode**: On macOS (for iOS/macOS builds)
 
-### Members
-- Search, Status filtering, and Chapter filtering
-- Add and Edit Member
-- Read-only Member Details
-- Delete confirmation
-- Optional Chapter assignment / genuinely unassigned Members
-- Contact-number and email duplicate protection
-- Service assignment
-- GIG Tracker access
+---
 
-### Chapters
-- Search Chapters
-- Add and Rename Chapter
-- Member Count and Active Member Count
-- Manage Chapter Members
-- Assign only currently-unassigned Members directly to a Chapter
-- Safe deletion with historical snapshot preservation
+### Android Installation & Packaging
 
-### Services
-- Seven seeded MFC Youth Service roles
-- Assigned Member counts
-- Search and view Members assigned to a Service
-- Member-to-Service assignment from the Members workflow
-
-### Activity Reports
-- Add, Edit, Delete, Search, and filter
-- Current and historical Chapter filtering
-- Report Types: Core Household, Household, Assembly, Fellowship
-- Optional linked Event with historical Event-name snapshot preservation
-- Date filtering
-- Six-month report volume analytics
-- Report Type mix and Chapter activity analytics
-- Filtered PDF export through Microsoft Print to PDF
-
-### Events
-- Add, Edit, Delete, Search, and Event Details
-- Participant registration and editing
-- Chapter and Service snapshots
-- Payment Status and Mode of Payment
-- Recorded Attendance state
-- Registered / Attended / Paid / Collected summary totals
-
-### GIG Tracker
-- Contribution history
-- Add/Edit/Delete contributions
-- Total contribution amount
-- Non-future contribution dates
-- Positive-amount validation
-
-## Data and Migration Safety
-
-Runtime data is stored at:
-
+#### 1. Pre-built Release APK
+A production-ready release build is available at:
 ```text
-%LOCALAPPDATA%\MFCYouthAreaManagementSystem\mfcyouth.db
+mfc_youth_flutter/build/app/outputs/flutter-apk/app-release.apk
 ```
 
-Logs are stored at:
-
-```text
-%LOCALAPPDATA%\MFCYouthAreaManagementSystem\Logs\
-```
-
-The app keeps the existing incremental migration chain through SQLite schema version `6`. Existing supported databases are migrated in place; startup also performs SQLite integrity checks, foreign-key checks, and the conservative data-integrity audit before normal use.
-
-Schema 6 includes:
-- nullable `Member.ChapterID`
-- optional Activity Report → Event relationship
-- Event name snapshots for historical Reports
-- recorded Event Participant attendance
-
-The local SQLite database is not claimed to be encrypted.
-
-## Technology
-
-- C# 12
-- .NET 8 WPF
-- SQLite / `System.Data.SQLite.Core 1.0.119`
-- Repository-based data access
-- XAML views and reusable WPF resources
-- Offline PDF export using Windows Microsoft Print to PDF
-
-## Project Structure
-
-```text
-Assets/                     Local assets
-Database/                   Database initialization, migration, integrity audit
-Database/Repositories/      SQLite repositories
-Installer/                  Inno Setup scripts and installer resources
-Models/                      Domain models
-Properties/                  App manifest and publish profiles
-Services/                    WPF/application services
-Styles/                      Shared WPF theme resources
-Utilities/                   Validation, logging, formatting, PDF and trend helpers
-ViewModels/                  WPF view models and commands
-Views/                       Primary WPF pages
-Views/Dialogs/               WPF editor/detail dialogs
-scripts/                     Release publishing automation
-App.xaml                     WPF application resources and DataTemplates
-App.xaml.cs                  WPF startup and database initialization
-```
-
-The old WinForms presentation layer is no longer part of the source package. The WPF conversion is authoritative.
-
-## Developer Requirements
-
-- Windows 10/11 x64
-- Visual Studio 2022 with **.NET desktop development**, or .NET 8 SDK
-- NuGet access for first restore unless dependencies are already cached
-- Inno Setup 6 only when compiling the installer
-
-## Build
-
+#### 2. Installing to a Physical Device via ADB
+Connect your Android phone or tablet via USB (with USB Debugging enabled) and run:
 ```powershell
-dotnet restore ".\MFC Youth Database.sln" -r win-x64
-dotnet build ".\MFC Youth Database.sln" -c Release -p:Platform=x64 -r win-x64 --no-restore
+adb install -r "mfc_youth_flutter/build/app/outputs/flutter-apk/app-release.apk"
 ```
+*Alternatively, transfer `app-release.apk` directly to the phone via USB cable, Google Drive, or local storage and tap **Install**.*
 
-Expected release gate: **0 build errors**. Review meaningful warnings before publishing.
-
-## Publish
-
-Recommended:
-
+#### 3. Building from Source
 ```powershell
-.\scripts\publish-release.ps1
+cd mfc_youth_flutter
+flutter pub get
+
+# Generate production release APK (R8-optimized, tree-shaken)
+flutter build apk --release
 ```
 
-or:
+---
 
+### Windows Desktop & Laptop Packaging
+
+The native Windows runner is configured in `mfc_youth_flutter/windows/` with a custom 1280×720 viewport, adaptive multi-column desktop layout, and native `.ico` application icons.
+
+#### 1. Setup C++ Build Tools
+Ensure **Visual Studio Community 2022** has the **Desktop development with C++** workload installed:
+1. Open **Visual Studio Installer**.
+2. Select **Modify** on Visual Studio 2022.
+3. Check **Desktop development with C++** and install.
+
+#### 2. Build Windows Executable
 ```powershell
-dotnet publish ".\MFC Youth Area Management System.csproj" `
-  -c Release `
-  -r win-x64 `
-  --self-contained true `
-  -p:PublishSingleFile=false `
-  -p:PublishTrimmed=false `
-  -o ".\dist\publish-win-x64"
+cd mfc_youth_flutter
+flutter build windows --release
 ```
-
-The release script verifies the expected version, schema level, self-contained runtime files, SQLite native runtime, installer resources, and the final installer when Inno Setup is available.
-
-## Release Packaging
-
-Generated folders are deliberately excluded from the clean source package:
-
+The standalone executable and native dependencies will be output to:
 ```text
-bin/
-obj/
-dist/
+mfc_youth_flutter/build/windows/x64/runner/Release/mfc_youth_flutter.exe
 ```
 
-This prevents stale WinForms binaries or old installers from being confused with the converted WPF source. Run the release script on the Windows development machine to create a fresh publish folder and installer from this source.
+---
 
-## Current Limitations / Future Work
+### iOS & macOS Packaging
 
-- No authentication or role-permission system yet
-- No database encryption yet
-- No Member photos yet
-- No Excel import/export yet
-- Backup/Restore UI remains deferred
-- Cloud synchronization / web-hybrid integration remains a later roadmap phase
+The native iOS runner is configured in `mfc_youth_flutter/ios/`:
+* Display Name: `"MFC Youth AMS"`
+* Native app icons generated from `logo-2.png`
 
-## Privacy
+#### Building on macOS:
+```bash
+cd mfc_youth_flutter
+flutter pub get
 
-Member, Event, payment-status, and organizational data are stored locally. Protect the Windows account and database file appropriately, and never commit a real runtime database to a public repository.
->>>>>>> 2db330e5d4161a3256b7a45d51e1b116f0c53950
+# Build iOS archive:
+flutter build ipa --release
+
+# Build native macOS app:
+flutter build macos --release
+```
+
+---
+
+### Running in Development
+
+To run the application on any connected physical device, emulator, or desktop runner with live hot reload:
+```powershell
+cd mfc_youth_flutter
+flutter run
+```
+
+---
+
+## Backend & Database Setup
+
+The application communicates directly with Supabase Cloud.
+
+1. Create a Supabase project at [supabase.com](https://supabase.com).
+2. Execute the sequential SQL migrations located in [`Backend/supabase/`](file:///d:/data/Github%20Repositories/MFC-Youth-Area-Management-System/Backend/supabase) via the Supabase SQL Editor.
+3. Update your API credentials in [`mfc_youth_flutter/lib/constants/app_constants.dart`](file:///d:/data/Github%20Repositories/MFC-Youth-Area-Management-System/mfc_youth_flutter/lib/constants/app_constants.dart):
+   ```dart
+   static const String supabaseUrl = 'https://your-project.supabase.co';
+   static const String supabaseAnonKey = 'your-anon-key';
+   ```
+
+---
+
+## Technical Guides & Documentation
+
+* **Native Packaging Guide**: [`NATIVE_SETUP.md`](file:///d:/data/Github%20Repositories/MFC-Youth-Area-Management-System/NATIVE_SETUP.md)
+* **Release History & Changelog**: [`CHANGELOG.md`](file:///d:/data/Github%20Repositories/MFC-Youth-Area-Management-System/CHANGELOG.md)
+* **Security & Vulnerability Disclosure**: [`SECURITY.md`](file:///d:/data/Github%20Repositories/MFC-Youth-Area-Management-System/SECURITY.md)
+
+---
+
+## Community & Governance
+
+This software is developed and maintained for the **Missionary Families for Christ (MFC) Youth** ministry. User data and member records must be handled in strict accordance with community pastoral standards and statutory data privacy compliance.
