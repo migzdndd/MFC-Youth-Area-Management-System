@@ -3742,7 +3742,7 @@ from { opacity: .45; }
 }
 
 /* =========================================================
-   UI REFRESH — Login, Dashboard and Uiverse-style buttons
+   UI REFRESH: Login, Dashboard and Uiverse-style buttons
    Interaction pattern adapted from Uiverse.io by ernestnash.
    ========================================================= */
 
@@ -6612,6 +6612,75 @@ from { opacity: .45; }
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+
+.mfc-offline-pill {
+  position: fixed;
+  top: calc(14px + var(--sat, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  min-height: 44px;
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1.5px solid #f59e0b;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);
+  pointer-events: auto;
+  user-select: none;
+  animation: mfcPillSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes mfcPillSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.mfc-offline-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #d97706;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35);
+  animation: mfcPulseDot 2s infinite ease-in-out;
+}
+
+@keyframes mfcPulseDot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.75;
+  }
+}
+
+[data-theme="dark"] .mfc-offline-pill,
+body.dark .mfc-offline-pill {
+  background-color: #451a03;
+  color: #fef3c7;
+  border-color: #b45309;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .mfc-offline-dot,
+body.dark .mfc-offline-dot {
+  background-color: #fbbf24;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.35);
 }
 
 body.offline {

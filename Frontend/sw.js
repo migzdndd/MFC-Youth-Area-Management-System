@@ -13,7 +13,7 @@
  * ============================================================================
  */
 
-const SHELL_CACHE = 'mfc-ams-shell-v2';
+const SHELL_CACHE = 'mfc-ams-shell-v3';
 const API_CACHE = 'mfc-ams-api-v1';
 
 const APP_SHELL_URLS = [
@@ -36,8 +36,10 @@ const APP_SHELL_URLS = [
   '/changelogs',
   '/changelogs.html',
   '/manifest.webmanifest',
+  '/css/fonts.css',
   '/css/style.css',
   '/css/changelogs.css',
+  '/js/platform.js',
   '/js/loader.js',
   '/js/config.js',
   '/js/offline-store.js',
@@ -47,6 +49,9 @@ const APP_SHELL_URLS = [
   '/js/ui.js',
   '/js/app.js',
   '/js/member.js',
+  '/js/vendor/alpine.min.js',
+  '/js/vendor/jspdf.umd.min.js',
+  '/js/vendor/jspdf.plugin.autotable.min.js',
   '/js/modules/dashboard.js',
   '/js/modules/members.js',
   '/js/modules/chapters.js',
@@ -61,8 +66,7 @@ const APP_SHELL_URLS = [
   '/Icons/chapters.png',
   '/Icons/services.png',
   '/Icons/reports.png',
-  '/Icons/events.png',
-  'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js'
+  '/Icons/events.png'
 ];
 
 /**

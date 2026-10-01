@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- MFC Youth Area Management System: Two-Factor Authentication (TOTP) setup -->
 <html lang="en">
 
@@ -8,12 +8,10 @@
   <meta name="description" content="Manage Two-Factor Authentication for your MFC Youth Area Management System account.">
   <meta name="theme-color" content="#002847">
   <title>Two-Factor Authentication Setup - MFC Youth Area Management System</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-  </style>
+  <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="icon" type="image/png" href="/img/logo-2.png">
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="/js/vendor/alpine.min.js"></script>
 </head>
 
 <body class="auth-body auth-recovery-body" data-allow-authenticated="true">
@@ -34,7 +32,7 @@
 
       <!-- State 1: Loading Status -->
       <div id="mfaLoadingSection" style="text-align: center; padding: 30px 10px;">
-        <p style="color: #afbdd0; font-size: 0.95rem;">Checking security factor status…</p>
+        <p style="color: #afbdd0; font-size: 0.95rem;">Checking security factor statusâ€¦</p>
       </div>
 
       <!-- State 2: Enrolled / Active Status -->
@@ -126,6 +124,7 @@
 
   <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
+  <script src="/js/platform.js"></script>
   <script src="/js/loader.js"></script>
   <script src="/js/config.js"></script>
   <script src="/js/auth.js"></script>
@@ -266,7 +265,7 @@
           return;
         }
 
-        setButtonBusy(activateBtn, true, 'Activating…');
+        setButtonBusy(activateBtn, true, 'Activatingâ€¦');
 
         try {
           const res = await fetch('/api/mfa/verify-enroll', {
@@ -309,7 +308,7 @@
           return;
         }
 
-        setButtonBusy(unenrollBtn, true, 'Disabling…');
+        setButtonBusy(unenrollBtn, true, 'Disablingâ€¦');
 
         try {
           const res = await fetch('/api/mfa/unenroll', {

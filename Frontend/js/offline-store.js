@@ -384,11 +384,28 @@
     });
   }
 
+  /**
+   * Caches a specific master entity collection (chapters, members, household groups, event registries).
+   */
+  async function cacheMasterCollection(name, items, areaId = null) {
+    return cacheReadData(`master_${name}`, items, areaId);
+  }
+
+  /**
+   * Retrieves a cached master entity collection.
+   */
+  async function getMasterCollection(name) {
+    const entry = await getReadData(`master_${name}`);
+    return entry?.data || null;
+  }
+
   return {
     openDB,
     cacheReadData,
     getReadData,
     clearReadData,
+    cacheMasterCollection,
+    getMasterCollection,
     enqueueMutation,
     getPendingMutations,
     getMutation,

@@ -244,27 +244,41 @@ function cloudMemberToLocal(member, previous = {}) {
 async function syncBackendMembersIntoLocalDb() {
   if (!session?.backendAuth || session?.demo || !session?.areaId) return false;
 
+  let payload = null;
   try {
-    const payload = await backendApi('/api/members');
-    const cloudMembers = Array.isArray(payload?.members) ? payload.members : [];
-    const data = db();
-    const previousMembers = Array.isArray(data.members) ? data.members : [];
-
-    data.members = cloudMembers.map(cloudMember => {
-      const email = String(cloudMember.email || '').trim().toLowerCase();
-      const previous = previousMembers.find(localMember =>
-        String(localMember.id) === String(cloudMember.id) ||
-        (email && String(localMember.email || '').trim().toLowerCase() === email)
-      ) || {};
-      return cloudMemberToLocal(cloudMember, previous);
-    });
-
-    save(data);
-    return true;
+    payload = await backendApi('/api/members');
+    if (payload && window.offlineStore) {
+      await window.offlineStore.cacheReadData('members_data', payload, session.areaId);
+    }
   } catch (error) {
-    console.warn('Backend members sync skipped while offline:', error?.message || error);
-    return false;
+    if (window.offlineStore) {
+      const cached = await window.offlineStore.getReadData('members_data');
+      if (cached?.data) {
+        payload = cached.data;
+        console.log('[api] Operating offline: loaded cached members from IndexedDB.');
+      }
+    }
+    if (!payload) {
+      console.warn('Backend members sync skipped while offline:', error?.message || error);
+      return false;
+    }
   }
+
+  const cloudMembers = Array.isArray(payload?.members) ? payload.members : [];
+  const data = db();
+  const previousMembers = Array.isArray(data.members) ? data.members : [];
+
+  data.members = cloudMembers.map(cloudMember => {
+    const email = String(cloudMember.email || '').trim().toLowerCase();
+    const previous = previousMembers.find(localMember =>
+      String(localMember.id) === String(cloudMember.id) ||
+      (email && String(localMember.email || '').trim().toLowerCase() === email)
+    ) || {};
+    return cloudMemberToLocal(cloudMember, previous);
+  });
+
+  save(data);
+  return true;
 }
 
 /**
@@ -365,6 +379,10 @@ async function syncCloudModulesIntoLocalDb() {
     payload = await backendApi('/api/sync', { timeoutMs: 10000 });
     if (payload && window.offlineStore) {
       await window.offlineStore.cacheReadData('sync_data', payload, session.areaId);
+      if (payload.chapters) await window.offlineStore.cacheMasterCollection('chapters', payload.chapters, session.areaId);
+      if (payload.events) await window.offlineStore.cacheMasterCollection('events', payload.events, session.areaId);
+      if (payload.participants) await window.offlineStore.cacheMasterCollection('participants', payload.participants, session.areaId);
+      if (payload.reports) await window.offlineStore.cacheMasterCollection('reports', payload.reports, session.areaId);
     }
   } catch (error) {
     if (window.offlineStore) {

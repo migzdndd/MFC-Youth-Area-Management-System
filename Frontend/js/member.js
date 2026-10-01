@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * MFC Youth Member Portal - Web Script
  * ============================================================================
@@ -179,10 +179,10 @@ function esc(value = '') {
  * Turns raw computer dates into clear Philippine dates (e.g. "Sep 27, 2026").
  *
  * Backup plan if it breaks:
- * If the date is missing, blank, or invalid, it displays a neat dash ("—").
+ * If the date is missing, blank, or invalid, it displays a neat dash ("-").
  */
 function fmtDate(value) {
-  if (!value) return '—';
+  if (!value) return '-';
 
   const d = new Date(
     String(value).length === 10
@@ -191,7 +191,7 @@ function fmtDate(value) {
   );
 
   return Number.isNaN(d.getTime())
-    ? '—'
+    ? '-'
     : d.toLocaleDateString('en-PH', {
         year: 'numeric',
         month: 'short',
@@ -206,15 +206,15 @@ function fmtDate(value) {
  * Formats both the date and the time for gatherings (e.g. "Sep 27, 2026, 3:00 PM").
  *
  * Backup plan if it breaks:
- * If the time or date is broken or missing, it shows a neat dash ("—").
+ * If the time or date is broken or missing, it shows a neat dash ("-").
  */
 function fmtDateTime(value) {
-  if (!value) return '—';
+  if (!value) return '-';
 
   const d = new Date(value);
 
   return Number.isNaN(d.getTime())
-    ? '—'
+    ? '-'
     : d.toLocaleString('en-PH', {
         month: 'short',
         day: 'numeric',
@@ -310,7 +310,7 @@ function memberEventRow(event, registration, timing) {
     ? 'EVENT'
     : dateObj.toLocaleDateString('en-PH', { month: 'short' }).toUpperCase();
   const dayStr = Number.isNaN(dateObj.getTime())
-    ? '—'
+    ? '-'
     : dateObj.toLocaleDateString('en-PH', { day: '2-digit' });
 
   const feeNum = Number(event.fee || 0);
@@ -1149,11 +1149,11 @@ async function bootstrapMemberPortal() {
                   <dl class="profile-field-list">
                     <div>
                       <dt>Full Name</dt>
-                      <dd>${esc(fullName(member) || '—')}</dd>
+                      <dd>${esc(fullName(member) || '-')}</dd>
                     </div>
                     <div>
                       <dt>Email Address</dt>
-                      <dd>${esc(member.email || '—')}</dd>
+                      <dd>${esc(member.email || '-')}</dd>
                     </div>
                     <div>
                       <dt>Contact Number</dt>

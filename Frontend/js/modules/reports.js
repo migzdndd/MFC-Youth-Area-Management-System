@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * MFC Youth Area Management System - Activity Reports & PDF Exports
  * ============================================================================
@@ -811,7 +811,7 @@ function renderReports() {
                           >
                             ${esc(
             report.activity ||
-            '—'
+            '-'
           )}
                           </div>
                         </td>
@@ -819,14 +819,14 @@ function renderReports() {
                         <td>
                           ${esc(
             report.chapter ||
-            '—'
+            '-'
           )}
                         </td>
 
                         <td>
                           ${esc(
             report.type ||
-            '—'
+            '-'
           )}
                         </td>
 
@@ -840,14 +840,14 @@ function renderReports() {
                         <td>
                           ${esc(
             report.location ||
-            '—'
+            '-'
           )}
                         </td>
 
                         <td>
                           ${esc(
             report.preparedBy ||
-            '—'
+            '-'
           )}
                         </td>
 
@@ -1080,7 +1080,7 @@ window.viewReport = function (id) {
 
       <div class="detail-item">
         <span class="detail-label">Chapter</span>
-        <div class="detail-value">${esc(report.chapter || '—')}</div>
+        <div class="detail-value">${esc(report.chapter || '-')}</div>
       </div>
 
       <div class="detail-item">
@@ -1090,12 +1090,12 @@ window.viewReport = function (id) {
 
       <div class="detail-item">
         <span class="detail-label">Location / Venue</span>
-        <div class="detail-value">${esc(report.location || '—')}</div>
+        <div class="detail-value">${esc(report.location || '-')}</div>
       </div>
 
       <div class="detail-item">
         <span class="detail-label">Prepared By</span>
-        <div class="detail-value">${esc(report.preparedBy || '—')}</div>
+        <div class="detail-value">${esc(report.preparedBy || '-')}</div>
       </div>
 
       <div class="detail-item">
@@ -1202,7 +1202,7 @@ window.reportModal = function (
             ${esc(
             event.name
           )}
-            —
+            -
             ${fmtDate(
             event.date
           )}
@@ -1717,14 +1717,14 @@ function printReportSummary(
             <td>
               ${esc(
           report.chapter ||
-          '—'
+          '-'
         )}
             </td>
 
             <td>
               ${esc(
           report.type ||
-          '—'
+          '-'
         )}
             </td>
 
@@ -1738,7 +1738,7 @@ function printReportSummary(
             <td>
               ${esc(
           report.location ||
-          '—'
+          '-'
         )}
             </td>
           </tr>
@@ -2439,13 +2439,13 @@ function exportReportsPdf(
 
         report.title ||
         report.activity ||
-        '—',
+        '-',
 
         report.chapter ||
-        '—',
+        '-',
 
         report.type ||
-        '—',
+        '-',
 
         String(
           Number(
@@ -2455,7 +2455,7 @@ function exportReportsPdf(
         ),
 
         report.location ||
-        '—'
+        '-'
       ]
     ),
 

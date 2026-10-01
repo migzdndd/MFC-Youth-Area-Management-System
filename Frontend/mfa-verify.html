@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- MFC Youth Area Management System: Two-Factor Authentication (TOTP) verification -->
 <html lang="en">
 
@@ -8,12 +8,10 @@
   <meta name="description" content="Two-Factor Authentication verification for MFC Youth Area Management System.">
   <meta name="theme-color" content="#002847">
   <title>Two-Factor Authentication - MFC Youth Area Management System</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-  </style>
+  <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="icon" type="image/png" href="/img/logo-2.png">
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="/js/vendor/alpine.min.js"></script>
 </head>
 
 <body class="auth-body auth-recovery-body">
@@ -73,6 +71,7 @@
 
   <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
+  <script src="/js/platform.js"></script>
   <script src="/js/loader.js"></script>
   <script src="/js/config.js"></script>
   <script src="/js/auth.js"></script>
@@ -132,7 +131,7 @@
           return;
         }
 
-        setButtonBusy(submitBtn, true, 'Verifying…');
+        setButtonBusy(submitBtn, true, 'Verifyingâ€¦');
         const msgContainer = document.getElementById('mfaMessage');
         if (msgContainer) msgContainer.innerHTML = '';
 

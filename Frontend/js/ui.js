@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * MFC Youth Area Management System - User Interface & Visual Tools
  * ============================================================================
@@ -59,10 +59,10 @@ function esc(value = '') {
  * Currency Formatter (Philippine Pesos)
  *
  * What it does:
- * Formats a number as Philippine Pesos (e.g. 150 becomes "₱150.00").
+ * Formats a number as Philippine Pesos (e.g. 150 becomes "â‚±150.00").
  *
  * Backup plan if it breaks:
- * If the value is missing or not a number, it safely returns "₱0.00".
+ * If the value is missing or not a number, it safely returns "â‚±0.00".
  */
 function money(value) {
   return Number(value || 0).toLocaleString('en-PH', {
@@ -78,10 +78,10 @@ function money(value) {
  * Turns computer dates into readable Philippine dates (e.g. "Sep 27, 2026").
  *
  * Backup plan if it breaks:
- * If the date is missing or invalid, it cleanly shows a dash ("—").
+ * If the date is missing or invalid, it cleanly shows a dash ("â€”").
  */
 function fmtDate(value) {
-  if (!value) return '—';
+  if (!value) return 'â€”';
 
   const d = new Date(
     `${value}`.length === 10
@@ -90,7 +90,7 @@ function fmtDate(value) {
   );
 
   return Number.isNaN(d.getTime())
-    ? '—'
+    ? 'â€”'
     : d.toLocaleDateString('en-PH', {
       year: 'numeric',
       month: 'short',
@@ -105,15 +105,15 @@ function fmtDate(value) {
  * Formats both the date and time for events (e.g. "Sep 27, 2026, 3:00 PM").
  *
  * Backup plan if it breaks:
- * If either component is invalid, it returns a neat dash ("—").
+ * If either component is invalid, it returns a neat dash ("â€”").
  */
 function fmtDateTime(value) {
-  if (!value) return '—';
+  if (!value) return 'â€”';
 
   const d = new Date(value);
 
   return Number.isNaN(d.getTime())
-    ? '—'
+    ? 'â€”'
     : d.toLocaleString('en-PH', {
       year: 'numeric',
       month: 'short',
@@ -482,7 +482,7 @@ function openModal(
             type="button"
             aria-label="Close dialog"
             @click="close()"
-          >×</button>
+          >Ã-</button>
         </header>
 
         <div class="modal-body" id="modalBody">${body}</div>

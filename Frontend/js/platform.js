@@ -39,6 +39,14 @@
         Network.addListener('networkStatusChange', (status) => {
           console.log('[MFC Platform] Network connection changed:', status);
           this.updateOfflineStatus(!status.connected);
+          if (status.connected) {
+            window.dispatchEvent(new Event('online'));
+            if (window.syncManager && typeof window.syncManager.scheduleProcess === 'function') {
+              window.syncManager.scheduleProcess(600);
+            }
+          } else {
+            window.dispatchEvent(new Event('offline'));
+          }
         });
       }
 
@@ -98,7 +106,12 @@
 
     initWebNetworkListener() {
       this.updateOfflineStatus(!navigator.onLine);
-      window.addEventListener('online', () => this.updateOfflineStatus(false));
+      window.addEventListener('online', () => {
+        this.updateOfflineStatus(false);
+        if (window.syncManager && typeof window.syncManager.scheduleProcess === 'function') {
+          window.syncManager.scheduleProcess(600);
+        }
+      });
       window.addEventListener('offline', () => this.updateOfflineStatus(true));
     },
 
@@ -109,17 +122,19 @@
         document.body.classList.remove('offline');
       }
 
-      let banner = document.getElementById('mfc-offline-banner');
+      let pill = document.getElementById('mfc-offline-pill');
       if (isOffline) {
-        if (!banner) {
-          banner = document.createElement('div');
-          banner.id = 'mfc-offline-banner';
-          banner.className = 'mfc-offline-banner';
-          banner.innerHTML = '<span>⚠️ You are offline. Changes will sync when reconnected.</span>';
-          document.body.prepend(banner);
+        if (!pill) {
+          pill = document.createElement('div');
+          pill.id = 'mfc-offline-pill';
+          pill.className = 'mfc-offline-pill';
+          pill.setAttribute('role', 'status');
+          pill.setAttribute('aria-live', 'polite');
+          pill.innerHTML = '<span class="mfc-offline-dot" aria-hidden="true"></span><span class="mfc-offline-pill-text">Offline Mode - Showing Cached Data</span>';
+          document.body.appendChild(pill);
         }
-      } else if (banner) {
-        banner.remove();
+      } else if (pill) {
+        pill.remove();
       }
     }
   };

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- MFC Youth Area Management System: Analytics and activity reporting interface -->
 <html lang="en">
 
@@ -8,9 +8,7 @@
   <meta name="theme-color" content="#002847">
   <meta name="description" content="Activity Reports - MFC Youth Area Management System.">
   <title>Activity Reports - MFC Youth Area Management System</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-  </style>
+  <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,7 +16,7 @@
   <meta name="apple-mobile-web-app-title" content="MFC Youth AMS">
   <link rel="apple-touch-icon" href="/img/logo-2.png">
   <link rel="icon" type="image/png" href="/img/logo-2.png">
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="/js/vendor/alpine.min.js"></script>
 </head>
 
 <body data-page="reports">
@@ -52,10 +50,11 @@
   </div>
   <div id="modalRoot"></div>
   <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+  <script src="/js/vendor/jspdf.umd.min.js"
     referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"
+  <script src="/js/vendor/jspdf.plugin.autotable.min.js"
     referrerpolicy="no-referrer"></script>
+  <script src="/js/platform.js"></script>
   <script src="/js/loader.js"></script>
   <script src="/js/config.js"></script>
   <script src="/js/offline-store.js"></script>

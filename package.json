@@ -1,12 +1,27 @@
 {
-  "name": "mfc-youth-area-management-system-web",
+  "name": "mfc-youth-ams",
   "version": "1.0.1",
   "private": true,
   "type": "module",
+  "scripts": {
+    "dev:web": "serve Frontend -p 5500",
+    "mobile:sync": "cap sync",
+    "mobile:android": "cap open android",
+    "mobile:ios": "cap open ios",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@tauri-apps/cli": "^2.12.1",
+    "serve": "^14.0.0"
+  },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
-    "@capacitor/cli": "^8.4.3",
     "@capacitor/core": "^8.5.2",
-    "@capacitor/ios": "^8.5.2"
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3"
   }
 }

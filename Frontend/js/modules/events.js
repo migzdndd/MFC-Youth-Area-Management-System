@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MFC Youth Area Management System - Events & Participant Attendance
  *
  * What this file does:
@@ -176,7 +176,7 @@ function renderEvents() {
                   <tr>
                     <td>${fmtDateTime(event.date)}</td>
                     <td><strong>${esc(event.name)}</strong></td>
-                    <td>${esc(event.venue || '—')}</td>
+                    <td>${esc(event.venue || '-')}</td>
                     <td>
                       <span class="badge ${upcoming ? 'pending' : 'active'}">
                         ${upcoming ? 'Upcoming' : 'Completed'}
@@ -408,10 +408,10 @@ window.viewEvent = id => {
 
               return `
                 <tr>
-                  <td>${esc(participantName(data, participant) || '—')}</td>
-                  <td>${age === null || age === undefined || age === '' ? '—' : esc(String(age))}</td>
-                  <td>${esc(chapter || '—')}</td>
-                  <td>${esc(services || '—')}</td>
+                  <td>${esc(participantName(data, participant) || '-')}</td>
+                  <td>${age === null || age === undefined || age === '' ? '-' : esc(String(age))}</td>
+                  <td>${esc(chapter || '-')}</td>
+                  <td>${esc(services || '-')}</td>
                   <td>
                     <span class="badge ${participant.paymentStatus === 'Paid' ? 'paid' : 'unpaid'}">
                       ${esc(participant.paymentStatus || 'Unpaid')}
@@ -446,7 +446,7 @@ window.viewEvent = id => {
   const body = `
     <div class="event-summary">
       <div><span>Date & Time</span><strong>${fmtDateTime(event.date)}</strong></div>
-      <div><span>Venue</span><strong>${esc(event.venue || '—')}</strong></div>
+      <div><span>Venue</span><strong>${esc(event.venue || '-')}</strong></div>
       <div><span>Registration Fee</span><strong>${Number(event.fee) > 0 ? money(event.fee) : 'Free'}</strong></div>
       <div><span>Registered</span><strong>${participants.length}</strong></div>
       <div><span>Paid</span><strong>${paid}</strong></div>

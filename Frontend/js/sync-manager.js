@@ -34,6 +34,18 @@
   let autoSyncTimer = null;
   let lastSyncTime = null;
   let lastSyncError = null;
+  let backoffAttempt = 0;
+
+  /**
+   * Calculates exponential backoff delay with random jitter (1.5s -> 3s -> 6s -> 12s -> max 30s).
+   */
+  function calculateBackoffDelay(attempt) {
+    const base = 1500;
+    const max = 30000;
+    const exp = Math.min(base * Math.pow(2, Math.max(0, attempt - 1)), max);
+    const jitter = Math.floor(Math.random() * 400);
+    return exp + jitter;
+  }
 
   /**
    * Dispatches a custom event on window with standardized payload.
@@ -313,6 +325,15 @@
           remaining
         });
 
+        if (remaining > 0 && (failedCount > 0 || lastSyncError) && isOnline()) {
+          backoffAttempt = Math.min(backoffAttempt + 1, 6);
+          const backoffDelay = calculateBackoffDelay(backoffAttempt);
+          console.log(`[sync-manager] Outbox has ${remaining} pending item(s). Replaying with exponential backoff in ${backoffDelay}ms.`);
+          scheduleProcess(backoffDelay);
+        } else if (remaining === 0) {
+          backoffAttempt = 0;
+        }
+
         return {
           ok: true,
           syncedCount,
@@ -323,6 +344,11 @@
       } catch (err) {
         console.error('[sync-manager] Outbox processing encountered fatal error:', err);
         lastSyncError = err.message;
+        if (isOnline()) {
+          backoffAttempt = Math.min(backoffAttempt + 1, 6);
+          const backoffDelay = calculateBackoffDelay(backoffAttempt);
+          scheduleProcess(backoffDelay);
+        }
         return { ok: false, error: err.message, syncedCount, failedCount };
       } finally {
         isSyncing = false;
