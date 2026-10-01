@@ -67,9 +67,9 @@ export function ClaimAccountView({ onSwitchView }) {
       <div style={{ width: '100%', maxWidth: '440px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ textAlign: 'center' }}>
           <img
-            src="/MFCYouth.ico"
+            src="/logo.png"
             alt="MFC Youth Logo"
-            style={{ width: '48px', height: '48px', margin: '0 auto 10px', display: 'block', borderRadius: '10px' }}
+            style={{ width: '56px', height: '56px', margin: '0 auto 10px', display: 'block', borderRadius: '50%', objectFit: 'contain' }}
           />
           <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)' }}>
             Claim Your Youth Account

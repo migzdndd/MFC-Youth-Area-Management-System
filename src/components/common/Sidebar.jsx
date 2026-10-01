@@ -35,7 +35,7 @@ export function Sidebar({ currentView, onNavigate }) {
     <aside className="sidebar" aria-label="Main Navigation">
       <div className="sidebar-header">
         <img
-          src="/MFCYouth.ico"
+          src="/logo.png"
           alt="MFC Youth Logo"
           className="sidebar-logo"
         />

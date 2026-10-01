@@ -59,9 +59,9 @@ export function LoginView({ onSwitchView }) {
         {/* Brand Header */}
         <div style={{ textAlign: 'center' }}>
           <img
-            src="/MFCYouth.ico"
+            src="/logo.png"
             alt="MFC Youth Logo"
-            style={{ width: '56px', height: '56px', margin: '0 auto 12px', display: 'block', borderRadius: '12px' }}
+            style={{ width: '64px', height: '64px', margin: '0 auto 12px', display: 'block', borderRadius: '50%', objectFit: 'contain' }}
           />
           <h1 style={{ fontSize: '1.45rem', fontWeight: 700, color: 'var(--text-main)' }}>
             MFC Youth AMS
