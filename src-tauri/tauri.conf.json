@@ -1,0 +1,47 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/tooling/cli/schema.json",
+  "productName": "MFC Youth AMS",
+  "version": "1.0.1",
+  "identifier": "com.mfcyouth.ams",
+  "build": {
+    "beforeDevCommand": "serve Frontend -p 5500",
+    "devUrl": "http://localhost:5500",
+    "frontendDist": "../Frontend"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "MFC Youth Area Management System",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": [
+        "https://github.com/MFC-Youth/MFC-Youth-AMS-App/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}
