@@ -32,7 +32,7 @@
 
       <!-- State 1: Loading Status -->
       <div id="mfaLoadingSection" style="text-align: center; padding: 30px 10px;">
-        <p style="color: #afbdd0; font-size: 0.95rem;">Checking security factor statusâ€¦</p>
+        <p style="color: #afbdd0; font-size: 0.95rem;">Checking security factor status...</p>
       </div>
 
       <!-- State 2: Enrolled / Active Status -->
@@ -265,7 +265,7 @@
           return;
         }
 
-        setButtonBusy(activateBtn, true, 'Activatingâ€¦');
+        setButtonBusy(activateBtn, true, 'Activating...');
 
         try {
           const res = await fetch('/api/mfa/verify-enroll', {
@@ -308,7 +308,7 @@
           return;
         }
 
-        setButtonBusy(unenrollBtn, true, 'Disablingâ€¦');
+        setButtonBusy(unenrollBtn, true, 'Disabling...');
 
         try {
           const res = await fetch('/api/mfa/unenroll', {

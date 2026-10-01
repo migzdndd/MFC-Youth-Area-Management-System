@@ -146,10 +146,14 @@ Leaders can trigger an immediate outbox flush and dataset refresh at any point:
 # 1. Synchronize web assets
 npm run mobile:sync
 
-# 2. Build release APK or Android App Bundle (.aab)
+# 2. Build ready-to-install signed release APK (No Google Play required)
 cd android
 ./gradlew assembleRelease
-# Output: android/app/build/outputs/apk/release/app-release-unsigned.apk
+# Output: android/app/build/outputs/apk/release/app-release.apk
+
+# 3. Optional: Build Android App Bundle (.aab) for Google Play Console
+./gradlew bundleRelease
+# Output: android/app/build/outputs/bundle/release/app-release.aab
 ```
 
 ### 5.2 iOS Package Generation

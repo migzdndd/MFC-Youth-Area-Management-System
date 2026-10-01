@@ -1,4 +1,4 @@
-﻿# Dependencies and build output
+# Dependencies and build output
 node_modules/
 **/node_modules/
 .npm/
@@ -64,8 +64,12 @@ ehthumbs.db
 Thumbs.db
 desktop.ini
 
-# Archives
+# Archives and binaries
 *.zip
+*.apk
+*.aab
+*.keystore
+*.jks
 
 # Deployment and agent state
 .vercel/

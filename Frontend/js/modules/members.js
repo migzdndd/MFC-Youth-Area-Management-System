@@ -161,7 +161,7 @@ function renderChapterServantMembers(data) {
         <button class="btn blue" id="addChapterMember" type="button">
           + Add Member
         </button>
-        <span class="scope-chip">${esc(chapter.name)} Chapter Â· View + Add</span>
+        <span class="scope-chip">${esc(chapter.name)} Chapter &middot; View + Add</span>
       `
     ) +
     `
@@ -218,7 +218,7 @@ function renderChapterServantMembers(data) {
                     </span>
                   </td>
                   <td>${esc((member.services || []).join(', ') || 'No Service Assigned')}</td>
-                  <td>${esc(member.contact || 'â€”')}</td>
+                  <td>${esc(member.contact || '-')}</td>
                   <td class="actions-cell">
                     <button class="btn" onclick='viewMember(${inlineJsArg(member.id)})'>View</button>
                   </td>
@@ -426,7 +426,7 @@ function renderMembers() {
                         <td>
                           ${esc(
             member.chapterName ||
-            'â€”'
+            '-'
           )}
                         </td>
 
@@ -463,7 +463,7 @@ function renderMembers() {
                         <td>
                           ${esc(
               member.contact ||
-              'â€”'
+              '-'
             )}
                         </td>
 
@@ -653,7 +653,7 @@ window.viewMember = function(id) {
                   <span>${esc(fmtDate(row.date))}</span>
                   <strong>${esc(money(row.amount || 0))}</strong>
                 </div>
-                <div class="detail-history-note">${esc(row.note || 'â€”')}</div>
+                <div class="detail-history-note">${esc(row.note || '-')}</div>
               </div>
             `
           )
@@ -668,7 +668,7 @@ window.viewMember = function(id) {
       <div class="detail-grid">
         <div class="detail-item">
           <span class="detail-label">Full Name</span>
-          <div class="detail-value">${esc(fullName(member) || 'â€”')}</div>
+          <div class="detail-value">${esc(fullName(member) || '-')}</div>
         </div>
 
         <div class="detail-item">
@@ -678,22 +678,22 @@ window.viewMember = function(id) {
 
         <div class="detail-item">
           <span class="detail-label">First Name</span>
-          <div class="detail-value">${esc(member.firstName || 'â€”')}</div>
+          <div class="detail-value">${esc(member.firstName || '-')}</div>
         </div>
 
         <div class="detail-item">
           <span class="detail-label">Middle Name</span>
-          <div class="detail-value">${esc(member.middleName || 'â€”')}</div>
+          <div class="detail-value">${esc(member.middleName || '-')}</div>
         </div>
 
         <div class="detail-item">
           <span class="detail-label">Last Name</span>
-          <div class="detail-value">${esc(member.lastName || 'â€”')}</div>
+          <div class="detail-value">${esc(member.lastName || '-')}</div>
         </div>
 
         <div class="detail-item">
           <span class="detail-label">Current Age</span>
-          <div class="detail-value">${age === null ? 'â€”' : esc(String(age))}</div>
+          <div class="detail-value">${age === null ? '-' : esc(String(age))}</div>
         </div>
 
         <div class="detail-item">
@@ -708,7 +708,7 @@ window.viewMember = function(id) {
 
         <div class="detail-item">
           <span class="detail-label">Contact Number</span>
-          <div class="detail-value">${esc(member.contact || 'â€”')}</div>
+          <div class="detail-value">${esc(member.contact || '-')}</div>
         </div>
 
         <div class="detail-item">
@@ -1504,7 +1504,7 @@ window.gigMember = id => {
                     ${fmtDate(
             row.date
           )}
-                    â€”
+                    -
                     ${esc(
             row.note ||
             'Contribution'

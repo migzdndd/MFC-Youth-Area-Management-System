@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * MFC Youth Area Management System - User Interface & Visual Tools
  * ============================================================================
@@ -78,10 +78,10 @@ function money(value) {
  * Turns computer dates into readable Philippine dates (e.g. "Sep 27, 2026").
  *
  * Backup plan if it breaks:
- * If the date is missing or invalid, it cleanly shows a dash ("â€”").
+ * If the date is missing or invalid, it cleanly shows a dash ("-").
  */
 function fmtDate(value) {
-  if (!value) return 'â€”';
+  if (!value) return '-';
 
   const d = new Date(
     `${value}`.length === 10
@@ -90,7 +90,7 @@ function fmtDate(value) {
   );
 
   return Number.isNaN(d.getTime())
-    ? 'â€”'
+    ? '-'
     : d.toLocaleDateString('en-PH', {
       year: 'numeric',
       month: 'short',
@@ -105,15 +105,15 @@ function fmtDate(value) {
  * Formats both the date and time for events (e.g. "Sep 27, 2026, 3:00 PM").
  *
  * Backup plan if it breaks:
- * If either component is invalid, it returns a neat dash ("â€”").
+ * If either component is invalid, it returns a neat dash ("-").
  */
 function fmtDateTime(value) {
-  if (!value) return 'â€”';
+  if (!value) return '-';
 
   const d = new Date(value);
 
   return Number.isNaN(d.getTime())
-    ? 'â€”'
+    ? '-'
     : d.toLocaleString('en-PH', {
       year: 'numeric',
       month: 'short',
@@ -719,10 +719,31 @@ const sidebarState = {
   sync() {
     const sidebar = document.getElementById('sidebar');
     const menuBtn = document.getElementById('menuBtn');
-    if (sidebar) sidebar.classList.toggle('is-open', this.open);
-    if (menuBtn) menuBtn.setAttribute('aria-expanded', String(this.open));
+    if (sidebar) {
+      sidebar.classList.toggle('is-open', this.open);
+      sidebar.classList.toggle('open', this.open);
+    }
+    let scrim = document.querySelector('.sidebar-scrim');
+    if (!scrim) {
+      scrim = document.createElement('div');
+      scrim.className = 'sidebar-scrim';
+      scrim.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(scrim);
+      scrim.addEventListener('click', () => sidebarState.close());
+    }
+    scrim.classList.toggle('show', this.open);
+    if (menuBtn) {
+      menuBtn.setAttribute('aria-expanded', String(this.open));
+    }
   }
 };
+
+// Global escape key listener to close mobile navigation drawer
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && sidebarState.open) {
+    sidebarState.close();
+  }
+});
 
 /**
  * Manages the Bottom Navigation Bar active state.
@@ -740,38 +761,50 @@ function updateBottomNavActiveState() {
 }
 
 /**
- * Ensures Mobile Navigation Elements exist in the DOM.
+ * Ensures Mobile Navigation Elements exist in the DOM and listeners are attached.
  * 
  * What it does:
- * Injects the mobile-topbar and bottom-nav into the app layout if they are missing.
+ * Injects or connects the mobile-topbar, backdrop scrim, and bottom-nav into the app layout.
  */
 function ensureMobileNavElements() {
-  if (window.innerWidth > 1024) return;
+  const hasSidebar = !!document.getElementById('sidebar');
+  if (!hasSidebar) return;
 
-  // 1. Mobile Top Bar
-  if (!document.querySelector('.mobile-topbar')) {
-    const topbar = document.createElement('div');
-    topbar.className = 'mobile-topbar';
-    topbar.innerHTML = `
-      <button id="menuBtn" type="button" aria-label="Open menu" style="background:none; border:none; color:white; cursor:pointer; display:flex; align-items:center; gap:8px;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        <span style="font-weight:600; font-size:0.9rem;">Menu</span>
-      </button>
-      <div class="mobile-page-title" style="font-weight:700; font-size:1rem;">MFC Youth AMS</div>
-      <div style="width:40px;"></div>
-    `;
-    
-    const layout = document.querySelector('.app-layout');
-    if (layout) {
-      layout.prepend(topbar);
-      topbar.querySelector('#menuBtn').addEventListener('click', () => sidebarState.toggle());
-    }
+  // 1. Ensure backdrop scrim exists and is wired
+  let scrim = document.querySelector('.sidebar-scrim');
+  if (!scrim) {
+    scrim = document.createElement('div');
+    scrim.className = 'sidebar-scrim';
+    scrim.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(scrim);
+    scrim.addEventListener('click', () => sidebarState.close());
   }
 
-  // 2. Bottom Navigation Bar
+  // 2. Attach toggle listener to static or injected menuBtn
+  const menuBtn = document.getElementById('menuBtn');
+  if (menuBtn && !menuBtn._hasSidebarToggle) {
+    menuBtn._hasSidebarToggle = true;
+    menuBtn.addEventListener('click', () => sidebarState.toggle());
+  }
+
+  // 3. Auto-close sidebar on link tap for mobile
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar && !sidebar._hasNavAutoClose) {
+    sidebar._hasNavAutoClose = true;
+    sidebar.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+          sidebarState.close();
+        }
+      });
+    });
+  }
+
+  // 4. Inject Bottom Navigation Bar if not already present on admin/leader pages
   if (!document.querySelector('.bottom-nav')) {
     const bottomNav = document.createElement('nav');
     bottomNav.className = 'bottom-nav';
+    bottomNav.setAttribute('aria-label', 'Mobile primary navigation');
     
     // Primary destinations based on common roles
     const navItems = [
@@ -800,4 +833,6 @@ function ensureMobileNavElements() {
       });
     });
   }
+
+  updateBottomNavActiveState();
 }
