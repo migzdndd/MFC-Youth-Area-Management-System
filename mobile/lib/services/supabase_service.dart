@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants/app_constants.dart';
 import '../models/user_session.dart';
 
@@ -174,4 +175,68 @@ class SupabaseService {
       return false;
     }
   }
+
+  /// Direct Supabase client instance accessor
+  static SupabaseClient get client => Supabase.instance.client;
+
+  /// Direct Supabase query for Area Members
+  Future<List<Map<String, dynamic>>> fetchMembersDirect({required String areaId, String? token}) async {
+    try {
+      final res = await _client.get(
+        Uri.parse('${AppConstants.supabaseUrl}/rest/v1/members?area_id=eq.$areaId&order=last_name.asc'),
+        headers: {
+          'apikey': AppConstants.supabaseAnonKey,
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List;
+        return list.map((e) => e as Map<String, dynamic>).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Direct Supabase query for Area Chapters
+  Future<List<Map<String, dynamic>>> fetchChaptersDirect({required String areaId, String? token}) async {
+    try {
+      final res = await _client.get(
+        Uri.parse('${AppConstants.supabaseUrl}/rest/v1/chapters?area_id=eq.$areaId&order=name.asc'),
+        headers: {
+          'apikey': AppConstants.supabaseAnonKey,
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List;
+        return list.map((e) => e as Map<String, dynamic>).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Direct Supabase query for Area Events
+  Future<List<Map<String, dynamic>>> fetchEventsDirect({required String areaId, String? token}) async {
+    try {
+      final res = await _client.get(
+        Uri.parse('${AppConstants.supabaseUrl}/rest/v1/events?area_id=eq.$areaId&order=starts_at.desc'),
+        headers: {
+          'apikey': AppConstants.supabaseAnonKey,
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List;
+        return list.map((e) => e as Map<String, dynamic>).toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
 }
+

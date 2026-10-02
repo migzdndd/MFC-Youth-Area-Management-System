@@ -3,10 +3,12 @@ import '../constants/app_constants.dart';
 import '../models/user_session.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+import '../services/supabase_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiService _api;
   final StorageService _storage;
+  final SupabaseService _supabase = SupabaseService();
 
   UserSession? _session;
   bool _loading = true;
@@ -100,6 +102,20 @@ class AuthProvider extends ChangeNotifier {
         _authError = res['error']?.toString() ?? 'Invalid credentials or inactive account.';
       }
     } catch (e) {
+      // Direct Supabase Fallback if Backend API Gateway fails or is unreachable
+      try {
+        final directSession = await _supabase.signInWithPassword(email, password);
+        if (directSession != null) {
+          _session = directSession;
+          await _storage.saveSession(directSession);
+          _loading = false;
+          notifyListeners();
+          return true;
+        }
+      } catch (directErr) {
+        debugPrint('Direct Supabase sign-in warning: $directErr');
+      }
+
       if (e is ApiException) {
         _authError = e.message;
       } else {
