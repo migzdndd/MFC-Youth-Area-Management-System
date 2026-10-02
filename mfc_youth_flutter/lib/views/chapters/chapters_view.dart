@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
 import '../../models/chapter.dart';
+import '../../models/member.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../widgets/wireframe_skeleton.dart';
@@ -39,7 +40,6 @@ class _ChaptersViewState extends State<ChaptersView> {
       }
     } catch (_) {}
 
-    // Supabase REST fallback
     final supData = await api.supabaseRest('chapters', token: auth.session?.accessToken);
     if (supData is List) {
       setState(() {
@@ -55,6 +55,7 @@ class _ChaptersViewState extends State<ChaptersView> {
   void _showAddChapterDialog() {
     final nameCtrl = TextEditingController();
     final servantCtrl = TextEditingController();
+
     bool saving = false;
 
     showDialog(
@@ -62,6 +63,7 @@ class _ChaptersViewState extends State<ChaptersView> {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDlgState) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
+
           return AlertDialog(
             backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -100,7 +102,7 @@ class _ChaptersViewState extends State<ChaptersView> {
             ),
             actions: [
               TextButton(
-                onPressed: saving ? null : () => Navigator.pop(ctx),
+                onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancel'),
               ),
               FilledButton(
@@ -135,8 +137,109 @@ class _ChaptersViewState extends State<ChaptersView> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 child: saving
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
                     : const Text('Save Chapter'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAssignMembersDialog(Chapter chapter) async {
+    final auth = context.read<AuthProvider>();
+    final api = context.read<ApiService>();
+
+    List<Member> unassigned = [];
+    bool fetching = true;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDlgState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final selectedIds = <dynamic>{};
+
+          if (fetching) {
+            api.request('/chapters/assign-members?chapterId=${chapter.id}', token: auth.session?.accessToken, areaId: auth.areaId).then((res) {
+              if (res['ok'] == true && res['members'] is List) {
+                setDlgState(() {
+                  unassigned = (res['members'] as List).map((m) => Member.fromJson(m)).toList();
+                  fetching = false;
+                });
+              } else {
+                setDlgState(() => fetching = false);
+              }
+            }).catchError((_) {
+              setDlgState(() => fetching = false);
+            });
+          }
+
+          return AlertDialog(
+            backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'Assign Members to ${chapter.name}',
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            ),
+            content: SizedBox(
+              width: 440,
+              height: 380,
+              child: fetching
+                  ? const Center(child: CircularProgressIndicator())
+                  : unassigned.isEmpty
+                      ? const Center(child: Text('No unassigned members currently available in this Area.'))
+                      : ListView.builder(
+                          itemCount: unassigned.length,
+                          itemBuilder: (context, idx) {
+                            final m = unassigned[idx];
+                            final checked = selectedIds.contains(m.id);
+                            return CheckboxListTile(
+                              title: Text(m.fullName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              subtitle: Text(m.email ?? m.phone ?? 'No contact info', style: const TextStyle(fontSize: 12)),
+                              value: checked,
+                              activeColor: AppColors.blue,
+                              onChanged: (val) {
+                                setDlgState(() {
+                                  if (val == true) {
+                                    selectedIds.add(m.id);
+                                  } else {
+                                    selectedIds.remove(m.id);
+                                  }
+                                });
+                              },
+                            );
+                          },
+                        ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: selectedIds.isEmpty
+                    ? null
+                    : () async {
+                        try {
+                          await api.request(
+                            '/chapters/assign-members',
+                            method: 'POST',
+                            body: {
+                              'chapterId': chapter.id,
+                              'memberIds': selectedIds.toList(),
+                            },
+                            token: auth.session?.accessToken,
+                            areaId: auth.areaId,
+                          );
+                        } catch (_) {}
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        _loadChapters();
+                      },
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, foregroundColor: Colors.white),
+                child: Text('Assign (${selectedIds.length})'),
               ),
             ],
           );
@@ -212,8 +315,8 @@ class _ChaptersViewState extends State<ChaptersView> {
                         Row(
                           children: [
                             Container(
-                              width: 42,
-                              height: 42,
+                              width: 44,
+                              height: 44,
                               decoration: BoxDecoration(
                                 color: AppColors.blue.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(10),
@@ -270,6 +373,21 @@ class _ChaptersViewState extends State<ChaptersView> {
                             ),
                           ],
                         ),
+                        if (isLeader) ...[
+                          const SizedBox(height: 12),
+                          const Divider(height: 1),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton.icon(
+                                icon: const Icon(Icons.group_add_outlined, size: 16),
+                                label: const Text('Assign Unassigned Youth'),
+                                onPressed: () => _showAssignMembersDialog(ch),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   );

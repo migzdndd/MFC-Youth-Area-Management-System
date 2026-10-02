@@ -11,6 +11,7 @@ import 'providers/members_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/api_service.dart';
 import 'services/storage_service.dart';
+import 'services/sync_service.dart';
 import 'views/auth/login_view.dart';
 import 'views/home_shell.dart';
 import 'widgets/wireframe_skeleton.dart';
@@ -38,6 +39,10 @@ void main() async {
         Provider<StorageService>.value(value: storageService),
         ProxyProvider<StorageService, ApiService>(
           update: (_, storage, __) => ApiService(storage),
+        ),
+        ChangeNotifierProxyProvider<ApiService, SyncService>(
+          create: (ctx) => SyncService(ctx.read<ApiService>()),
+          update: (_, api, prev) => prev ?? SyncService(api),
         ),
         ChangeNotifierProvider(create: (_) => ThemeProvider(storageService)),
         ChangeNotifierProxyProvider2<ApiService, StorageService, AuthProvider>(
@@ -68,6 +73,7 @@ class MfcYouthApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
 
+    final lightBase = ThemeData.light();
     final lightTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
@@ -80,7 +86,11 @@ class MfcYouthApp extends StatelessWidget {
         surface: AppColors.surfaceLight,
         brightness: Brightness.light,
       ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
+      textTheme: GoogleFonts.interTextTheme(lightBase.textTheme).copyWith(
+        titleLarge: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppColors.navy),
+        titleMedium: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: AppColors.navy),
+        headlineSmall: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: AppColors.navy),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.navy,
@@ -88,6 +98,7 @@ class MfcYouthApp extends StatelessWidget {
       ),
     );
 
+    final darkBase = ThemeData.dark();
     final darkTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
@@ -100,7 +111,11 @@ class MfcYouthApp extends StatelessWidget {
         surface: AppColors.surfaceDark,
         brightness: Brightness.dark,
       ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+      textTheme: GoogleFonts.interTextTheme(darkBase.textTheme).copyWith(
+        titleLarge: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppColors.textLight),
+        titleMedium: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: AppColors.textLight),
+        headlineSmall: GoogleFonts.poppins(fontWeight: FontWeight.w800, color: AppColors.textLight),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surfaceDark,
         foregroundColor: AppColors.textLight,

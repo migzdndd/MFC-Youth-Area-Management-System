@@ -12,6 +12,7 @@ class MembersProvider extends ChangeNotifier {
   String _searchQuery = '';
   dynamic _selectedChapterId;
   String _selectedStatus = 'All'; // 'All' | 'Active' | 'Inactive'
+  String _selectedCategory = 'All'; // 'All' | 'Kids (4-12)' | 'Youth (13-21)' | 'LIT Servant' | 'Campus Servant' | 'High Servant'
 
   MembersProvider(this._api);
 
@@ -20,6 +21,7 @@ class MembersProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   dynamic get selectedChapterId => _selectedChapterId;
   String get selectedStatus => _selectedStatus;
+  String get selectedCategory => _selectedCategory;
   List<Member> get members => _allMembers;
 
   Future<void> fetchMembers({String? token, String? areaId}) =>
@@ -33,13 +35,19 @@ class MembersProvider extends ChangeNotifier {
       if (_selectedStatus != 'All') {
         if (m.status.toLowerCase() != _selectedStatus.toLowerCase()) return false;
       }
+      if (_selectedCategory != 'All') {
+        if (!m.ministryCategory.toLowerCase().contains(_selectedCategory.toLowerCase())) {
+          return false;
+        }
+      }
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
         final matchName = m.fullName.toLowerCase().contains(q);
         final matchEmail = (m.email ?? '').toLowerCase().contains(q);
         final matchPhone = (m.phone ?? '').contains(q);
+        final matchSchool = (m.school ?? '').toLowerCase().contains(q);
         final matchService = m.services.any((s) => s.toLowerCase().contains(q));
-        if (!matchName && !matchEmail && !matchPhone && !matchService) return false;
+        if (!matchName && !matchEmail && !matchPhone && !matchService && !matchSchool) return false;
       }
       return true;
     }).toList();
@@ -60,6 +68,11 @@ class MembersProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setCategoryFilter(String category) {
+    _selectedCategory = category;
+    notifyListeners();
+  }
+
   Future<void> loadMembers({String? token, String? areaId}) async {
     _loading = true;
     _error = null;
@@ -72,7 +85,7 @@ class MembersProvider extends ChangeNotifier {
       } else {
         final supData = await _api.supabaseRest('members', token: token);
         if (supData is List) {
-          _allMembers = supData.map((m) => Member.fromJson(m)).toList();
+          _allMembers = supData.map((e) => Member.fromJson(e)).toList();
         }
       }
     } catch (e) {
@@ -86,8 +99,8 @@ class MembersProvider extends ChangeNotifier {
   Future<bool> saveMember(Map<String, dynamic> payload, {String? token, String? areaId}) async {
     try {
       final isEdit = payload['id'] != null;
-      final endpoint = isEdit ? '/members/${payload['id']}' : '/members';
-      final method = isEdit ? 'PUT' : 'POST';
+      const endpoint = '/members';
+      final method = isEdit ? 'PATCH' : 'POST';
 
       await _api.request(endpoint, method: method, body: payload, token: token, areaId: areaId);
       await loadMembers(token: token, areaId: areaId);
@@ -101,7 +114,7 @@ class MembersProvider extends ChangeNotifier {
 
   Future<bool> deleteMember(dynamic id, {String? token, String? areaId}) async {
     try {
-      await _api.request('/members/$id', method: 'DELETE', token: token, areaId: areaId);
+      await _api.request('/members', method: 'DELETE', body: {'id': id}, token: token, areaId: areaId);
       _allMembers.removeWhere((m) => m.id.toString() == id.toString());
       notifyListeners();
       return true;
@@ -110,5 +123,33 @@ class MembersProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  /// Generate CSV String from currently filtered members
+  String generateCsv() {
+    final list = filteredMembers;
+    final buffer = StringBuffer();
+    buffer.writeln('ID,Full Name,Email,Phone,Gender,Age,Birth Date,Chapter,Status,Role,School,Grade Level,Emergency Contact,Emergency Phone');
+
+    for (final m in list) {
+      final row = [
+        '"${m.id}"',
+        '"${m.fullName.replaceAll('"', '""')}"',
+        '"${(m.email ?? '').replaceAll('"', '""')}"',
+        '"${(m.phone ?? '').replaceAll('"', '""')}"',
+        '"${m.gender ?? ''}"',
+        '"${m.age ?? ''}"',
+        '"${m.birthDate ?? ''}"',
+        '"${(m.chapterName ?? '').replaceAll('"', '""')}"',
+        '"${m.status}"',
+        '"${m.accessLevel}"',
+        '"${(m.school ?? '').replaceAll('"', '""')}"',
+        '"${(m.gradeLevel ?? '').replaceAll('"', '""')}"',
+        '"${(m.emergencyContactName ?? '').replaceAll('"', '""')}"',
+        '"${(m.emergencyContactPhone ?? '').replaceAll('"', '""')}"',
+      ];
+      buffer.writeln(row.join(','));
+    }
+    return buffer.toString();
   }
 }

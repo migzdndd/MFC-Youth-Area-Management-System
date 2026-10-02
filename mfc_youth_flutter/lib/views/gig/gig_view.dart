@@ -5,6 +5,7 @@ import '../../constants/app_colors.dart';
 import '../../models/gig_record.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/sync_service.dart';
 import '../../widgets/wireframe_skeleton.dart';
 
 class GigView extends StatefulWidget {
@@ -45,7 +46,7 @@ class _GigViewState extends State<GigView> {
     } catch (_) {}
 
     // Supabase REST fallback
-    final supData = await api.supabaseRest('gig_records', token: auth.session?.accessToken);
+    final supData = await api.supabaseRest('gig_contributions', token: auth.session?.accessToken);
     if (supData is List) {
       final list = supData.map((r) => GigRecord.fromJson(r)).toList();
       final sum = list.fold<double>(0.0, (acc, item) => acc + item.amount);
@@ -60,10 +61,117 @@ class _GigViewState extends State<GigView> {
     setState(() => _loading = false);
   }
 
+  void _showLogGigDialog() {
+    final amountCtrl = TextEditingController();
+    final donorCtrl = TextEditingController();
+    final notesCtrl = TextEditingController();
+    final dateCtrl = TextEditingController(text: DateTime.now().toIso8601String().split('T').first);
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        bool saving = false;
+
+        return StatefulBuilder(
+          builder: (context, setDlgState) {
+            return AlertDialog(
+              backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Log GIG Stewardship', style: TextStyle(fontWeight: FontWeight.w800)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: amountCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Contribution Amount (PHP)',
+                        prefixIcon: const Icon(Icons.attach_money),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: donorCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Donor / Member Name',
+                        hintText: 'Leave empty for anonymous',
+                        prefixIcon: const Icon(Icons.person_outline),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: dateCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Date (YYYY-MM-DD)',
+                        prefixIcon: const Icon(Icons.calendar_today, size: 18),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: notesCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: 'Notes / Ministry Intention',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                ElevatedButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final parsedAmount = double.tryParse(amountCtrl.text.trim()) ?? 0.0;
+                          if (parsedAmount <= 0) return;
+
+                          setDlgState(() => saving = true);
+                          final auth = context.read<AuthProvider>();
+                          final sync = context.read<SyncService>();
+
+                          final payload = {
+                            'amount': parsedAmount,
+                            'donorName': donorCtrl.text.trim().isNotEmpty ? donorCtrl.text.trim() : 'Anonymous',
+                            'date': dateCtrl.text.trim(),
+                            'notes': notesCtrl.text.trim(),
+                            'areaId': auth.areaId,
+                          };
+
+                          await sync.queueMutation(
+                            action: 'add_gig',
+                            payload: payload,
+                            token: auth.session?.accessToken,
+                            areaId: auth.areaId,
+                          );
+
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          _loadGigRecords();
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Save Contribution'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currencyFormat = NumberFormat.currency(symbol: '₱', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(symbol: 'PHP ', decimalDigits: 2);
 
     if (_loading) {
       return const TableSkeletonWidget(itemCount: 4);
@@ -71,6 +179,13 @@ class _GigViewState extends State<GigView> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showLogGigDialog,
+        backgroundColor: AppColors.blue,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Log GIG', style: TextStyle(fontWeight: FontWeight.w700)),
+      ),
       body: RefreshIndicator(
         onRefresh: _loadGigRecords,
         color: AppColors.blue,
@@ -80,7 +195,7 @@ class _GigViewState extends State<GigView> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [AppColors.navy, AppColors.blue],
@@ -91,7 +206,7 @@ class _GigViewState extends State<GigView> {
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.blue.withValues(alpha: 0.3),
-                        blurRadius: 12,
+                        blurRadius: 14,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -129,9 +244,14 @@ class _GigViewState extends State<GigView> {
                         currencyFormat.format(_totalAmount),
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 30,
+                          fontSize: 32,
                           fontWeight: FontWeight.w900,
                         ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Total tithes and ministry generosity logged across your area',
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
                       ),
                     ],
                   ),
@@ -153,6 +273,11 @@ class _GigViewState extends State<GigView> {
                           fontWeight: FontWeight.w600,
                           color: isDark ? AppColors.mutedDark : AppColors.mutedLight,
                         ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Click Log GIG to add the first contribution.',
+                        style: TextStyle(fontSize: 12, color: isDark ? AppColors.mutedDark : AppColors.mutedLight),
                       ),
                     ],
                   ),
@@ -207,7 +332,7 @@ class _GigViewState extends State<GigView> {
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
-                                          rec.fundType ?? 'Tithes',
+                                          rec.fundType ?? 'Stewardship',
                                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.blue),
                                         ),
                                       ),

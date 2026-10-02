@@ -23,6 +23,13 @@ class DailyReading {
     this.gospelText,
   });
 
+  String get content {
+    if (gospelText != null && gospelText!.trim().isNotEmpty) return gospelText!;
+    if (firstReadingText != null && firstReadingText!.trim().isNotEmpty) return firstReadingText!;
+    if (psalmText != null && psalmText!.trim().isNotEmpty) return psalmText!;
+    return 'Reflect on today\'s liturgical readings and the presence of Christ.';
+  }
+
   factory DailyReading.fromJson(Map<String, dynamic> json) {
     final first = json['firstReading'] as Map<String, dynamic>? ?? {};
     final psalm = json['psalm'] as Map<String, dynamic>? ?? {};
