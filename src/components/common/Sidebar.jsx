@@ -1,23 +1,12 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { getAuthorizedWorkflows } from '../../constants/workflows';
 
 export function Sidebar({ currentView, onNavigate, isOpen = false, onClose }) {
   const { role, logout } = useAuth();
 
   const isChapterServant = role === 'chapter_servant';
-
-  const allNavItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '/Icons/dashboard.png' },
-    { id: 'members', label: 'Members', icon: '/Icons/members.png', hideForChapterServant: true },
-    { id: 'chapters', label: isChapterServant ? 'Chapter' : 'Chapters', icon: '/Icons/chapters.png' },
-    { id: 'services', label: 'Services', icon: '/Icons/services.png', hideForChapterServant: true },
-    { id: 'reports', label: 'Activity Reports', icon: '/Icons/reports.png' },
-    { id: 'events', label: 'Events', icon: '/Icons/events.png' }
-  ];
-
-  const navItems = isChapterServant
-    ? allNavItems.filter(item => !item.hideForChapterServant)
-    : allNavItems;
+  const navItems = getAuthorizedWorkflows(role);
 
   const handleNavClick = (id) => {
     onNavigate(id);
@@ -41,6 +30,7 @@ export function Sidebar({ currentView, onNavigate, isOpen = false, onClose }) {
       <nav className="sidebar-nav">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
+          const displayLabel = isChapterServant && item.chapterServantLabel ? item.chapterServantLabel : item.label;
           return (
             <button
               key={item.id}
@@ -50,7 +40,7 @@ export function Sidebar({ currentView, onNavigate, isOpen = false, onClose }) {
               aria-current={isActive ? 'page' : undefined}
             >
               <img src={item.icon} className="nav-icon" alt="" aria-hidden="true" />
-              <span>{item.label}</span>
+              <span>{displayLabel}</span>
             </button>
           );
         })}

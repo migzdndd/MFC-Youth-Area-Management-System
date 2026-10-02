@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { OfflineProvider } from './context/OfflineContext';
 import { AuthProvider } from './context/AuthContext';
 import { platform } from './services/platform';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import './web-style.css';
 import './index.css';
 
@@ -15,13 +16,15 @@ const rootElement = document.getElementById('root');
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
-      <ThemeProvider>
-        <OfflineProvider>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </OfflineProvider>
-      </ThemeProvider>
+      <ErrorBoundary fullScreen title="MFC Youth Area Management System Error">
+        <ThemeProvider>
+          <OfflineProvider>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </OfflineProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
     </React.StrictMode>
   );
 }
