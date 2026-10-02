@@ -43,19 +43,20 @@ class _GigViewState extends State<GigView> {
         });
         return;
       }
-    } catch (_) {}
-
-    // Supabase REST fallback
-    final supData = await api.supabaseRest('gig_contributions', token: auth.session?.accessToken);
-    if (supData is List) {
-      final list = supData.map((r) => GigRecord.fromJson(r)).toList();
-      final sum = list.fold<double>(0.0, (acc, item) => acc + item.amount);
-      setState(() {
-        _records = list;
-        _totalAmount = sum;
-        _loading = false;
-      });
-      return;
+    } catch (_) {
+      if (mounted) {
+        final sync = context.read<SyncService>();
+        if (sync.gigRecords.isNotEmpty) {
+          final list = sync.gigRecords;
+          final sum = list.fold<double>(0.0, (acc, item) => acc + item.amount);
+          setState(() {
+            _records = list;
+            _totalAmount = sum;
+            _loading = false;
+          });
+          return;
+        }
+      }
     }
 
     setState(() => _loading = false);
@@ -218,7 +219,7 @@ class _GigViewState extends State<GigView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'GIG Financial Stewardship',
+                            'GIG Contributions',
                             style: TextStyle(
                               color: AppColors.cyan,
                               fontSize: 13,

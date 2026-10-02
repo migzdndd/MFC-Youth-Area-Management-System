@@ -110,7 +110,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Account Recovery',
+                      _showTokenReset ? 'Set a New Password' : 'Forgot Your Password?',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -122,16 +122,6 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _showTokenReset
-                      ? 'Enter the recovery token and choose a new password.'
-                      : 'We will dispatch a secure recovery link to your inbox.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? AppColors.mutedDark : AppColors.mutedLight,
-                  ),
                 ),
                 const SizedBox(height: 18),
 

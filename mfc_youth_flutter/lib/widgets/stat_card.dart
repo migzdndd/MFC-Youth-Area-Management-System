@@ -4,7 +4,6 @@ import '../constants/app_colors.dart';
 class StatCard extends StatelessWidget {
   final String title;
   final String value;
-  final String? subtitle;
   final IconData icon;
   final Color iconColor;
   final VoidCallback? onTap;
@@ -13,7 +12,6 @@ class StatCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.value,
-    this.subtitle,
     required this.icon,
     this.iconColor = AppColors.blue,
     this.onTap,
@@ -85,18 +83,6 @@ class StatCard extends StatelessWidget {
                   letterSpacing: -0.5,
                 ),
               ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  subtitle!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? AppColors.mutedDark : AppColors.mutedLight,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
             ],
           ),
         ),

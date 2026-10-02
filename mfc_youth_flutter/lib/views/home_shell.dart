@@ -31,7 +31,6 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void initState() {
     super.initState();
-    // Background sync on load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = context.read<AuthProvider>();
       context.read<SyncService>().syncNow(
@@ -70,23 +69,23 @@ class _HomeShellState extends State<HomeShell> {
   String _getTitle() {
     switch (_currentRoute) {
       case 'dashboard':
-        return 'Area Dashboard';
+        return 'Dashboard';
       case 'members':
-        return 'Youth Directory';
+        return 'Members';
       case 'chapters':
-        return 'Chapters & Units';
+        return 'Chapters';
       case 'events':
-        return 'Events & Attendance';
+        return 'Events';
+      case 'services':
+        return 'Services';
       case 'gig':
-        return 'GIG Stewardship';
+        return 'GIG Contributions';
       case 'reports':
         return 'Activity Reports';
-      case 'services':
-        return 'Creative Ministries';
       case 'readings':
         return 'Daily Scripture';
       case 'settings':
-        return 'Settings & Security';
+        return 'Account Security';
       default:
         return 'MFC Youth';
     }
@@ -102,12 +101,12 @@ class _HomeShellState extends State<HomeShell> {
         return const ChaptersView();
       case 'events':
         return const EventsView();
+      case 'services':
+        return const ServicesView();
       case 'gig':
         return const GigView();
       case 'reports':
         return const ReportsView();
-      case 'services':
-        return const ServicesView();
       case 'readings':
         return const ReadingsView();
       case 'settings':
@@ -123,48 +122,33 @@ class _HomeShellState extends State<HomeShell> {
         return 0;
       case 'members':
         return 1;
-      case 'events':
-        return 2;
-      case 'reports':
-        return 3;
-      case 'settings':
-      case 'readings':
       case 'chapters':
-      case 'gig':
+        return 2;
+      case 'events':
+        return 3;
       case 'services':
         return 4;
+      case 'reports':
+        return 5;
       default:
         return 0;
     }
   }
 
   void _onBottomNavTapped(int index) {
-    HapticFeedback.lightImpact();
-    switch (index) {
-      case 0:
-        setState(() => _currentRoute = 'dashboard');
-        break;
-      case 1:
-        setState(() => _currentRoute = 'members');
-        break;
-      case 2:
-        setState(() => _currentRoute = 'events');
-        break;
-      case 3:
-        setState(() => _currentRoute = 'reports');
-        break;
-      case 4:
-        setState(() => _currentRoute = 'settings');
-        break;
+    const routes = ['dashboard', 'members', 'chapters', 'events', 'services', 'reports'];
+    if (index >= 0 && index < routes.length) {
+      setState(() => _currentRoute = routes[index]);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isWide = MediaQuery.of(context).size.width >= 960;
-    final sync = context.watch<SyncService>();
     final auth = context.watch<AuthProvider>();
+    final sync = context.watch<SyncService>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWide = screenWidth > 960;
 
     return CallbackShortcuts(
       bindings: {
@@ -174,25 +158,23 @@ class _HomeShellState extends State<HomeShell> {
       child: Focus(
         autofocus: true,
         child: Scaffold(
-          backgroundColor: isDark ? AppColors.navyDark : AppColors.surfaceLight,
+          backgroundColor: isDark ? AppColors.navyDark : AppColors.pageLight,
           appBar: AppBar(
-            automaticallyImplyLeading: !isWide,
+            leading: isWide
+                ? IconButton(
+                    icon: Icon(_sidebarCollapsed ? Icons.menu : Icons.menu_open),
+                    tooltip: _sidebarCollapsed ? 'Expand Navigation Sidebar' : 'Collapse Navigation Sidebar',
+                    onPressed: () {
+                      setState(() => _sidebarCollapsed = !_sidebarCollapsed);
+                    },
+                  )
+                : null,
             title: Row(
               children: [
-                if (isWide) ...[
-                  IconButton(
-                    icon: Icon(_sidebarCollapsed ? Icons.menu_open : Icons.menu),
-                    tooltip: _sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar',
-                    onPressed: () => setState(() => _sidebarCollapsed = !_sidebarCollapsed),
-                  ),
-                  const SizedBox(width: 4),
+                if (!isWide) ...[
+                  Image.asset('assets/images/logo-2.png', height: 26),
+                  const SizedBox(width: 8),
                 ],
-                Image.asset(
-                  'assets/images/logo-2.png',
-                  height: 28,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(width: 10),
                 Text(
                   _getTitle(),
                   style: TextStyle(
@@ -243,9 +225,9 @@ class _HomeShellState extends State<HomeShell> {
               ),
               const SizedBox(width: 8),
 
-              // Area Database Selection Button
+              // Area Context Selection Button
               IconButton(
-                tooltip: 'Select Active Area Database',
+                tooltip: 'Select Active Area Scope',
                 icon: const Icon(Icons.hub_outlined),
                 onPressed: () {
                   showDialog(
@@ -325,19 +307,24 @@ class _HomeShellState extends State<HomeShell> {
                         label: 'Members',
                       ),
                       NavigationDestination(
+                        icon: Icon(Icons.apartment_outlined),
+                        selectedIcon: Icon(Icons.apartment, color: AppColors.blue),
+                        label: 'Chapters',
+                      ),
+                      NavigationDestination(
                         icon: Icon(Icons.event_outlined),
                         selectedIcon: Icon(Icons.event, color: AppColors.blue),
                         label: 'Events',
                       ),
                       NavigationDestination(
+                        icon: Icon(Icons.handshake_outlined),
+                        selectedIcon: Icon(Icons.handshake, color: AppColors.blue),
+                        label: 'Services',
+                      ),
+                      NavigationDestination(
                         icon: Icon(Icons.analytics_outlined),
                         selectedIcon: Icon(Icons.analytics, color: AppColors.blue),
                         label: 'Reports',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.menu),
-                        selectedIcon: Icon(Icons.menu_open, color: AppColors.blue),
-                        label: 'More',
                       ),
                     ],
                   ),
@@ -353,11 +340,11 @@ class _HomeShellState extends State<HomeShell> {
       {'route': 'members', 'icon': Icons.people_outline, 'tooltip': 'Members'},
       {'route': 'chapters', 'icon': Icons.apartment_outlined, 'tooltip': 'Chapters'},
       {'route': 'events', 'icon': Icons.event_outlined, 'tooltip': 'Events'},
-      {'route': 'gig', 'icon': Icons.volunteer_activism_outlined, 'tooltip': 'GIG'},
-      {'route': 'reports', 'icon': Icons.analytics_outlined, 'tooltip': 'Reports'},
       {'route': 'services', 'icon': Icons.handshake_outlined, 'tooltip': 'Services'},
-      {'route': 'readings', 'icon': Icons.menu_book_outlined, 'tooltip': 'Scripture'},
-      {'route': 'settings', 'icon': Icons.settings_outlined, 'tooltip': 'Settings'},
+      {'route': 'gig', 'icon': Icons.volunteer_activism_outlined, 'tooltip': 'GIG Contributions'},
+      {'route': 'reports', 'icon': Icons.analytics_outlined, 'tooltip': 'Activity Reports'},
+      {'route': 'readings', 'icon': Icons.menu_book_outlined, 'tooltip': 'Daily Scripture'},
+      {'route': 'settings', 'icon': Icons.settings_outlined, 'tooltip': 'Account Security'},
     ];
 
     return Container(

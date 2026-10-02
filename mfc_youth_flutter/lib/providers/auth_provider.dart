@@ -3,16 +3,20 @@ import '../constants/app_constants.dart';
 import '../models/user_session.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
-import '../services/supabase_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final ApiService _api;
   final StorageService _storage;
-  final SupabaseService _supabase = SupabaseService();
 
   UserSession? _session;
   bool _loading = true;
   String? _authError;
+
+  // MFA Challenge State
+  bool _mfaRequired = false;
+  String? _mfaFactorId;
+  String? _mfaTempToken;
+  String? _mfaPendingEmail;
 
   AuthProvider(this._api, this._storage) {
     _initSession();
@@ -21,12 +25,16 @@ class AuthProvider extends ChangeNotifier {
   UserSession? get session => _session;
   bool get loading => _loading;
   String? get authError => _authError;
-  bool get isAuthenticated => _session != null && (_session!.accessToken != null || _session!.userId != null);
+  bool get isAuthenticated => _session != null && _session!.accessToken != null;
   bool get needsAreaSetup => _session?.needsAreaSetup == true;
   String get role => _session?.role ?? 'member';
   String? get areaId => _session?.areaId;
-  String get areaName => _session?.areaName ?? 'MFC Youth Area';
+  String get areaName => _session?.areaName.isNotEmpty == true ? _session!.areaName : 'MFC Youth Area';
   bool get isLeadership => AppConstants.isLeadership(role);
+
+  bool get mfaRequired => _mfaRequired;
+  String? get mfaFactorId => _mfaFactorId;
+  String? get mfaPendingEmail => _mfaPendingEmail;
 
   Future<void> _initSession() async {
     _session = await _storage.getSession();
@@ -39,26 +47,48 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String email, String password) async {
-    _loading = true;
+  void cancelMfa() {
+    _mfaRequired = false;
+    _mfaFactorId = null;
+    _mfaTempToken = null;
+    _mfaPendingEmail = null;
     _authError = null;
     notifyListeners();
+  }
 
-    final cleanEmail = email.trim().toLowerCase();
+  /// Production Login via Backend Serverless Gateway: POST /api/auth/login
+  Future<bool> login(String email, String password, {bool remember = true}) async {
+    _loading = true;
+    _authError = null;
+    _mfaRequired = false;
+    _mfaFactorId = null;
+    _mfaTempToken = null;
+    _mfaPendingEmail = email.trim().toLowerCase();
+    notifyListeners();
 
-    // 1. Built-in demo shortcut
-    if (cleanEmail == 'admin@mfcyouth.local' && password == 'admin123') {
-      return loginDemo('area_servant');
-    }
-
-    // 2. Primary Backend Router Attempt
     try {
       final res = await _api.request(
         '/auth/login',
         method: 'POST',
-        body: {'email': cleanEmail, 'password': password},
+        body: {
+          'email': _mfaPendingEmail,
+          'password': password,
+          'remember': remember,
+        },
       );
 
+      // 1. MFA Interception Check
+      if (res['mfaRequired'] == true) {
+        _mfaRequired = true;
+        _mfaFactorId = res['factorId']?.toString();
+        final tempSession = res['tempSession'] as Map<String, dynamic>?;
+        _mfaTempToken = tempSession?['accessToken'] as String?;
+        _loading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // 2. Direct Session Confirmation
       if (res['ok'] == true && (res['session'] != null || res['user'] != null)) {
         final newSession = UserSession.fromJson(res);
         _session = newSession;
@@ -66,29 +96,83 @@ class AuthProvider extends ChangeNotifier {
         _loading = false;
         notifyListeners();
         return true;
+      } else {
+        _authError = res['error']?.toString() ?? 'Invalid credentials or inactive account.';
       }
     } catch (e) {
-      // Backend router fallback
-    }
-
-    // 3. Direct Supabase Auth Fallback
-    try {
-      final supSession = await _supabase.signInWithPassword(cleanEmail, password);
-      if (supSession != null) {
-        _session = supSession;
-        await _storage.saveSession(supSession);
-        _loading = false;
-        notifyListeners();
-        return true;
+      if (e is ApiException) {
+        _authError = e.message;
+      } else {
+        _authError = e.toString().replaceAll('Exception: ', '');
       }
-    } catch (e) {
-      _authError = e.toString().replaceAll('Exception: ', '');
     }
 
     _loading = false;
-    _authError ??= 'Unable to connect to login server. Please verify your credentials.';
     notifyListeners();
     return false;
+  }
+
+  /// Verify MFA TOTP 6-Digit Code via POST /api/auth/mfa/verify
+  Future<bool> verifyMfaTotp(String code, {bool remember = true}) async {
+    if (_mfaFactorId == null || _mfaTempToken == null) {
+      _authError = 'Two-factor session expired. Please sign in again.';
+      notifyListeners();
+      return false;
+    }
+
+    _loading = true;
+    _authError = null;
+    notifyListeners();
+
+    try {
+      final res = await _api.request(
+        '/auth/mfa/verify',
+        method: 'POST',
+        headers: {'Authorization': 'Bearer $_mfaTempToken'},
+        token: _mfaTempToken,
+        body: {
+          'factorId': _mfaFactorId,
+          'code': code.trim(),
+          'remember': remember,
+        },
+      );
+
+      if (res['ok'] == true && (res['session'] != null || res['user'] != null)) {
+        final newSession = UserSession.fromJson(res);
+        _session = newSession;
+        await _storage.saveSession(newSession);
+        _mfaRequired = false;
+        _mfaFactorId = null;
+        _mfaTempToken = null;
+        _mfaPendingEmail = null;
+        _loading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _authError = res['error']?.toString() ?? 'Invalid authentication code.';
+      }
+    } catch (e) {
+      if (e is ApiException) {
+        _authError = e.message;
+      } else {
+        _authError = e.toString().replaceAll('Exception: ', '');
+      }
+    }
+
+    _loading = false;
+    notifyListeners();
+    return false;
+  }
+
+  /// Verify MFA TOTP code with factorId and challengeId
+  Future<bool> mfaVerify({
+    required String factorId,
+    required String challengeId,
+    required String code,
+    bool remember = true,
+  }) async {
+    _mfaFactorId = factorId;
+    return verifyMfaTotp(code, remember: remember);
   }
 
   /// Register new Servant Leader with verification passcode check
@@ -129,7 +213,11 @@ class AuthProvider extends ChangeNotifier {
         _authError = res['error']?.toString() ?? 'Registration failed.';
       }
     } catch (e) {
-      _authError = e.toString().replaceAll('Exception: ', '');
+      if (e is ApiException) {
+        _authError = e.message;
+      } else {
+        _authError = e.toString().replaceAll('Exception: ', '');
+      }
     }
 
     _loading = false;
@@ -169,50 +257,16 @@ class AuthProvider extends ChangeNotifier {
         _authError = res['error']?.toString() ?? 'Unable to claim member account.';
       }
     } catch (e) {
-      _authError = e.toString().replaceAll('Exception: ', '');
+      if (e is ApiException) {
+        _authError = e.message;
+      } else {
+        _authError = e.toString().replaceAll('Exception: ', '');
+      }
     }
 
     _loading = false;
     notifyListeners();
     return {'ok': false, 'error': _authError};
-  }
-
-  /// MFA Verification Challenge
-  Future<Map<String, dynamic>> mfaChallenge(String factorId) async {
-    try {
-      final res = await _api.request(
-        '/auth/mfa/challenge',
-        method: 'POST',
-        body: {'factorId': factorId},
-        token: _session?.accessToken,
-      );
-      return res;
-    } catch (e) {
-      return {'ok': false, 'error': e.toString()};
-    }
-  }
-
-  /// MFA Verification with TOTP Code
-  Future<bool> mfaVerify({
-    required String factorId,
-    required String challengeId,
-    required String code,
-  }) async {
-    try {
-      final res = await _api.request(
-        '/auth/mfa/verify',
-        method: 'POST',
-        body: {
-          'factorId': factorId,
-          'challengeId': challengeId,
-          'code': code.trim(),
-        },
-        token: _session?.accessToken,
-      );
-      return res['ok'] == true;
-    } catch (_) {
-      return false;
-    }
   }
 
   /// Forgot Password Request
@@ -276,35 +330,12 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  bool loginDemo([String roleKey = 'area_servant']) {
-    final demoSession = UserSession(
-      userId: 'demo-admin-id',
-      memberId: 1,
-      email: 'admin@mfcyouth.local',
-      name: 'Demo Servant Leader',
-      role: roleKey,
-      areaId: 'demo-area-ncr',
-      areaName: 'MFC Youth NCR East',
-      needsAreaSetup: false,
-      accessToken: 'demo-flutter-token',
-      backendAuth: false,
-      demo: true,
-    );
-
-    _session = demoSession;
-    _storage.saveSession(demoSession);
-    _loading = false;
-    _authError = null;
-    notifyListeners();
-    return true;
-  }
-
+  /// Area Selection Context Switcher: POST /api/areas/select
   Future<bool> selectArea(String chosenAreaId, {String? chosenAreaName}) async {
     if (_session == null) return false;
 
     String name = chosenAreaName ?? 'Selected Area';
 
-    // Try backend call first
     try {
       final res = await _api.request(
         '/areas/select',
@@ -315,12 +346,7 @@ class AuthProvider extends ChangeNotifier {
       if (res['ok'] == true && res['area'] != null) {
         name = res['area']['name']?.toString() ?? name;
       }
-    } catch (_) {
-      // Direct Supabase fallback
-      if (_session!.userId != null && _session!.accessToken != null) {
-        await _supabase.linkProfileToArea(_session!.userId!, chosenAreaId, _session!.accessToken!);
-      }
-    }
+    } catch (_) {}
 
     final updated = _session!.copyWith(
       areaId: chosenAreaId,
@@ -334,6 +360,7 @@ class AuthProvider extends ChangeNotifier {
     return true;
   }
 
+  /// Create new Area: POST /api/areas
   Future<bool> createArea(String name) async {
     if (_session == null) return false;
     final cleanName = name.trim();
@@ -357,15 +384,7 @@ class AuthProvider extends ChangeNotifier {
         createdAreaId = res['area']['id']?.toString();
         finalName = res['area']['name']?.toString() ?? cleanName;
       }
-    } catch (_) {
-      if (_session!.userId != null && _session!.accessToken != null) {
-        final area = await _supabase.createArea(cleanName, _session!.accessToken!, _session!.userId!);
-        if (area != null) {
-          createdAreaId = area['id']?.toString();
-          finalName = area['name']?.toString() ?? cleanName;
-        }
-      }
-    }
+    } catch (_) {}
 
     final updated = _session!.copyWith(
       areaId: createdAreaId ?? 'created-area-id',
@@ -381,7 +400,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     try {
-      if (_session?.backendAuth == true && _session?.accessToken != null) {
+      if (_session?.accessToken != null) {
         await _api.request('/auth/logout', method: 'POST', token: _session!.accessToken);
       }
     } catch (_) {}
@@ -389,6 +408,10 @@ class AuthProvider extends ChangeNotifier {
     await _storage.clearSession();
     _session = null;
     _authError = null;
+    _mfaRequired = false;
+    _mfaFactorId = null;
+    _mfaTempToken = null;
+    _mfaPendingEmail = null;
     notifyListeners();
   }
 }

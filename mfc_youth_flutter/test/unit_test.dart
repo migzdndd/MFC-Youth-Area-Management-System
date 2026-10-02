@@ -6,37 +6,47 @@ import 'package:mfc_youth_flutter/models/report.dart';
 
 void main() {
   group('Member Model & Business Logic Tests', () {
-    test('Correctly calculates age and detects youth vs kids vs servant', () {
+    test('Correctly calculates age and detects youth vs servant and academic track', () {
       final now = DateTime.now();
-      final birthDate10YearsAgo = '${now.year - 10}-01-15';
       final birthDate16YearsAgo = '${now.year - 16}-05-20';
 
-      final kidMember = Member.fromJson({
+      final youthMember = Member.fromJson({
         'id': 1,
         'first_name': 'Juan',
         'last_name': 'Dela Cruz',
-        'birth_date': birthDate10YearsAgo,
-        'access_level': 'member',
-        'status': 'Active',
-      });
-
-      expect(kidMember.age, 10);
-      expect(kidMember.ministryCategory, 'Kids (4-12)');
-
-      final youthMember = Member.fromJson({
-        'id': 2,
-        'first_name': 'Maria',
-        'last_name': 'Santos',
         'birth_date': birthDate16YearsAgo,
         'access_level': 'member',
+        'academic_track': 'HS',
         'status': 'Active',
       });
 
       expect(youthMember.age, 16);
-      expect(youthMember.ministryCategory, 'Youth (13-21)');
+      expect(youthMember.ministryCategory, 'HS');
+
+      final collegeMember = Member.fromJson({
+        'id': 2,
+        'first_name': 'Maria',
+        'last_name': 'Santos',
+        'access_level': 'member',
+        'academic_track': 'College',
+        'status': 'Active',
+      });
+
+      expect(collegeMember.ministryCategory, 'College');
+
+      final areaKidsServant = Member.fromJson({
+        'id': 3,
+        'first_name': 'Sister',
+        'last_name': 'Coordinator',
+        'access_level': 'area_kids_servant',
+        'status': 'Active',
+      });
+
+      expect(areaKidsServant.ministryCategory, 'Area Kids Servant');
+      expect(areaKidsServant.accessLevel, 'area_kids_servant');
 
       final leaderMember = Member.fromJson({
-        'id': 3,
+        'id': 4,
         'first_name': 'Brother',
         'last_name': 'Leader',
         'access_level': 'chapter_servant',

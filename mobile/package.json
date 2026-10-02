@@ -31,6 +31,7 @@
     "react-native-safe-area-context": "4.12.0",
     "react-native-screens": "~4.1.0",
     "react-native-svg": "15.8.0",
+    "react-native-url-polyfill": "^4.0.0",
     "react-native-web": "~0.19.13"
   },
   "devDependencies": {
@@ -41,7 +42,7 @@
   "private": true,
   "overrides": {
     "tar": "^7.5.22",
-    "image-size": "^2.0.4",
+    "image-size": "^1.2.0",
     "postcss": "^8.5.28",
     "@xmldom/xmldom": "^0.9.12",
     "uuid": "^11.1.1"

@@ -56,6 +56,11 @@ class Member {
 
   bool get isActive => status.toLowerCase() == 'active';
 
+  bool get isServant {
+    final role = accessLevel.toLowerCase();
+    return role.isNotEmpty && role != 'member' && role != 'general_member';
+  }
+
   int? get age {
     if (birthDate == null || birthDate!.isEmpty) return null;
     try {
@@ -73,19 +78,24 @@ class Member {
 
   String get ministryCategory {
     final role = accessLevel.toLowerCase();
-    if (role == 'mfc_high_servant') return 'High Servant';
-    if (role == 'lit_servant') return 'LIT Servant';
+    if (role == 'national_coordinator') return 'National Coordinator';
+    if (role == 'couple_coordinator') return 'Couple Coordinator';
+    if (role == 'area_servant') return 'Area Servant';
+    if (role == 'mfc_high_servant') return 'MFC High Servant';
+    if (role == 'lit_servant') return 'Area LIT Servant';
     if (role == 'campus_servant') return 'Campus Servant';
-    if (role == 'area_kids_servant') return 'Kids Servant';
+    if (role == 'area_kids_servant') return 'Area Kids Servant';
     if (role == 'chapter_servant') return 'Chapter Servant';
+    if (role == 'household_servant') return 'Household Servant';
+    if (role == 'unit_servant') return 'Unit Servant';
 
-    final memberAge = age;
-    if (memberAge != null) {
-      if (memberAge >= 4 && memberAge <= 12) return 'Kids (4-12)';
-      if (memberAge >= 13 && memberAge <= 21) return 'Youth (13-21)';
-      if (memberAge > 21) return 'Young Adult';
+    if (academicTrack != null && academicTrack!.trim().isNotEmpty) {
+      return academicTrack!.trim();
     }
-    return 'Youth';
+    if (gradeLevel != null && gradeLevel!.trim().isNotEmpty) {
+      return gradeLevel!.trim();
+    }
+    return 'Youth Member';
   }
 
   factory Member.fromJson(Map<String, dynamic> json) {

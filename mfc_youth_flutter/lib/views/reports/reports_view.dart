@@ -39,16 +39,17 @@ class _ReportsViewState extends State<ReportsView> {
         });
         return;
       }
-    } catch (_) {}
-
-    // Supabase REST fallback
-    final supData = await api.supabaseRest('reports', token: auth.session?.accessToken);
-    if (supData is List) {
-      setState(() {
-        _reports = supData.map((r) => ActivityReport.fromJson(r)).toList();
-        _loading = false;
-      });
-      return;
+    } catch (_) {
+      if (mounted) {
+        final sync = context.read<SyncService>();
+        if (sync.reports.isNotEmpty) {
+          setState(() {
+            _reports = sync.reports;
+            _loading = false;
+          });
+          return;
+        }
+      }
     }
 
     setState(() => _loading = false);
@@ -234,7 +235,7 @@ class _ReportsViewState extends State<ReportsView> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Historical Reports (${_reports.length})',
+                    'Activity Records (${_reports.length})',
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                   ),
                   TextButton.icon(

@@ -5,65 +5,86 @@ import '../services/api_service.dart';
 class MembersProvider extends ChangeNotifier {
   final ApiService _api;
 
+  List<Member> _allMembers = [];
   bool _loading = false;
   String? _error;
-  List<Member> _allMembers = [];
 
   String _searchQuery = '';
-  dynamic _selectedChapterId;
-  String _selectedStatus = 'All'; // 'All' | 'Active' | 'Inactive'
-  String _selectedCategory = 'All'; // 'All' | 'Kids (4-12)' | 'Youth (13-21)' | 'LIT Servant' | 'Campus Servant' | 'High Servant'
+  String? _selectedChapter;
+  String? _selectedStatus;
+  String? _selectedCategory;
+  String? _userRole;
+  dynamic _userChapterId;
 
   MembersProvider(this._api);
 
+  List<Member> get members => _allMembers;
   bool get loading => _loading;
   String? get error => _error;
-  String get searchQuery => _searchQuery;
-  dynamic get selectedChapterId => _selectedChapterId;
-  String get selectedStatus => _selectedStatus;
-  String get selectedCategory => _selectedCategory;
-  List<Member> get members => _allMembers;
 
-  Future<void> fetchMembers({String? token, String? areaId}) =>
-      loadMembers(token: token, areaId: areaId);
+  String get searchQuery => _searchQuery;
+  String? get selectedChapter => _selectedChapter;
+  String? get selectedStatus => _selectedStatus;
+  String? get selectedCategory => _selectedCategory;
+
+  void setUserScope(String? role, dynamic chapterId) {
+    _userRole = role?.toLowerCase();
+    _userChapterId = chapterId;
+  }
 
   List<Member> get filteredMembers {
     return _allMembers.where((m) {
-      if (_selectedChapterId != null && _selectedChapterId.toString() != 'all') {
-        if (m.chapterId?.toString() != _selectedChapterId.toString()) return false;
-      }
-      if (_selectedStatus != 'All') {
-        if (m.status.toLowerCase() != _selectedStatus.toLowerCase()) return false;
-      }
-      if (_selectedCategory != 'All') {
-        if (!m.ministryCategory.toLowerCase().contains(_selectedCategory.toLowerCase())) {
+      // Role-based automatic scoping
+      if (_userRole == 'chapter_servant' && _userChapterId != null) {
+        if (m.chapterId?.toString() != _userChapterId.toString()) {
           return false;
         }
+      } else if (_userRole == 'mfc_high_servant') {
+        final track = (m.academicTrack ?? '').toUpperCase();
+        final school = (m.school ?? '').toLowerCase();
+        final isHs = track == 'HS' || track == 'HIGH SCHOOL' || school.contains('high school');
+        if (!isHs && !m.isServant) return false;
+      } else if (_userRole == 'campus_servant') {
+        final track = (m.academicTrack ?? '').toUpperCase();
+        final school = (m.school ?? '').toLowerCase();
+        final isCollegeOrShs = track == 'SHS' || track == 'COLLEGE' || school.contains('college') || school.contains('university');
+        if (!isCollegeOrShs && !m.isServant) return false;
       }
-      if (_searchQuery.isNotEmpty) {
-        final q = _searchQuery.toLowerCase();
-        final matchName = m.fullName.toLowerCase().contains(q);
-        final matchEmail = (m.email ?? '').toLowerCase().contains(q);
-        final matchPhone = (m.phone ?? '').contains(q);
-        final matchSchool = (m.school ?? '').toLowerCase().contains(q);
-        final matchService = m.services.any((s) => s.toLowerCase().contains(q));
-        if (!matchName && !matchEmail && !matchPhone && !matchService && !matchSchool) return false;
-      }
-      return true;
+
+      final matchesSearch = _searchQuery.isEmpty ||
+          m.fullName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (m.email?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
+          (m.phone?.contains(_searchQuery) ?? false);
+
+      final matchesChapter = _selectedChapter == null ||
+          _selectedChapter == 'all' ||
+          m.chapterId?.toString() == _selectedChapter ||
+          m.chapterName == _selectedChapter;
+
+      final matchesStatus = _selectedStatus == null ||
+          _selectedStatus == 'all' ||
+          m.status.toLowerCase() == _selectedStatus!.toLowerCase();
+
+      final matchesCategory = _selectedCategory == null ||
+          _selectedCategory == 'all' ||
+          m.ministryCategory.toLowerCase() == _selectedCategory!.toLowerCase() ||
+          (m.academicTrack?.toLowerCase() == _selectedCategory!.toLowerCase());
+
+      return matchesSearch && matchesChapter && matchesStatus && matchesCategory;
     }).toList();
   }
 
-  void setSearchQuery(String query) {
-    _searchQuery = query.trim();
+  void setSearchQuery(String q) {
+    _searchQuery = q.trim();
     notifyListeners();
   }
 
-  void setChapterFilter(dynamic chapterId) {
-    _selectedChapterId = chapterId;
+  void setChapterFilter(String? chapterId) {
+    _selectedChapter = chapterId;
     notifyListeners();
   }
 
-  void setStatusFilter(String status) {
+  void setStatusFilter(String? status) {
     _selectedStatus = status;
     notifyListeners();
   }
@@ -82,11 +103,6 @@ class MembersProvider extends ChangeNotifier {
       final res = await _api.request('/members', token: token, areaId: areaId);
       if (res['ok'] == true && res['members'] is List) {
         _allMembers = (res['members'] as List).map((m) => Member.fromJson(m)).toList();
-      } else {
-        final supData = await _api.supabaseRest('members', token: token);
-        if (supData is List) {
-          _allMembers = supData.map((e) => Member.fromJson(e)).toList();
-        }
       }
     } catch (e) {
       _error = e.toString();
@@ -114,9 +130,8 @@ class MembersProvider extends ChangeNotifier {
 
   Future<bool> deleteMember(dynamic id, {String? token, String? areaId}) async {
     try {
-      await _api.request('/members', method: 'DELETE', body: {'id': id}, token: token, areaId: areaId);
-      _allMembers.removeWhere((m) => m.id.toString() == id.toString());
-      notifyListeners();
+      await _api.request('/members?id=$id', method: 'DELETE', token: token, areaId: areaId);
+      await loadMembers(token: token, areaId: areaId);
       return true;
     } catch (e) {
       _error = e.toString();
@@ -125,30 +140,16 @@ class MembersProvider extends ChangeNotifier {
     }
   }
 
-  /// Generate CSV String from currently filtered members
   String generateCsv() {
-    final list = filteredMembers;
     final buffer = StringBuffer();
-    buffer.writeln('ID,Full Name,Email,Phone,Gender,Age,Birth Date,Chapter,Status,Role,School,Grade Level,Emergency Contact,Emergency Phone');
-
-    for (final m in list) {
-      final row = [
-        '"${m.id}"',
-        '"${m.fullName.replaceAll('"', '""')}"',
-        '"${(m.email ?? '').replaceAll('"', '""')}"',
-        '"${(m.phone ?? '').replaceAll('"', '""')}"',
-        '"${m.gender ?? ''}"',
-        '"${m.age ?? ''}"',
-        '"${m.birthDate ?? ''}"',
-        '"${(m.chapterName ?? '').replaceAll('"', '""')}"',
-        '"${m.status}"',
-        '"${m.accessLevel}"',
-        '"${(m.school ?? '').replaceAll('"', '""')}"',
-        '"${(m.gradeLevel ?? '').replaceAll('"', '""')}"',
-        '"${(m.emergencyContactName ?? '').replaceAll('"', '""')}"',
-        '"${(m.emergencyContactPhone ?? '').replaceAll('"', '""')}"',
-      ];
-      buffer.writeln(row.join(','));
+    buffer.writeln('ID,Full Name,Role,Chapter,Status,Phone,Email,Birth Date,Age,School,Track');
+    for (final m in filteredMembers) {
+      final safeName = '"${m.fullName.replaceAll('"', '""')}"';
+      final safeRole = '"${m.ministryCategory.replaceAll('"', '""')}"';
+      final safeChapter = '"${(m.chapterName ?? '').replaceAll('"', '""')}"';
+      final safeSchool = '"${(m.school ?? '').replaceAll('"', '""')}"';
+      final safeTrack = '"${(m.academicTrack ?? '').replaceAll('"', '""')}"';
+      buffer.writeln('${m.id},$safeName,$safeRole,$safeChapter,${m.status},${m.phone ?? ""},${m.email ?? ""},${m.birthDate ?? ""},${m.age ?? ""},$safeSchool,$safeTrack');
     }
     return buffer.toString();
   }

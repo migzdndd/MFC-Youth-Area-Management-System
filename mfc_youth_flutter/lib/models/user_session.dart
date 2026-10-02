@@ -41,26 +41,31 @@ class UserSession {
   String get roleLabel => roleDisplay;
 
   factory UserSession.fromJson(Map<String, dynamic> json) {
-    final role = AppConstants.normalizeRole(json['role'] as String?);
-    final areaId = json['areaId'] ?? json['area_id'];
+    final user = (json['user'] is Map<String, dynamic>) ? json['user'] as Map<String, dynamic> : json;
+    final sess = (json['session'] is Map<String, dynamic>) ? json['session'] as Map<String, dynamic> : json;
+
+    final role = AppConstants.normalizeRole((user['role'] ?? json['role']) as String?);
+    final areaId = user['areaId'] ?? user['area_id'] ?? json['areaId'] ?? json['area_id'];
     final isLeadershipRole = AppConstants.isLeadership(role);
-    
+
     return UserSession(
-      userId: json['userId']?.toString() ?? json['id']?.toString(),
-      memberId: json['memberId'] ?? json['member_id'],
-      email: json['email'] as String? ?? '',
-      name: json['name'] as String? ?? json['email'] as String? ?? 'Servant Leader',
+      userId: user['id']?.toString() ?? user['userId']?.toString() ?? json['userId']?.toString() ?? json['id']?.toString(),
+      memberId: user['memberId'] ?? user['member_id'] ?? json['memberId'] ?? json['member_id'],
+      email: (user['email'] ?? json['email']) as String? ?? '',
+      name: (user['name'] ?? user['display_name'] ?? json['name'] ?? user['email'] ?? json['email']) as String? ?? 'Servant Leader',
       role: role,
       areaId: areaId?.toString(),
-      areaName: json['areaName'] as String? ?? json['area_name'] as String? ?? '',
-      chapterId: json['chapterId'] ?? json['chapter_id'],
-      mustChangePassword: json['mustChangePassword'] == true || json['must_change_password'] == true,
+      areaName: (user['areaName'] ?? user['area_name'] ?? json['areaName'] ?? json['area_name']) as String? ?? '',
+      chapterId: user['chapterId'] ?? user['chapter_id'] ?? json['chapterId'] ?? json['chapter_id'],
+      mustChangePassword: user['mustChangePassword'] == true || user['must_change_password'] == true || json['mustChangePassword'] == true,
       needsAreaSetup: json['needsAreaSetup'] == true || (isLeadershipRole && (areaId == null || areaId.toString().isEmpty)),
-      accessToken: json['accessToken'] as String? ?? json['access_token'] as String?,
-      refreshToken: json['refreshToken'] as String? ?? json['refresh_token'] as String?,
-      expiresAt: json['expiresAt'] is int ? json['expiresAt'] as int : null,
+      accessToken: (sess['accessToken'] ?? sess['access_token'] ?? json['accessToken'] ?? json['access_token']) as String?,
+      refreshToken: (sess['refreshToken'] ?? sess['refresh_token'] ?? json['refreshToken'] ?? json['refresh_token']) as String?,
+      expiresAt: sess['expiresAt'] is int
+          ? sess['expiresAt'] as int
+          : (sess['expires_at'] is int ? sess['expires_at'] as int : (json['expiresAt'] is int ? json['expiresAt'] as int : null)),
       backendAuth: json['backendAuth'] != false,
-      demo: json['demo'] == true,
+      demo: false,
     );
   }
 

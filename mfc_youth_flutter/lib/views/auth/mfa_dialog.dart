@@ -81,7 +81,7 @@ class _MfaDialogState extends State<MfaDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Two-Factor Challenge',
+                    'Two-Factor Verification',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -93,14 +93,6 @@ class _MfaDialogState extends State<MfaDialog> {
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Enter the 6-digit code from your authenticator app.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? AppColors.mutedDark : AppColors.mutedLight,
-                ),
               ),
               const SizedBox(height: 18),
 

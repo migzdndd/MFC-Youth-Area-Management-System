@@ -60,7 +60,7 @@ class _MembersViewState extends State<MembersView> {
             backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text(
-              isEdit ? 'Edit Pastoral Profile' : 'Register New Youth Member',
+              isEdit ? 'Member Profile' : 'Add Member',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 color: isDark ? AppColors.textLight : AppColors.navy,
@@ -633,23 +633,29 @@ class _MembersViewState extends State<MembersView> {
                         onSelected: () => membersProv.setStatusFilter('Inactive'),
                       ),
                       const SizedBox(width: 16),
-                      // Category Filter Chips
+                      // Academic Track and Ministry Filter Chips
                       _FilterChip(
-                        label: 'All Ministries',
-                        selected: membersProv.selectedCategory == 'All',
-                        onSelected: () => membersProv.setCategoryFilter('All'),
+                        label: 'All Tracks',
+                        selected: membersProv.selectedCategory == null || membersProv.selectedCategory == 'all',
+                        onSelected: () => membersProv.setCategoryFilter('all'),
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(
-                        label: 'Kids (4-12)',
-                        selected: membersProv.selectedCategory == 'Kids',
-                        onSelected: () => membersProv.setCategoryFilter('Kids'),
+                        label: 'HS',
+                        selected: membersProv.selectedCategory == 'HS',
+                        onSelected: () => membersProv.setCategoryFilter('HS'),
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(
-                        label: 'Youth (13-21)',
-                        selected: membersProv.selectedCategory == 'Youth',
-                        onSelected: () => membersProv.setCategoryFilter('Youth'),
+                        label: 'SHS',
+                        selected: membersProv.selectedCategory == 'SHS',
+                        onSelected: () => membersProv.setCategoryFilter('SHS'),
+                      ),
+                      const SizedBox(width: 8),
+                      _FilterChip(
+                        label: 'College',
+                        selected: membersProv.selectedCategory == 'College',
+                        onSelected: () => membersProv.setCategoryFilter('College'),
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(

@@ -48,20 +48,22 @@ class _EventsViewState extends State<EventsView> {
         });
         return;
       }
-    } catch (_) {}
-
-    final supData = await api.supabaseRest('events', token: auth.session?.accessToken);
-    if (supData is List) {
-      final list = supData.map((e) => Event.fromJson(e)).toList();
-      setState(() {
-        _events = list;
-        if (_selectedEvent == null && list.isNotEmpty) {
-          _selectedEvent = list.first;
-          _loadParticipants(list.first.id);
+    } catch (_) {
+      if (mounted) {
+        final sync = context.read<SyncService>();
+        if (sync.events.isNotEmpty) {
+          final list = sync.events;
+          setState(() {
+            _events = list;
+            if (_selectedEvent == null && list.isNotEmpty) {
+              _selectedEvent = list.first;
+              _loadParticipants(list.first.id);
+            }
+            _loading = false;
+          });
+          return;
         }
-        _loading = false;
-      });
-      return;
+      }
     }
 
     setState(() => _loading = false);
@@ -615,7 +617,7 @@ class _EventsViewState extends State<EventsView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Participant Roster',
+                'Participants (${_participants.length})',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
@@ -624,7 +626,7 @@ class _EventsViewState extends State<EventsView> {
               ),
               TextButton.icon(
                 icon: const Icon(Icons.person_add_alt_1, size: 16),
-                label: const Text('Add Attendee'),
+                label: const Text('Register Participant'),
                 onPressed: _showAddParticipantDialog,
               ),
             ],

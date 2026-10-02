@@ -88,6 +88,9 @@ class DashboardProvider extends ChangeNotifier {
           _registrationsCount = _participants.length;
           _attendedCount = _participants.where((p) => p.attended).length;
         }
+        if (syncRes['members'] is List) {
+          _members = (syncRes['members'] as List).map((m) => Member.fromJson(m)).toList();
+        }
       }
     } catch (_) {}
 
@@ -97,12 +100,7 @@ class DashboardProvider extends ChangeNotifier {
       if (membersRes['ok'] == true && membersRes['members'] is List) {
         _members = (membersRes['members'] as List).map((m) => Member.fromJson(m)).toList();
       }
-    } catch (_) {
-      final supData = await _api.supabaseRest('members', token: token);
-      if (supData is List) {
-        _members = supData.map((e) => Member.fromJson(e)).toList();
-      }
-    }
+    } catch (_) {}
 
     // 3. Fetch Daily Readings
     try {

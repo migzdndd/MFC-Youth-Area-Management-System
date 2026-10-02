@@ -94,7 +94,7 @@ class _MemberClaimDialogState extends State<MemberClaimDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Claim Youth Profile',
+                      'Claim Member Account',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -106,14 +106,6 @@ class _MemberClaimDialogState extends State<MemberClaimDialog> {
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Already in our member directory? Create your login account here.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? AppColors.mutedDark : AppColors.mutedLight,
-                  ),
                 ),
                 const SizedBox(height: 18),
 

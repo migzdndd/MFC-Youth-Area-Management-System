@@ -5,6 +5,7 @@ import '../../models/chapter.dart';
 import '../../models/member.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/sync_service.dart';
 import '../../widgets/wireframe_skeleton.dart';
 
 class ChaptersView extends StatefulWidget {
@@ -38,15 +39,17 @@ class _ChaptersViewState extends State<ChaptersView> {
         });
         return;
       }
-    } catch (_) {}
-
-    final supData = await api.supabaseRest('chapters', token: auth.session?.accessToken);
-    if (supData is List) {
-      setState(() {
-        _chapters = supData.map((c) => Chapter.fromJson(c)).toList();
-        _loading = false;
-      });
-      return;
+    } catch (_) {
+      if (mounted) {
+        final sync = context.read<SyncService>();
+        if (sync.chapters.isNotEmpty) {
+          setState(() {
+            _chapters = sync.chapters;
+            _loading = false;
+          });
+          return;
+        }
+      }
     }
 
     setState(() => _loading = false);

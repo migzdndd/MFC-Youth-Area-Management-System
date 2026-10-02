@@ -23,15 +23,15 @@ class AppDrawer extends StatelessWidget {
     final isDark = theme.isDark;
 
     final navItems = [
-      {'route': 'dashboard', 'title': 'Area Dashboard', 'icon': Icons.dashboard_outlined, 'activeIcon': Icons.dashboard},
-      {'route': 'members', 'title': 'Members Directory', 'icon': Icons.people_outline, 'activeIcon': Icons.people},
-      {'route': 'chapters', 'title': 'Chapters & Units', 'icon': Icons.apartment_outlined, 'activeIcon': Icons.apartment},
-      {'route': 'events', 'title': 'Events & Attendance', 'icon': Icons.event_outlined, 'activeIcon': Icons.event},
-      {'route': 'gig', 'title': 'GIG & Tithes', 'icon': Icons.volunteer_activism_outlined, 'activeIcon': Icons.volunteer_activism},
+      {'route': 'dashboard', 'title': 'Dashboard', 'icon': Icons.dashboard_outlined, 'activeIcon': Icons.dashboard},
+      {'route': 'members', 'title': 'Members', 'icon': Icons.people_outline, 'activeIcon': Icons.people},
+      {'route': 'chapters', 'title': 'Chapters', 'icon': Icons.apartment_outlined, 'activeIcon': Icons.apartment},
+      {'route': 'events', 'title': 'Events', 'icon': Icons.event_outlined, 'activeIcon': Icons.event},
+      {'route': 'services', 'title': 'Services', 'icon': Icons.handshake_outlined, 'activeIcon': Icons.handshake},
+      {'route': 'gig', 'title': 'GIG Contributions', 'icon': Icons.volunteer_activism_outlined, 'activeIcon': Icons.volunteer_activism},
       {'route': 'reports', 'title': 'Activity Reports', 'icon': Icons.analytics_outlined, 'activeIcon': Icons.analytics},
-      {'route': 'services', 'title': 'Ministries & Servants', 'icon': Icons.handshake_outlined, 'activeIcon': Icons.handshake},
       {'route': 'readings', 'title': 'Daily Scripture', 'icon': Icons.menu_book_outlined, 'activeIcon': Icons.menu_book},
-      {'route': 'settings', 'title': 'Settings & Security', 'icon': Icons.settings_outlined, 'activeIcon': Icons.settings},
+      {'route': 'settings', 'title': 'Account Security', 'icon': Icons.settings_outlined, 'activeIcon': Icons.settings},
     ];
 
     return Drawer(
@@ -57,12 +57,12 @@ class AppDrawer extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'MFC YOUTH',
+                        'MFC Youth',
                         style: TextStyle(
-                          fontSize: 17,
+                          fontSize: 18,
                           fontWeight: FontWeight.w900,
                           color: isDark ? AppColors.textLight : AppColors.navy,
-                          letterSpacing: 0.8,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ],

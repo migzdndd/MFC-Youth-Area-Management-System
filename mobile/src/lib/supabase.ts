@@ -25,9 +25,8 @@ const ExpoSecureStoreAdapter = {
   },
 };
 
-// Replace with your project Supabase credentials or environment variables
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://mfc-youth-app.supabase.co';
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://desmhxtmnmfybrsdwhwz.supabase.co';
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_rUW_5JS39kngwMT6bY5b4w_Se_Lo3eT';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {

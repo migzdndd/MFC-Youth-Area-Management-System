@@ -23,18 +23,25 @@ class ApiService {
     Map<String, String>? headers,
     String? token,
     String? areaId,
-    int timeoutSeconds = 10,
+    int timeoutSeconds = 15,
   }) async {
     final baseUrl = await getBaseUrl();
     final normalizedPath = endpoint.startsWith('/') ? endpoint : '/$endpoint';
     final fullPath = normalizedPath.startsWith('/api') ? normalizedPath : '/api$normalizedPath';
     final uri = Uri.parse('$baseUrl$fullPath');
 
+    final effectiveToken = token ?? await _storage.getAccessToken();
+    String? effectiveAreaId = areaId;
+    if (effectiveAreaId == null || effectiveAreaId.isEmpty) {
+      final session = await _storage.getSession();
+      effectiveAreaId = session?.areaId;
+    }
+
     final reqHeaders = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-      if (areaId != null && areaId.isNotEmpty) 'X-MFC-Area-ID': areaId,
+      if (effectiveToken != null && effectiveToken.isNotEmpty) 'Authorization': 'Bearer $effectiveToken',
+      if (effectiveAreaId != null && effectiveAreaId.isNotEmpty) 'X-MFC-Area-ID': effectiveAreaId,
       ...?headers,
     };
 
@@ -81,43 +88,6 @@ class ApiService {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Network connection error: $e');
-    }
-  }
-
-  /// Direct fallback to Supabase REST query
-  Future<dynamic> supabaseRest(
-    String tablePath, {
-    String method = 'GET',
-    dynamic body,
-    String? token,
-  }) async {
-    final uri = Uri.parse('${AppConstants.supabaseUrl}/rest/v1/$tablePath');
-    final reqHeaders = <String, String>{
-      'Content-Type': 'application/json',
-      'apikey': AppConstants.supabaseAnonKey,
-      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-      'Prefer': 'return=representation',
-    };
-
-    try {
-      http.Response response;
-      final upper = method.toUpperCase();
-      if (upper == 'POST') {
-        response = await http.post(uri, headers: reqHeaders, body: jsonEncode(body));
-      } else if (upper == 'PATCH') {
-        response = await http.patch(uri, headers: reqHeaders, body: jsonEncode(body));
-      } else if (upper == 'DELETE') {
-        response = await http.delete(uri, headers: reqHeaders);
-      } else {
-        response = await http.get(uri, headers: reqHeaders);
-      }
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return jsonDecode(response.body);
-      }
-      return null;
-    } catch (e) {
-      return null;
     }
   }
 }

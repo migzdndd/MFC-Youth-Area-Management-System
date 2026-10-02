@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
 import '../../models/member.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/members_provider.dart';
 import '../../widgets/wireframe_skeleton.dart';
 
@@ -17,35 +18,30 @@ class _ServicesViewState extends State<ServicesView> {
     {
       'id': 'Music',
       'title': 'Music Ministry',
-      'description': 'Worship leaders, instrumentalists, choir, and praise band servants.',
       'icon': Icons.music_note,
       'color': AppColors.blue,
     },
     {
       'id': 'Dance',
       'title': 'Dance Ministry',
-      'description': 'Liturgical praise and conference youth dance team.',
       'icon': Icons.directions_run,
       'color': AppColors.purple,
     },
     {
       'id': 'Creative Writing',
       'title': 'Creative Writing',
-      'description': 'Reflections, newsletters, scripts, and promotional write-ups.',
       'icon': Icons.edit_note,
       'color': AppColors.cyan,
     },
     {
       'id': 'Graphics & Promo',
       'title': 'Graphics & Promo',
-      'description': 'Visual branding, posters, social media publicity, and presentations.',
       'icon': Icons.palette_outlined,
       'color': AppColors.gold,
     },
     {
       'id': 'Photography & Videography',
-      'title': 'Media & Tech',
-      'description': 'Photo coverage, live sound, event recaps, and video testimonies.',
+      'title': 'Photography & Videography',
       'icon': Icons.videocam_outlined,
       'color': AppColors.danger,
     },
@@ -55,7 +51,11 @@ class _ServicesViewState extends State<ServicesView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MembersProvider>().fetchMembers();
+      final auth = context.read<AuthProvider>();
+      context.read<MembersProvider>().loadMembers(
+            token: auth.session?.accessToken,
+            areaId: auth.areaId,
+          );
     });
   }
 
@@ -104,37 +104,23 @@ class _ServicesViewState extends State<ServicesView> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              ministry['title'] as String,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: isDark ? AppColors.textLight : AppColors.textDark,
-                              ),
-                            ),
-                            Text(
-                              '${ministryMembers.length} Servants assigned',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDark ? AppColors.mutedDark : AppColors.mutedLight,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          ministry['title'] as String,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? AppColors.textLight : AppColors.textDark,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 8),
                   Expanded(
                     child: ministryMembers.isEmpty
                         ? Center(
                             child: Text(
-                              'No members assigned to this ministry yet.',
+                              'No servants currently tagged under this ministry.',
                               style: TextStyle(color: isDark ? AppColors.mutedDark : AppColors.mutedLight),
                             ),
                           )
@@ -142,27 +128,26 @@ class _ServicesViewState extends State<ServicesView> {
                             controller: scrollController,
                             itemCount: ministryMembers.length,
                             separatorBuilder: (_, __) => const Divider(height: 1),
-                            itemBuilder: (context, idx) {
-                              final mem = ministryMembers[idx];
+                            itemBuilder: (context, index) {
+                              final mem = ministryMembers[index];
                               return ListTile(
                                 contentPadding: EdgeInsets.zero,
                                 leading: CircleAvatar(
-                                  backgroundColor: AppColors.blue,
-                                  radius: 18,
+                                  backgroundColor: AppColors.blue.withValues(alpha: 0.15),
                                   child: Text(
-                                    mem.name.isNotEmpty ? mem.name[0].toUpperCase() : 'M',
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    mem.firstName.isNotEmpty ? mem.firstName[0].toUpperCase() : 'M',
+                                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.blue),
                                   ),
                                 ),
                                 title: Text(
-                                  mem.name,
+                                  mem.fullName,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     color: isDark ? AppColors.textLight : AppColors.textDark,
                                   ),
                                 ),
-                                subtitle: Text(
-                                  mem.chapterName != null ? 'Chapter: ${mem.chapterName}' : 'MFC Youth',
+                                trailing: Text(
+                                  mem.chapterName ?? 'MFC Youth',
                                   style: TextStyle(fontSize: 12, color: isDark ? AppColors.mutedDark : AppColors.mutedLight),
                                 ),
                               );
@@ -182,7 +167,7 @@ class _ServicesViewState extends State<ServicesView> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final membersProv = context.watch<MembersProvider>();
-
+    final auth = context.watch<AuthProvider>();
 
     if (membersProv.loading) {
       return const TableSkeletonWidget(itemCount: 4);
@@ -191,11 +176,23 @@ class _ServicesViewState extends State<ServicesView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: RefreshIndicator(
-        onRefresh: () => membersProv.fetchMembers(),
+        onRefresh: () => membersProv.loadMembers(
+          token: auth.session?.accessToken,
+          areaId: auth.areaId,
+        ),
         color: AppColors.blue,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            Text(
+              'Service Catalog',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.textLight : AppColors.textDark,
+              ),
+            ),
+            const SizedBox(height: 12),
             ..._creativeMinistries.map((ministry) {
               final serviceId = ministry['id'] as String;
               final assignedMembers = membersProv.members.where((m) => m.services.contains(serviceId)).toList();
@@ -220,31 +217,20 @@ class _ServicesViewState extends State<ServicesView> {
                   title: Text(
                     ministry['title'] as String,
                     style: TextStyle(
+                      fontWeight: FontWeight.w700,
                       fontSize: 15,
-                      fontWeight: FontWeight.w800,
                       color: isDark ? AppColors.textLight : AppColors.textDark,
                     ),
                   ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      ministry['description'] as String,
-                      style: TextStyle(fontSize: 12, color: isDark ? AppColors.mutedDark : AppColors.mutedLight),
-                    ),
-                  ),
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: (ministry['color'] as Color).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(999),
+                      color: AppColors.blue.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${assignedMembers.length} Servants',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: ministry['color'] as Color,
-                      ),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.blue),
                     ),
                   ),
                   onTap: () => _showMinistryMembersSheet(context, ministry, assignedMembers),

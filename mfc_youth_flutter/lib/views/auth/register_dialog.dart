@@ -85,7 +85,7 @@ class _RegisterDialogState extends State<RegisterDialog> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Servant Registration',
+                        'Register Admin Account',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
@@ -97,14 +97,6 @@ class _RegisterDialogState extends State<RegisterDialog> {
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Create an administrative account with your area passcode.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppColors.mutedDark : AppColors.mutedLight,
-                    ),
                   ),
                   const SizedBox(height: 18),
 
