@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * MFC Youth Area Management System - Main Coordinator Script
+ * MFC Youth AMS System - Main Coordinator Script
  * ============================================================================
  * What this file is:
  * This is the conductor of the leader dashboard. It verifies who is logged in,

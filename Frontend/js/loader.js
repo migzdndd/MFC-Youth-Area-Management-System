@@ -1,5 +1,5 @@
 /**
- * MFC Youth Area Management System - Page Loader & Screen Transition Animations
+ * MFC Youth AMS System - Page Loader & Screen Transition Animations
  *
  * What this file does:
  * Makes moving between pages feel smooth and instant. It shows a branded loading curtain
@@ -594,7 +594,7 @@
         </ul>
         <hr>
         <h3>3. Where You'll Go (Based on Your Role)</h3>
-        <p>The MFC Youth Area Management System automatically customizes your experience depending on your current service role. Once you log in, you will be taken to the portal that fits your responsibilities:</p>
+        <p>The MFC Youth AMS System automatically customizes your experience depending on your current service role. Once you log in, you will be taken to the portal that fits your responsibilities:</p>
         <h4><img src="/Icons/members.png" alt="" style="width: 20px; vertical-align: middle; margin-right: 8px; filter: brightness(0) saturate(100%) invert(23%) sepia(13%) saturate(1212%) hue-rotate(174deg) brightness(96%) contrast(87%);"> General Members</h4>
         <ul>
           <li>Here, you can view your personal profile.</li>

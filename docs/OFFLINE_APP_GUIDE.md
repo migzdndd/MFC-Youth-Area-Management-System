@@ -1,6 +1,6 @@
 # Offline Desktop and Mobile Application Guide
 
-This guide details the prerequisites, architecture, build procedures, and operational workflows for the **MFC Youth Area Management System** across Web, Android, iOS, Windows, and macOS.
+This guide details the prerequisites, architecture, build procedures, and operational workflows for the **MFC Youth AMS System** across Web, Android, iOS, Windows, and macOS.
 
 ---
 

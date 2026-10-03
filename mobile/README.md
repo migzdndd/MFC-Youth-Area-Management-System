@@ -1,6 +1,6 @@
-# MFC Youth Area Management System: Universal Cross-Platform App
+# MFC Youth AMS System: Universal Cross-Platform App
 
-Universal multiplatform Flutter application for the **MFC Youth Area Management System** (Missionary Families for Christ Youth and Kids Ministries), providing 100% functional parity with the web platform across **iOS, Android, Windows, macOS, and Web**.
+Universal multiplatform Flutter application for the **MFC Youth AMS System** (Missionary Families for Christ Youth and Kids Ministries), providing 100% functional parity with the web platform across **iOS, Android, Windows, macOS, and Web**.
 
 ---
 

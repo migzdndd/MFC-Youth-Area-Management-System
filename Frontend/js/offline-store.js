@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * MFC Youth Area Management System - Client Offline Storage Engine
+ * MFC Youth AMS System - Client Offline Storage Engine
  * ============================================================================
  * Purpose:
  * Native IndexedDB wrapper managing offline cached data and outgoing mutations.

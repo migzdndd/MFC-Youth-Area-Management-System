@@ -5,7 +5,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $Root = Split-Path -Parent $PSScriptRoot
-$Project = Join-Path $Root 'MFC Youth Area Management System.csproj'
+$Project = Join-Path $Root 'MFC Youth AMS System.csproj'
 $ReleaseBaseVersion = '2.0.4'
 $ReleaseChannel = 'beta'
 $ReleaseRevision = '0'
@@ -20,7 +20,7 @@ $ExpectedFileVersion = "$ReleaseBaseVersion.$ReleaseRevision"
 $ExpectedWizardImageSha256 = '386868F2B8CB81FE472AB5C7BE1AF393244865E14008B307C5F242AADE13262E'
 $ExpectedWizardSmallImageSha256 = 'ED7CE7DAFF211408049B4E53BDE90B58B2AE5AF4BCA17B9BDFDE13883515CD3E'
 
-Write-Host ("=== MFC Youth Area Management System {0} ===" -f $ReleaseDisplayVersion) -ForegroundColor Cyan
+Write-Host ("=== MFC Youth AMS System {0} ===" -f $ReleaseDisplayVersion) -ForegroundColor Cyan
 Write-Host 'Building a clean self-contained Windows x64 release...' -ForegroundColor Cyan
 
 $Dotnet = Get-Command 'dotnet.exe' -ErrorAction SilentlyContinue

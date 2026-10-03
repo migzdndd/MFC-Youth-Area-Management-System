@@ -16,7 +16,7 @@ const rootElement = document.getElementById('root');
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
-      <ErrorBoundary fullScreen title="MFC Youth Area Management System Error">
+      <ErrorBoundary fullScreen title="MFC Youth AMS System Error">
         <ThemeProvider>
           <OfflineProvider>
             <AuthProvider>

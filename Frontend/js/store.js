@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * MFC Youth Area Management System - Data Storage & Leader Permissions
+ * MFC Youth AMS System - Data Storage & Leader Permissions
  * ============================================================================
  * What this file is:
  * This script manages the saved records on your device (members, chapters, events,

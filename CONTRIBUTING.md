@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for contributing to the MFC Youth Area Management System Web!
+Thank you for contributing to the MFC Youth AMS System Web!
 
 ## How to Contribute
 1. **Report Bugs:** Open an issue with a clear description and steps to reproduce. (For security bugs, see `SECURITY.md`).

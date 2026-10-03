@@ -5,6 +5,7 @@ import '../../models/event.dart';
 import '../../models/participant.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/app_exception.dart';
 import '../../services/sync_service.dart';
 import '../../widgets/wireframe_skeleton.dart';
 import 'fast_check_in_dialog.dart';
@@ -48,7 +49,7 @@ class _EventsViewState extends State<EventsView> {
         });
         return;
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         final sync = context.read<SyncService>();
         if (sync.events.isNotEmpty) {
@@ -62,6 +63,14 @@ class _EventsViewState extends State<EventsView> {
             _loading = false;
           });
           return;
+        } else {
+          final errorMsg = e is AppException ? e.message : 'Unable to refresh events.';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
       }
     }
@@ -326,7 +335,7 @@ class _EventsViewState extends State<EventsView> {
     final isWide = MediaQuery.of(context).size.width >= 860;
 
     if (_loading) {
-      return const TableSkeletonWidget(itemCount: 5);
+      return const EventListSkeletonWidget(itemCount: 5);
     }
 
     return Scaffold(

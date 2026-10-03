@@ -1,5 +1,5 @@
 /**
- * MFC Youth Area Management System - Outbox Sync Manager
+ * MFC Youth AMS System - Outbox Sync Manager
  * Automatically syncs queued offline changes once internet connectivity is restored.
  */
 

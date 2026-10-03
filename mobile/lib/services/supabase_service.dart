@@ -1,60 +1,54 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants/app_constants.dart';
 import '../models/user_session.dart';
+import 'app_exception.dart';
 
+/// Supabase client integration for authentication and database queries.
 class SupabaseService {
-  final http.Client _client = http.Client();
+  /// Access the shared SupabaseClient instance.
+  SupabaseClient get client => Supabase.instance.client;
 
-  /// Direct Supabase password authentication
+  /// Direct Supabase authentication using the official SDK.
   Future<UserSession?> signInWithPassword(String email, String password) async {
     final cleanEmail = email.trim().toLowerCase();
-    final uri = Uri.parse('${AppConstants.supabaseUrl}/auth/v1/token?grant_type=password');
-
     try {
-      final res = await _client.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': AppConstants.supabaseAnonKey,
-        },
-        body: jsonEncode({
-          'email': cleanEmail,
-          'password': password,
-        }),
+      final authResponse = await client.auth.signInWithPassword(
+        email: cleanEmail,
+        password: password,
       );
 
-      if (res.statusCode != 200) {
-        final err = jsonDecode(res.body);
-        final msg = err['msg'] ?? err['error_description'] ?? 'Invalid email or password.';
-        throw Exception(msg);
+      final user = authResponse.user;
+      final session = authResponse.session;
+
+      if (user == null || session == null) {
+        throw const AppAuthException('Unable to establish authentication session.');
       }
 
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final token = data['access_token'] as String;
-      final refreshToken = data['refresh_token'] as String?;
-      final expiresAt = data['expires_at'] as int?;
-      final user = data['user'] as Map<String, dynamic>;
-      final userId = user['id'] as String;
+      final userId = user.id;
+      final token = session.accessToken;
+      final refreshToken = session.refreshToken;
+      final expiresAt = session.expiresAt;
 
-      // Read profiles record
+      // Query profiles record via PostgREST
       Map<String, dynamic>? profile;
       try {
-        final pRes = await _client.get(
-          Uri.parse('${AppConstants.supabaseUrl}/rest/v1/profiles?id=eq.$userId&select=id,member_id,role,area_id,chapter_id,must_change_password,is_active'),
-          headers: {
-            'apikey': AppConstants.supabaseAnonKey,
-            'Authorization': 'Bearer $token',
-          },
-        );
-        if (pRes.statusCode == 200) {
-          final list = jsonDecode(pRes.body) as List;
-          if (list.isNotEmpty) profile = list.first as Map<String, dynamic>;
+        final profileData = await client
+            .from('profiles')
+            .select('id, member_id, role, area_id, chapter_id, must_change_password, is_active')
+            .eq('id', userId)
+            .maybeSingle();
+        if (profileData != null) {
+          profile = Map<String, dynamic>.from(profileData);
         }
-      } catch (_) {}
+      } on PostgrestException catch (pe) {
+        debugPrint('Profile query note: ${pe.message}');
+      }
 
-      final role = AppConstants.normalizeRole(profile?['role']?.toString() ?? user['user_metadata']?['role']?.toString());
+      final role = AppConstants.normalizeRole(
+        profile?['role']?.toString() ?? user.userMetadata?['role']?.toString(),
+      );
       final areaId = profile?['area_id']?.toString();
       final isLeader = AppConstants.isLeadership(role);
       final needsAreaSetup = isLeader && (areaId == null || areaId.isEmpty);
@@ -62,25 +56,26 @@ class SupabaseService {
       String areaName = '';
       if (areaId != null && areaId.isNotEmpty) {
         try {
-          final aRes = await _client.get(
-            Uri.parse('${AppConstants.supabaseUrl}/rest/v1/areas?id=eq.$areaId&select=id,name,code'),
-            headers: {
-              'apikey': AppConstants.supabaseAnonKey,
-              'Authorization': 'Bearer $token',
-            },
-          );
-          if (aRes.statusCode == 200) {
-            final aList = jsonDecode(aRes.body) as List;
-            if (aList.isNotEmpty) areaName = aList.first['name']?.toString() ?? '';
+          final areaData = await client
+              .from('areas')
+              .select('id, name, code')
+              .eq('id', areaId)
+              .maybeSingle();
+          if (areaData != null) {
+            areaName = areaData['name']?.toString() ?? '';
           }
-        } catch (_) {}
+        } on PostgrestException catch (pe) {
+          debugPrint('Area name query note: ${pe.message}');
+        }
       }
 
       return UserSession(
         userId: userId,
         memberId: profile?['member_id'],
         email: cleanEmail,
-        name: user['user_metadata']?['display_name']?.toString() ?? user['user_metadata']?['name']?.toString() ?? cleanEmail,
+        name: user.userMetadata?['display_name']?.toString() ??
+            user.userMetadata?['name']?.toString() ??
+            cleanEmail,
         role: role,
         areaId: areaId,
         areaName: areaName,
@@ -93,150 +88,148 @@ class SupabaseService {
         backendAuth: true,
         demo: false,
       );
+    } on AuthException catch (ae) {
+      throw AppAuthException(ae.message, code: ae.statusCode, originalError: ae);
+    } on SocketException catch (se) {
+      throw AppNetworkException('Network connection unavailable: please check your connection.', originalError: se);
     } catch (e) {
-      rethrow;
+      if (e is AppException) rethrow;
+      throw AppAuthException('Authentication error: ${e.toString().replaceAll('Exception: ', '')}', originalError: e);
     }
   }
 
-  /// Fetch list of areas for first-time leader onboarding
+  /// Fetch list of areas for first-time leader onboarding.
   Future<List<Map<String, dynamic>>> fetchAreas({String? token}) async {
-    final uri = Uri.parse('${AppConstants.supabaseUrl}/rest/v1/areas?select=id,name,code');
     try {
-      final res = await _client.get(
-        uri,
-        headers: {
-          'apikey': AppConstants.supabaseAnonKey,
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
-      if (res.statusCode == 200) {
-        final list = jsonDecode(res.body) as List;
-        return list.map((e) => e as Map<String, dynamic>).toList();
-      }
-      return [];
-    } catch (_) {
-      return [];
+      final res = await client
+          .from('areas')
+          .select('id, name, code')
+          .order('name', ascending: true);
+      return List<Map<String, dynamic>>.from(res);
+    } on PostgrestException catch (pe) {
+      throw AppDatabaseException('Failed to load areas: ${pe.message}', code: pe.code, originalError: pe);
+    } on SocketException catch (se) {
+      throw AppNetworkException('Network error while loading areas.', originalError: se);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw AppDatabaseException('Unexpected error loading areas: $e', originalError: e);
     }
   }
 
-  /// Direct area creation in Supabase
-  Future<Map<String, dynamic>?> createArea(String name, String token, String userId) async {
+  /// Create a new pastoral area and link to the creator's profile.
+  Future<Map<String, dynamic>?> createArea(String name, {String? token, String? userId}) async {
     final cleanName = name.trim();
-    final code = cleanName.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]+'), '-').substring(0, cleanName.length > 20 ? 20 : cleanName.length);
-    final uri = Uri.parse('${AppConstants.supabaseUrl}/rest/v1/areas');
+    final code = cleanName
+        .toUpperCase()
+        .replaceAll(RegExp(r'[^A-Z0-9]+'), '-')
+        .substring(0, cleanName.length > 20 ? 20 : cleanName.length);
 
     try {
-      final res = await _client.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': AppConstants.supabaseAnonKey,
-          'Authorization': 'Bearer $token',
-          'Prefer': 'return=representation',
-        },
-        body: jsonEncode({
-          'name': cleanName,
-          'code': code,
-        }),
-      );
+      final res = await client
+          .from('areas')
+          .insert({'name': cleanName, 'code': code})
+          .select()
+          .single();
 
-      if (res.statusCode == 200 || res.statusCode == 201) {
-        final list = jsonDecode(res.body) as List;
-        if (list.isNotEmpty) {
-          final area = list.first as Map<String, dynamic>;
-          // Link profile to newly created area
-          await linkProfileToArea(userId, area['id'].toString(), token);
-          return area;
-        }
+      final area = Map<String, dynamic>.from(res);
+      final effectiveUserId = userId ?? client.auth.currentUser?.id;
+      if (effectiveUserId != null) {
+        await linkProfileToArea(effectiveUserId, area['id'].toString());
       }
-      return null;
-    } catch (_) {
-      return null;
+      return area;
+    } on PostgrestException catch (pe) {
+      throw AppDatabaseException('Failed to create area: ${pe.message}', code: pe.code, originalError: pe);
+    } on SocketException catch (se) {
+      throw AppNetworkException('Network error while creating area.', originalError: se);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw AppDatabaseException('Unexpected error creating area: $e', originalError: e);
     }
   }
 
-  /// Direct profile area update
-  Future<bool> linkProfileToArea(String userId, String areaId, String token) async {
-    final uri = Uri.parse('${AppConstants.supabaseUrl}/rest/v1/profiles?id=eq.$userId');
+  /// Link a leader profile to their designated area.
+  Future<bool> linkProfileToArea(String userId, String areaId, [String? token]) async {
     try {
-      final res = await _client.patch(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': AppConstants.supabaseAnonKey,
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'area_id': areaId,
-        }),
-      );
-      return res.statusCode >= 200 && res.statusCode < 300;
-    } catch (_) {
-      return false;
+      await client
+          .from('profiles')
+          .update({'area_id': areaId})
+          .eq('id', userId);
+      return true;
+    } on PostgrestException catch (pe) {
+      throw AppDatabaseException('Failed to link profile to area: ${pe.message}', code: pe.code, originalError: pe);
+    } on SocketException catch (se) {
+      throw AppNetworkException('Network error updating profile area.', originalError: se);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw AppDatabaseException('Unexpected error updating profile: $e', originalError: e);
     }
   }
 
-  /// Direct Supabase client instance accessor
-  static SupabaseClient get client => Supabase.instance.client;
-
-  /// Direct Supabase query for Area Members
+  /// Direct Supabase query for Area Members.
   Future<List<Map<String, dynamic>>> fetchMembersDirect({required String areaId, String? token}) async {
     try {
-      final res = await _client.get(
-        Uri.parse('${AppConstants.supabaseUrl}/rest/v1/members?area_id=eq.$areaId&order=last_name.asc'),
-        headers: {
-          'apikey': AppConstants.supabaseAnonKey,
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
-      if (res.statusCode == 200) {
-        final list = jsonDecode(res.body) as List;
-        return list.map((e) => e as Map<String, dynamic>).toList();
-      }
-      return [];
-    } catch (_) {
-      return [];
+      final res = await client
+          .from('members')
+          .select()
+          .eq('area_id', areaId)
+          .order('last_name', ascending: true);
+      return List<Map<String, dynamic>>.from(res);
+    } on PostgrestException catch (pe) {
+      throw AppDatabaseException('Failed to load members: ${pe.message}', code: pe.code, originalError: pe);
+    } on SocketException catch (se) {
+      throw AppNetworkException('Network error loading members.', originalError: se);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw AppDatabaseException('Unexpected error loading members: $e', originalError: e);
     }
   }
 
-  /// Direct Supabase query for Area Chapters
+  /// Direct Supabase query for Area Chapters.
   Future<List<Map<String, dynamic>>> fetchChaptersDirect({required String areaId, String? token}) async {
     try {
-      final res = await _client.get(
-        Uri.parse('${AppConstants.supabaseUrl}/rest/v1/chapters?area_id=eq.$areaId&order=name.asc'),
-        headers: {
-          'apikey': AppConstants.supabaseAnonKey,
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
-      if (res.statusCode == 200) {
-        final list = jsonDecode(res.body) as List;
-        return list.map((e) => e as Map<String, dynamic>).toList();
-      }
-      return [];
-    } catch (_) {
-      return [];
+      final res = await client
+          .from('chapters')
+          .select()
+          .eq('area_id', areaId)
+          .order('name', ascending: true);
+      return List<Map<String, dynamic>>.from(res);
+    } on PostgrestException catch (pe) {
+      throw AppDatabaseException('Failed to load chapters: ${pe.message}', code: pe.code, originalError: pe);
+    } on SocketException catch (se) {
+      throw AppNetworkException('Network error loading chapters.', originalError: se);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw AppDatabaseException('Unexpected error loading chapters: $e', originalError: e);
     }
   }
 
-  /// Direct Supabase query for Area Events
+  /// Direct Supabase query for Area Events.
   Future<List<Map<String, dynamic>>> fetchEventsDirect({required String areaId, String? token}) async {
     try {
-      final res = await _client.get(
-        Uri.parse('${AppConstants.supabaseUrl}/rest/v1/events?area_id=eq.$areaId&order=starts_at.desc'),
-        headers: {
-          'apikey': AppConstants.supabaseAnonKey,
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
-      if (res.statusCode == 200) {
-        final list = jsonDecode(res.body) as List;
-        return list.map((e) => e as Map<String, dynamic>).toList();
-      }
-      return [];
-    } catch (_) {
-      return [];
+      final res = await client
+          .from('events')
+          .select()
+          .eq('area_id', areaId)
+          .order('starts_at', ascending: false);
+      return List<Map<String, dynamic>>.from(res);
+    } on PostgrestException catch (pe) {
+      throw AppDatabaseException('Failed to load events: ${pe.message}', code: pe.code, originalError: pe);
+    } on SocketException catch (se) {
+      throw AppNetworkException('Network error loading events.', originalError: se);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw AppDatabaseException('Unexpected error loading events: $e', originalError: e);
+    }
+  }
+
+  /// Sign out current session.
+  Future<void> signOut() async {
+    try {
+      await client.auth.signOut();
+    } on AuthException catch (ae) {
+      throw AppAuthException('Sign out failed: ${ae.message}', code: ae.statusCode, originalError: ae);
+    } catch (e) {
+      throw AppAuthException('Sign out error: $e', originalError: e);
     }
   }
 }
-

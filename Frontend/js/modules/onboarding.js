@@ -1,5 +1,5 @@
 /**
- * MFC Youth Area Management System - First-Time Leader Area Connection Wizard
+ * MFC Youth AMS System - First-Time Leader Area Connection Wizard
  *
  * What this file does:
  * When a newly registered coordinator or servant leader logs in for the first time,

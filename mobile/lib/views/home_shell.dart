@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../services/sync_service.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/area_onboarding_dialog.dart';
+import '../widgets/responsive_layout.dart';
 import 'chapters/chapters_view.dart';
 import 'dashboard/dashboard_view.dart';
 import 'events/events_view.dart';
@@ -147,8 +148,7 @@ class _HomeShellState extends State<HomeShell> {
     final auth = context.watch<AuthProvider>();
     final sync = context.watch<SyncService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWide = screenWidth > 960;
+    final isWide = ResponsiveLayout.isDesktop(context);
 
     return CallbackShortcuts(
       bindings: {

@@ -1,5 +1,5 @@
 /**
- * MFC Youth Area Management System - Chapters & Local Communities
+ * MFC Youth AMS System - Chapters & Local Communities
  *
  * What this file does:
  * Manages local MFC Youth chapters, displays chapter rosters, handles member assignments,

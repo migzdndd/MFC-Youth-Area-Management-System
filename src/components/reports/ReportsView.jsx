@@ -161,11 +161,50 @@ export function ReportsView({ modalOpen, onCloseModal }) {
     });
   }, [visibleReports, search, selectedChapter, selectedType, dateFrom, dateTo]);
 
-  // Statistics calculation
-  const totalActivities = filtered.length;
-  const totalParticipants = filtered.reduce((sum, r) => sum + (parseInt(r.participants ?? r.attendance_count ?? 0, 10)), 0);
-  const averageAttendance = totalActivities > 0 ? Math.round(totalParticipants / totalActivities) : 0;
-  const chaptersInvolved = new Set(filtered.map(r => r.chapter).filter(Boolean)).size;
+  // Advanced Analytics Logic (Synchronized from Web App)
+  const analytics = useMemo(() => {
+    if (filtered.length === 0) return { insights: [], byType: [], byChapter: [] };
+
+    const typeMap = {};
+    const chapterMap = {};
+
+    filtered.forEach(rep => {
+      const type = rep.type || rep.category || 'Unspecified';
+      if (!typeMap[type]) typeMap[type] = { type, count: 0, participants: 0 };
+      typeMap[type].count++;
+      typeMap[type].participants += (parseInt(rep.participants ?? rep.attendance_count ?? 0, 10));
+
+      const chap = rep.chapter || 'No Chapter';
+      if (!chapterMap[chap]) chapterMap[chap] = { chapter: chap, count: 0, participants: 0 };
+      chapterMap[chap].count++;
+      chapterMap[chap].participants += (parseInt(rep.participants ?? rep.attendance_count ?? 0, 10));
+    });
+
+    const byType = Object.values(typeMap).sort((a, b) => b.count - a.count || b.participants - a.participants);
+    const byChapter = Object.values(chapterMap).sort((a, b) => b.count - a.count || b.participants - a.participants);
+
+    // Generate Natural Language Insights
+    const insights = [];
+    if (byChapter.length) {
+      insights.push(`${byChapter[0].chapter} recorded the highest number of activities (${byChapter[0].count}).`);
+    }
+    if (byType.length) {
+      insights.push(`${byType[0].type} was the most frequently recorded activity type (${byType[0].count}).`);
+    }
+    insights.push(`Total recorded participation was ${totalParticipants} across ${totalActivities} activit${totalActivities === 1 ? 'y' : 'ies'}.`);
+    insights.push(`Average attendance per recorded activity was approximately ${averageAttendance} participant${averageAttendance === 1 ? '' : 's'}.`);
+
+    return { insights, byType, byChapter };
+  }, [filtered, totalParticipants, totalActivities, averageAttendance]);
+
+  // Historical Chapters for Filter (Synchronized from Web App)
+  const allReportChapters = useMemo(() => {
+    const current = chapters.map(c => c.name || c.chapter_name).filter(Boolean);
+    const historical = [...new Set(reports.map(r => r.chapter).filter(Boolean))]
+      .filter(name => !current.includes(name))
+      .sort();
+    return { current, historical };
+  }, [chapters, reports]);
 
   // Monthly 6-month chart
   const months = useMemo(() => {
@@ -251,7 +290,23 @@ export function ReportsView({ modalOpen, onCloseModal }) {
         </section>
       </div>
 
+      {/* Report Insights Section (Synchronized from Web App) */}
+      {analytics.insights.length > 0 && (
+        <div className="card insights-panel" style={{ padding: '16px', background: 'var(--bg-surface-secondary)', borderRadius: '14px', borderLeft: '4px solid var(--mfc-blue)', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>AI INSIGHTS</span>
+            <h4 style={{ fontSize: '0.95rem', margin: 0, color: 'var(--text-main)' }}>Key Findings</h4>
+          </div>
+          <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.88rem', color: 'var(--text-main)', lineHeight: '1.6' }}>
+            {analytics.insights.map((insight, idx) => (
+              <li key={idx} style={{ marginBottom: '4px' }}>{insight}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Filter Toolbar */}
+
       <div className="toolbar" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
         <div style={{ flex: '1 1 240px', minWidth: '220px' }}>
           <input
@@ -273,8 +328,11 @@ export function ReportsView({ modalOpen, onCloseModal }) {
               style={{ width: '100%' }}
             >
               <option value="All">Chapter: All</option>
-              {chapters.map(c => (
-                <option key={c.id} value={c.name || c.chapter_name}>{c.name || c.chapter_name}</option>
+              {allReportChapters.current.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+              {allReportChapters.historical.map(name => (
+                <option key={name} value={name}>{name} (Historical)</option>
               ))}
             </select>
           </div>

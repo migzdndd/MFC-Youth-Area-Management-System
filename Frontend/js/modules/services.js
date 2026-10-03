@@ -1,5 +1,5 @@
 /**
- * MFC Youth Area Management System - Ministry Services & Assignments
+ * MFC Youth AMS System - Ministry Services & Assignments
  *
  * What this file does:
  * Organizes and displays ministry service teams (such as Music, Dance, Media, Graphics,

@@ -1,4 +1,4 @@
-# MFC Youth Area Management System
+# MFC Youth AMS System
 
 A standalone native **Cross-Platform Application** engineered for **Missionary Families for Christ (MFC) Youth & Kids Ministries**. Built with Flutter and Dart, the application delivers installable native clients for **Android**, **iOS**, **Windows Desktop**, and **macOS/Linux** to empower servant leaders, chapter heads, and area coordinators with real-time membership tracking, pastoral groupings, event registrations, service cataloging, GIG stewardship, and ministry analytics.
 
@@ -8,7 +8,7 @@ A standalone native **Cross-Platform Application** engineered for **Missionary F
 
 ```
 +-----------------------------------------------------------------------------------+
-|               MFC Youth Area Management System - Native Application               |
+|               MFC Youth AMS System - Native Application               |
 |                                 (Flutter / Dart)                                  |
 +--------------------+---------------------+--------------------+-------------------+
 |   Android (.apk)   |     iOS (.ipa)      |   Windows (.exe)   |   macOS / Linux   |

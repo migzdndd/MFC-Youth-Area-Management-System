@@ -128,13 +128,24 @@ class DashboardSkeletonWidget extends StatelessWidget {
 /// List and Table Wireframe Skeleton
 class TableSkeletonWidget extends StatelessWidget {
   final int itemCount;
+  final EdgeInsetsGeometry padding;
+  final bool shrinkWrap;
+  final ScrollPhysics? physics;
 
-  const TableSkeletonWidget({super.key, this.itemCount = 6});
+  const TableSkeletonWidget({
+    super.key,
+    this.itemCount = 6,
+    this.padding = const EdgeInsets.all(16),
+    this.shrinkWrap = false,
+    this.physics,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: padding,
+      shrinkWrap: shrinkWrap,
+      physics: physics,
       itemCount: itemCount,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, __) => Container(
@@ -159,6 +170,57 @@ class TableSkeletonWidget extends StatelessWidget {
               ),
             ),
             ShimmerContainer(width: 60, height: 24, borderRadius: BorderRadius.all(Radius.circular(999))),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Event List Skeleton Loader
+class EventListSkeletonWidget extends StatelessWidget {
+  final int itemCount;
+  final EdgeInsetsGeometry padding;
+
+  const EventListSkeletonWidget({
+    super.key,
+    this.itemCount = 5,
+    this.padding = const EdgeInsets.all(16),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: padding,
+      itemCount: itemCount,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, __) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ShimmerContainer(width: 180, height: 18),
+                ShimmerContainer(width: 56, height: 22, borderRadius: BorderRadius.all(Radius.circular(999))),
+              ],
+            ),
+            SizedBox(height: 10),
+            ShimmerContainer(width: 240, height: 12),
+            SizedBox(height: 14),
+            Row(
+              children: [
+                ShimmerContainer(width: 100, height: 12),
+                SizedBox(width: 16),
+                ShimmerContainer(width: 80, height: 12),
+              ],
+            ),
           ],
         ),
       ),

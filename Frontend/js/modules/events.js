@@ -1,5 +1,5 @@
 ﻿/**
- * MFC Youth Area Management System - Events & Participant Attendance
+ * MFC Youth AMS System - Events & Participant Attendance
  *
  * What this file does:
  * Manages Area assemblies, camps, youth conferences, and fellowship events.

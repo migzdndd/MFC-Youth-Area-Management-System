@@ -1,5 +1,5 @@
 /**
- * MFC Youth Area Management System - Native Platform Bridge
+ * MFC Youth AMS System - Native Platform Bridge
  * Bridges Capacitor (Android/iOS), Tauri (Desktop), Electron (Desktop), and Web.
  */
 

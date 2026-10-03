@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../constants/app_constants.dart';
+import 'app_exception.dart';
 import 'storage_service.dart';
 
 class ApiService {
@@ -92,13 +93,9 @@ class ApiService {
   }
 }
 
-class ApiException implements Exception {
-  final String message;
+class ApiException extends AppException {
   final int? statusCode;
   final Map<String, dynamic>? data;
 
-  ApiException(this.message, {this.statusCode, this.data});
-
-  @override
-  String toString() => message;
+  ApiException(super.message, {this.statusCode, this.data, super.code, super.originalError});
 }

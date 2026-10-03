@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * MFC Youth Area Management System - Server Communicator & Data Sync
+ * MFC Youth AMS System - Server Communicator & Data Sync
  * ============================================================================
  * What this file is:
  * This script is the bridge between this web page and the online cloud server.

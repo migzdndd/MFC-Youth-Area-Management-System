@@ -157,8 +157,14 @@ export function MembersView({ modalOpen, onCloseModal }) {
     if (isChapterServant && userChapterId) {
       return members.filter(m => String(m.chapter_id || m.chapterId) === String(userChapterId));
     }
+    if (role === 'campus_servant') {
+      return members.filter(m => m.academic_track === 'SHS' || m.academic_track === 'College' || m.academicTrack === 'SHS' || m.academicTrack === 'College');
+    }
+    if (role === 'mfc_high_servant') {
+      return members.filter(m => m.academic_track === 'HS' || m.academicTrack === 'HS');
+    }
     return members;
-  }, [members, isChapterServant, userChapterId]);
+  }, [members, isChapterServant, userChapterId, role]);
 
   const filteredMembers = useMemo(() => {
     return visibleMembers.filter((m) => {

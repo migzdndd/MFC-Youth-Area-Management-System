@@ -85,3 +85,11 @@ AGENTS.md
 GEMINI.md
 agents.md
 gemini.md
+
+# Ignored specification and compilation guides
+PRD.md
+Architecture.md
+COMPILATION_GUIDE.md
+prd.md
+architecture.md
+compilation_guide.md

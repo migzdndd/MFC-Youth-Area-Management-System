@@ -1,6 +1,6 @@
-# MFC Youth Area Management System - Native Cross-Platform Setup & Maintenance Guide
+# MFC Youth AMS System - Native Cross-Platform Setup & Maintenance Guide
 
-This document provides complete, step-by-step instructions for wrapping the **MFC Youth Area Management System** web application into native mobile apps (Android & iOS via **Capacitor 6**) and native desktop apps (Windows, macOS, & Linux via **Tauri 2**) without modifying or rewriting the underlying web frontend and backend logic.
+This document provides complete, step-by-step instructions for wrapping the **MFC Youth AMS System** web application into native mobile apps (Android & iOS via **Capacitor 6**) and native desktop apps (Windows, macOS, & Linux via **Tauri 2**) without modifying or rewriting the underlying web frontend and backend logic.
 
 ---
 

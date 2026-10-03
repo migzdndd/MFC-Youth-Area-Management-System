@@ -9,7 +9,7 @@ function createWindow() {
     height: 840,
     minWidth: 980,
     minHeight: 650,
-    title: 'MFC Youth Area Management System',
+    title: 'MFC Youth AMS System',
     icon: path.join(__dirname, '../MFCYouth.ico'),
     backgroundColor: '#002847',
     webPreferences: {

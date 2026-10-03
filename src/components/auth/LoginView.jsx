@@ -85,7 +85,7 @@ export function LoginView({ onSwitchView }) {
         <div className="auth-layout auth-layout-modern" style={{ maxWidth: '1100px', width: '100%', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '32px', alignItems: 'center' }}>
           
           {/* Desktop Left Hero */}
-          <aside className="auth-info login-hero desktop-only" aria-label="MFC Youth Area Management System overview" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <aside className="auth-info login-hero desktop-only" aria-label="MFC Youth AMS System overview" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div className="login-hero-brand" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <img src="/img/logo.png" className="login-hero-logo" alt="MFC Youth" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
               <span className="login-hero-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '999px', backgroundColor: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', fontSize: '0.8rem', fontWeight: 600 }}>

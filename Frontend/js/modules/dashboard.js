@@ -1,5 +1,5 @@
 /**
- * MFC Youth Area Management System - Area Leadership Dashboard
+ * MFC Youth AMS System - Area Leadership Dashboard
  *
  * What this file does:
  * Renders the main dashboard for servant leaders and coordinators.

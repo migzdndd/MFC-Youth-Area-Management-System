@@ -1,5 +1,5 @@
 ﻿/**
- * MFC Youth Area Management System - Member Records & GIG Contributions
+ * MFC Youth AMS System - Member Records & GIG Contributions
  *
  * What this file does:
  * Manages youth member profiles, chapter assignments, leadership roles,

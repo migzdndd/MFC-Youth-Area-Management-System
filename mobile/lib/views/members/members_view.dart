@@ -601,10 +601,20 @@ class _MembersViewState extends State<MembersView> {
                     IconButton.filledTonal(
                       icon: const Icon(Icons.refresh),
                       tooltip: 'Reload',
-                      onPressed: () => membersProv.loadMembers(
-                        token: auth.session?.accessToken,
-                        areaId: auth.areaId,
-                      ),
+                      onPressed: () async {
+                        await membersProv.loadMembers(
+                          token: auth.session?.accessToken,
+                          areaId: auth.areaId,
+                        );
+                        if (context.mounted && membersProv.error != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(membersProv.error!),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
                     ),
                   ],
                 ),

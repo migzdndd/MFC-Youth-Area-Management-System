@@ -1,4 +1,4 @@
-# MFC Youth Area Management System - Setup & Deployment Guide
+# MFC Youth AMS System - Setup & Deployment Guide
 
 This step-by-step guide walks you through setting up Supabase, running local environments, and deploying your entire application (Frontend + Backend API) into **one single Vercel project** using the **Vercel Web Dashboard**.
 

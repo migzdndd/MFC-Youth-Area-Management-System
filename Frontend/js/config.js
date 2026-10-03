@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * MFC Youth Area Management System - Global Settings & Ministry Lists
+ * MFC Youth AMS System - Global Settings & Ministry Lists
  * ============================================================================
  * What this file is:
  * This script holds the standard rules, ministry names, and access roles

@@ -124,26 +124,43 @@ class MfcYouthApp extends StatelessWidget {
     );
 
     return MaterialApp(
-      title: 'MFC Youth Area Management',
+      title: 'MFC Youth AMS',
       debugShowCheckedModeBanner: false,
       themeMode: theme.themeMode,
       theme: lightTheme,
       darkTheme: darkTheme,
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
+          final Widget currentScreen;
           if (auth.loading) {
-            return const Scaffold(
+            currentScreen = const Scaffold(
+              key: ValueKey('screen_skeleton_loader'),
               body: Center(
                 child: DashboardSkeletonWidget(),
               ),
             );
+          } else if (auth.isAuthenticated) {
+            currentScreen = const KeyedSubtree(
+              key: ValueKey('screen_home_shell'),
+              child: HomeShell(),
+            );
+          } else {
+            currentScreen = const KeyedSubtree(
+              key: ValueKey('screen_login_view'),
+              child: LoginView(),
+            );
           }
 
-          if (auth.isAuthenticated) {
-            return const HomeShell();
-          }
-
-          return const LoginView();
+          return AnimatedSwitcher(
+            duration: const Duration(milliseconds: 320),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+            child: currentScreen,
+          );
         },
       ),
     );

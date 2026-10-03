@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * MFC Youth Area Management System - User Interface & Visual Tools
+ * MFC Youth AMS System - User Interface & Visual Tools
  * ============================================================================
  * What this file is:
  * This script handles popup alerts (toasts), dialog windows (modals),

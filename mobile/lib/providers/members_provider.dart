@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/member.dart';
 import '../services/api_service.dart';
+import '../services/app_exception.dart';
+import '../services/supabase_service.dart';
 
 class MembersProvider extends ChangeNotifier {
   final ApiService _api;
+  final SupabaseService _supabase = SupabaseService();
 
   List<Member> _allMembers = [];
   bool _loading = false;
@@ -105,7 +108,17 @@ class MembersProvider extends ChangeNotifier {
         _allMembers = (res['members'] as List).map((m) => Member.fromJson(m)).toList();
       }
     } catch (e) {
-      _error = e.toString();
+      if (areaId != null && areaId.isNotEmpty) {
+        try {
+          final direct = await _supabase.fetchMembersDirect(areaId: areaId, token: token);
+          if (direct.isNotEmpty) {
+            _allMembers = direct.map((m) => Member.fromJson(m)).toList();
+            _error = null;
+            return;
+          }
+        } catch (_) {}
+      }
+      _error = e is AppException ? e.message : e.toString().replaceAll('Exception: ', '');
     } finally {
       _loading = false;
       notifyListeners();
@@ -122,7 +135,7 @@ class MembersProvider extends ChangeNotifier {
       await loadMembers(token: token, areaId: areaId);
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = e is AppException ? e.message : e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
     }
@@ -134,7 +147,7 @@ class MembersProvider extends ChangeNotifier {
       await loadMembers(token: token, areaId: areaId);
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = e is AppException ? e.message : e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
     }

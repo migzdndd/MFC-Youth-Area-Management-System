@@ -1,5 +1,5 @@
 /**
- * MFC Youth Area Management System - Sign-In & Security Helpers
+ * MFC Youth AMS System - Sign-In & Security Helpers
  *
  * What this file does:
  * Handles everything related to signing in, signing up, remembering who is logged in,

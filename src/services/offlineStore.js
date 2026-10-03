@@ -1,5 +1,5 @@
 /**
- * MFC Youth Area Management System - Production Offline IndexedDB Engine
+ * MFC Youth AMS System - Production Offline IndexedDB Engine
  * Zero-dependency persistent outbox and cache for native mobile and desktop.
  */
 

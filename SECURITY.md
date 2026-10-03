@@ -40,7 +40,7 @@ Older Public Beta releases are retained for historical purposes but are no longe
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in the MFC Youth Area Management System, please report it responsibly instead of disclosing it publicly.
+If you discover a security vulnerability in the MFC Youth AMS System, please report it responsibly instead of disclosing it publicly.
 
 ### How to Report
 
@@ -82,7 +82,7 @@ The following response times are general targets and may vary depending on the s
 
 ## Local Data Security
 
-MFC Youth Area Management System is designed as an offline desktop application.
+MFC Youth AMS System is designed as an offline desktop application.
 
 Application data is stored locally using SQLite and may include information such as:
 
@@ -113,5 +113,5 @@ Please do not publicly disclose security vulnerabilities before a fix or appropr
 
 Responsible disclosure gives the project maintainer time to investigate and address an issue while helping protect users and their locally stored information.
 
-Thank you for helping improve the security, privacy, stability, and reliability of the **MFC Youth Area Management System**.
+Thank you for helping improve the security, privacy, stability, and reliability of the **MFC Youth AMS System**.
 >>>>>>> 2db330e5d4161a3256b7a45d51e1b116f0c53950

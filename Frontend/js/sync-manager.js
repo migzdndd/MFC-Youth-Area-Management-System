@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * MFC Youth Area Management System - Background Re-synchronization Manager
+ * MFC Youth AMS System - Background Re-synchronization Manager
  * ============================================================================
  * Purpose:
  * Coordinates the FIFO outbox queue processor, network status monitoring,
