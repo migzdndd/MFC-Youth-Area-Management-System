@@ -14,7 +14,6 @@
     "dist",
     "mobile",
     "android",
-    "ios",
-    "_web_temp"
+    "ios"
   ]
 }
