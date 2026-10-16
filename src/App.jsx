@@ -27,6 +27,11 @@ import { MemberPortalView } from './components/member/MemberPortalView';
 import { ForgotPasswordView } from './components/auth/ForgotPasswordView';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AppLoadingWireframe } from './components/common/StateViews';
+import { usePlatform } from './context/PlatformContext';
+import { DesktopTitlebar } from './components/desktop/DesktopTitlebar';
+import { DesktopCommandPalette } from './components/desktop/DesktopCommandPalette';
+import { MobileHeader } from './components/mobile/MobileHeader';
+import { MobileFab } from './components/mobile/MobileFab';
 import {
   AUTH_WORKFLOWS,
   getWorkflowTitle,
@@ -35,12 +40,20 @@ import {
 
 export function AppContent() {
   const { isAuthenticated, loading, role, needsAreaSetup } = useAuth();
+  const { isDesktop, isMobile } = usePlatform();
   const [authView, setAuthView] = useState(AUTH_WORKFLOWS.LOGIN);
   const [currentView, setCurrentView] = useState('dashboard');
   const [isAreaSelectorOpen, setIsAreaSelectorOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Active workflow action state dispatched across views
   const [activeWorkflowAction, setActiveWorkflowAction] = useState(null);
+
+  React.useEffect(() => {
+    const handleOpenCmd = () => setIsCommandPaletteOpen(true);
+    window.addEventListener('mfc:open-command-palette', handleOpenCmd);
+    return () => window.removeEventListener('mfc:open-command-palette', handleOpenCmd);
+  }, []);
 
   const handleOpenAction = (action, targetRoute) => {
     setCurrentView(targetRoute);
@@ -104,19 +117,34 @@ export function AppContent() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   return (
-    <div className="app-container">
-      {/* Mobile Top App Bar */}
-      <div className="mobile-topbar">
-        <strong>MFC Youth AMS</strong>
-        <button
-          id="menuBtn"
-          type="button"
-          aria-label="Toggle navigation menu"
-          onClick={() => setIsMobileDrawerOpen(prev => !prev)}
-        >
-          Menu
-        </button>
-      </div>
+    <div className={`app-container ${isDesktop ? 'desktop-layout' : 'mobile-layout'}`}>
+      {/* Desktop Native Window Header & Titlebar */}
+      {isDesktop && (
+        <DesktopTitlebar
+          onOpenSearch={() => setIsCommandPaletteOpen(true)}
+          onOpenAreaSelector={() => setIsAreaSelectorOpen(true)}
+          canSelectArea={canSwitchArea}
+        />
+      )}
+
+      {/* Desktop Keyboard Command Palette (Ctrl+K) */}
+      {isDesktop && (
+        <DesktopCommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          onNavigate={setCurrentView}
+          onTriggerAction={handleOpenAction}
+        />
+      )}
+
+      {/* Mobile Native Safe-Area Header */}
+      {isMobile && (
+        <MobileHeader
+          onOpenAreaSelector={() => setIsAreaSelectorOpen(true)}
+          canSelectArea={canSwitchArea}
+          onOpenScanner={() => handleOpenAction('qr-scan', 'events')}
+        />
+      )}
 
       {/* Backdrop Scrim for Mobile Sidebar Drawer */}
       <div
@@ -140,12 +168,14 @@ export function AppContent() {
         {/* Offline & Sync Status Banner */}
         <OfflineBanner />
 
-        {/* Global Top Navbar */}
-        <Navbar
-          title={getWorkflowTitle(currentView)}
-          onOpenAreaSelector={() => setIsAreaSelectorOpen(true)}
-          canSelectArea={canSwitchArea}
-        />
+        {/* Global Top Navbar (Desktop only - mobile uses native MobileHeader) */}
+        {!isMobile && (
+          <Navbar
+            title={getWorkflowTitle(currentView)}
+            onOpenAreaSelector={() => setIsAreaSelectorOpen(true)}
+            canSelectArea={canSwitchArea}
+          />
+        )}
 
         {/* Page Content View Router wrapped with per-view ErrorBoundary */}
         <ErrorBoundary
@@ -218,14 +248,21 @@ export function AppContent() {
           </main>
         </ErrorBoundary>
 
+        {/* Mobile Floating Action Button (Quick Scan / Add) */}
+        {isMobile && (
+          <MobileFab onTriggerAction={handleOpenAction} />
+        )}
+
         {/* Mobile View Bottom Navigation Bar */}
-        <MobileNavBar
-          currentView={currentView}
-          onNavigate={(view) => {
-            setCurrentView(view);
-            setIsMobileDrawerOpen(false);
-          }}
-        />
+        {isMobile && (
+          <MobileNavBar
+            currentView={currentView}
+            onNavigate={(view) => {
+              setCurrentView(view);
+              setIsMobileDrawerOpen(false);
+            }}
+          />
+        )}
       </div>
 
       {/* Global Modals */}

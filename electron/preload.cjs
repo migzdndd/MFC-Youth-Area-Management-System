@@ -1,7 +1,10 @@
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('MFCDesktop', {
   isElectron: true,
   platform: process.platform,
-  version: process.versions.electron
+  version: process.versions.electron,
+  minimize: () => ipcRenderer.send('window:minimize'),
+  maximize: () => ipcRenderer.send('window:maximize'),
+  close: () => ipcRenderer.send('window:close')
 });
