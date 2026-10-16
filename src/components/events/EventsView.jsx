@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { EventModal } from './EventModal';
 import { EventDetailModal } from './EventDetailModal';
 import { ParticipantModal } from './ParticipantModal';
+import { QrAttendanceScannerModal } from './QrAttendanceScannerModal';
 import { LoadingView, EmptyView, ErrorView, TableSkeleton } from '../common/StateViews';
 import {
   EventsIcon,
@@ -38,6 +39,10 @@ export function EventsView({ modalOpen, onCloseModal }) {
 
   const [activeParticipant, setActiveParticipant] = useState(null);
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
+
+  // QR Attendance Scanner State
+  const [scannerEvent, setScannerEvent] = useState(null);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -221,7 +226,22 @@ export function EventsView({ modalOpen, onCloseModal }) {
         </div>
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={loadAllData}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => {
+              const target = events.find(e => new Date(e.date || e.event_date || 0).getTime() >= Date.now()) || events[0];
+              if (target) {
+                setScannerEvent(target);
+                setIsScannerOpen(true);
+              }
+            }}
+            style={{ minHeight: '44px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            title="Scan member QR badges for attendance"
+          >
+            📷 Scan Attendance
+          </button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={loadAllData} style={{ minHeight: '44px' }}>
             <SyncIcon size={14} />
             Refresh
           </button>
@@ -359,6 +379,17 @@ export function EventsView({ modalOpen, onCloseModal }) {
                           <button
                             type="button"
                             className="btn btn-secondary btn-sm"
+                            onClick={() => {
+                              setScannerEvent(event);
+                              setIsScannerOpen(true);
+                            }}
+                            title="Scan QR Attendance"
+                          >
+                            📷 Scan
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
                             onClick={() => setSelectedViewEvent(event)}
                           >
                             View
@@ -430,6 +461,17 @@ export function EventsView({ modalOpen, onCloseModal }) {
                   <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
                     <button
                       type="button"
+                      className="btn btn-secondary btn-sm"
+                      style={{ minHeight: '44px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      onClick={() => {
+                        setScannerEvent(event);
+                        setIsScannerOpen(true);
+                      }}
+                    >
+                      📷 Scan
+                    </button>
+                    <button
+                      type="button"
                       className="btn btn-primary btn-sm"
                       style={{ flex: 1, minHeight: '44px' }}
                       onClick={() => setSelectedViewEvent(event)}
@@ -490,6 +532,10 @@ export function EventsView({ modalOpen, onCloseModal }) {
         participants={selectedViewEvent ? getEventParticipants(selectedViewEvent.id) : []}
         members={members}
         isAreaAdmin={isAreaAdmin}
+        onOpenScanner={(evt) => {
+          setScannerEvent(evt);
+          setIsScannerOpen(true);
+        }}
         onRegisterParticipant={() => {
           setActiveParticipant(null);
           setIsParticipantModalOpen(true);
@@ -535,6 +581,19 @@ export function EventsView({ modalOpen, onCloseModal }) {
           </div>
         </div>
       )}
+
+      {/* QR Attendance Scanner Modal */}
+      <QrAttendanceScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => {
+          setIsScannerOpen(false);
+          setScannerEvent(null);
+        }}
+        event={scannerEvent}
+        members={members}
+        participants={scannerEvent ? getEventParticipants(scannerEvent.id) : []}
+        onAttendanceUpdated={loadAllData}
+      />
     </div>
   );
 }

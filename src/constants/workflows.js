@@ -116,21 +116,30 @@ export function getWorkflowTitle(workflowId, defaultTitle = 'MFC Youth AMS') {
 }
 
 export function getAuthorizedWorkflows(role = '') {
-  const isChapterServant = String(role).toLowerCase() === 'chapter_servant';
+  const normRole = String(role).toLowerCase();
+  const isChapterServant = normRole.includes('chapter');
+  const isDomainModerator = normRole.includes('lit') || normRole.includes('campus') || normRole.includes('high') || normRole.includes('kids');
+  const isAreaAdmin = normRole.includes('area') || normRole.includes('national') || normRole.includes('couple');
+
   return LEADERSHIP_WORKFLOWS.filter(item => {
     if (item.isFooterLink) return false;
     if (isChapterServant && item.hideForChapterServant) return false;
+    if (item.id === 'gig' && !isAreaAdmin) return false;
+    if (item.id === 'services' && isChapterServant) return false;
     return true;
   });
 }
 
 export function getMobilePrimaryWorkflows(role = '') {
-  const isChapterServant = String(role).toLowerCase() === 'chapter_servant';
+  const normRole = String(role).toLowerCase();
+  const isChapterServant = normRole.includes('chapter');
+  const isDomainModerator = normRole.includes('lit');
+
   return LEADERSHIP_WORKFLOWS.filter(item => {
     if (item.isFooterLink) return false;
     if (isChapterServant && item.hideForChapterServant) return false;
-    // For Chapter Servant, show chapter in bottom bar if members is hidden
     if (isChapterServant && item.id === 'chapters') return true;
+    if (isDomainModerator && item.id === 'services') return true;
     return item.mobilePrimary;
   });
 }
