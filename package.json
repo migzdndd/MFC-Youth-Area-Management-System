@@ -15,8 +15,8 @@
     "desktop:build": "tauri build",
     "mobile:sync": "npm run build && cap sync",
     "mobile:android": "cap open android",
-    "mobile:build:apk": "npm run build && cap sync android && cd android && .\\gradlew.bat assembleRelease",
-    "mobile:build:release": "npm run build && cap sync android && cd android && .\\gradlew.bat assembleRelease",
+    "mobile:build:apk": "node scripts/build-android-apk.js",
+    "mobile:build:release": "node scripts/build-android-apk.js",
     "mobile:ios": "cap open ios"
   },
   "devDependencies": {
