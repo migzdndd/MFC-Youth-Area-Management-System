@@ -1,21 +1,44 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiRequest, getStoredSession, saveStoredSession, clearStoredSession } from '../services/api';
 import { offlineStore } from '../services/offlineStore';
+import { biometrics } from '../services/biometrics';
 
 const AuthContext = createContext();
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://desmhxtmnmfybrsdwhwz.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_rUW_5JS39kngwMT6bY5b4w_Se_Lo3eT';
 
-const LEADERSHIP_ROLES = new Set([
+export const ROLE_TIERS = {
+  AREA_ADMIN: 'AREA_ADMIN',
+  DOMAIN_MODERATOR: 'DOMAIN_MODERATOR',
+  CHAPTER_LEADER: 'CHAPTER_LEADER',
+  MEMBER_SERVANT: 'MEMBER_SERVANT'
+};
+
+const AREA_ADMIN_ROLES = new Set([
   'national_coordinator',
   'couple_coordinator',
   'area_servant',
+  'area_admin'
+]);
+
+const DOMAIN_MODERATOR_ROLES = new Set([
   'lit_servant',
   'campus_servant',
   'mfc_high_servant',
-  'area_kids_servant',
-  'chapter_servant'
+  'area_kids_servant'
+]);
+
+const CHAPTER_LEADER_ROLES = new Set([
+  'chapter_servant',
+  'chapter_head',
+  'chapter_leader'
+]);
+
+const LEADERSHIP_ROLES = new Set([
+  ...AREA_ADMIN_ROLES,
+  ...DOMAIN_MODERATOR_ROLES,
+  ...CHAPTER_LEADER_ROLES
 ]);
 
 export function AuthProvider({ children }) {
@@ -50,19 +73,56 @@ export function AuthProvider({ children }) {
   const login = async (email, password, rememberMe = true) => {
     const cleanEmail = String(email || '').trim().toLowerCase();
 
-    // 1. Quick demo shortcut (same as website auth.js)
-    if (cleanEmail === 'admin@mfcyouth.local' && password === 'admin123') {
-      const demoSession = {
+    // 1. Quick demo shortcuts for the 4 official role tiers
+    const demoProfiles = {
+      'admin@mfcyouth.local': {
         userId: 'demo-admin-id',
         memberId: 1,
-        email: cleanEmail,
-        name: 'Demo Servant Leader',
+        email: 'admin@mfcyouth.local',
+        name: 'Bro. Miguel (Area Admin)',
         role: 'area_servant',
         areaId: 'demo-area-ncr',
         areaName: 'MFC Youth NCR East',
-        chapterId: null,
+        chapterId: null
+      },
+      'lit@mfcyouth.local': {
+        userId: 'demo-lit-id',
+        memberId: 2,
+        email: 'lit@mfcyouth.local',
+        name: 'Sis. Bea (LIT Moderator)',
+        role: 'lit_servant',
+        areaId: 'demo-area-ncr',
+        areaName: 'MFC Youth NCR East',
+        chapterId: 'chap-1'
+      },
+      'chapter@mfcyouth.local': {
+        userId: 'demo-chapter-id',
+        memberId: 3,
+        email: 'chapter@mfcyouth.local',
+        name: 'Bro. Paolo (Chapter Leader)',
+        role: 'chapter_servant',
+        areaId: 'demo-area-ncr',
+        areaName: 'MFC Youth NCR East',
+        chapterId: 'chap-1'
+      },
+      'member@mfcyouth.local': {
+        userId: 'demo-member-id',
+        memberId: 4,
+        email: 'member@mfcyouth.local',
+        name: 'Sis. Angela (Youth Servant)',
+        role: 'member',
+        areaId: 'demo-area-ncr',
+        areaName: 'MFC Youth NCR East',
+        chapterId: 'chap-1'
+      }
+    };
+
+    if (demoProfiles[cleanEmail] && (password === 'admin123' || password === 'demo123')) {
+      const profile = demoProfiles[cleanEmail];
+      const demoSession = {
+        ...profile,
         needsAreaSetup: false,
-        accessToken: 'demo-token-active',
+        accessToken: `demo-token-${profile.role}`,
         refreshToken: 'demo-refresh-token',
         expiresAt: Math.floor(Date.now() / 1000) + 86400 * 7,
         backendAuth: false,
@@ -557,7 +617,73 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Biometrics hardware state
+  const [biometricsAvailable, setBiometricsAvailable] = useState(false);
+  const [biometricsEnrolled, setBiometricsEnrolled] = useState(false);
+
+  useEffect(() => {
+    biometrics.isAvailable().then(setBiometricsAvailable);
+    biometrics.isEnrolled().then(setBiometricsEnrolled);
+  }, [session]);
+
+  const loginWithBiometrics = async () => {
+    const res = await biometrics.verify();
+    if (res.ok && res.session) {
+      saveStoredSession(res.session, true);
+      setSession(res.session);
+      return { ok: true, session: res.session };
+    }
+    return { ok: false, error: res.error || 'Biometric authentication failed.' };
+  };
+
+  const enrollBiometrics = async () => {
+    if (!session) return { ok: false, error: 'No active session to enroll.' };
+    const res = await biometrics.enroll(session);
+    if (res.ok) {
+      setBiometricsEnrolled(true);
+    }
+    return res;
+  };
+
+  const disableBiometrics = async () => {
+    await biometrics.disable();
+    setBiometricsEnrolled(false);
+    return { ok: true };
+  };
+
   const isAuthenticated = Boolean(session && (session.accessToken || session.userId || session.email));
+
+  // Role Tier resolution
+  const normalizedRole = String(session?.role || 'member').toLowerCase();
+  const isAreaAdmin = AREA_ADMIN_ROLES.has(normalizedRole);
+  const isDomainModerator = DOMAIN_MODERATOR_ROLES.has(normalizedRole);
+  const isChapterLeader = CHAPTER_LEADER_ROLES.has(normalizedRole);
+  const isMember = !isAreaAdmin && !isDomainModerator && !isChapterLeader;
+
+  const roleTier = isAreaAdmin
+    ? ROLE_TIERS.AREA_ADMIN
+    : isDomainModerator
+    ? ROLE_TIERS.DOMAIN_MODERATOR
+    : isChapterLeader
+    ? ROLE_TIERS.CHAPTER_LEADER
+    : ROLE_TIERS.MEMBER_SERVANT;
+
+  // Domain resolver
+  const activeDomain = normalizedRole.includes('lit')
+    ? 'lit'
+    : normalizedRole.includes('campus')
+    ? 'campus'
+    : normalizedRole.includes('high')
+    ? 'high'
+    : normalizedRole.includes('kids')
+    ? 'kids'
+    : null;
+
+  // RBAC permissions
+  const canEditMembers = isAreaAdmin || isChapterLeader || isDomainModerator;
+  const canManageEvents = isAreaAdmin || isDomainModerator || isChapterLeader;
+  const canAccessFinancials = isAreaAdmin;
+  const canExportReports = isAreaAdmin || isDomainModerator;
 
   return (
     <AuthContext.Provider
@@ -565,6 +691,16 @@ export function AuthProvider({ children }) {
         session,
         user: session?.user || { email: session?.email, name: session?.name },
         role: session?.role || 'member',
+        roleTier,
+        isAreaAdmin,
+        isDomainModerator,
+        isChapterLeader,
+        isMember,
+        activeDomain,
+        canEditMembers,
+        canManageEvents,
+        canAccessFinancials,
+        canExportReports,
         areaId: session?.areaId,
         areaName: session?.areaName,
         needsAreaSetup: session?.needsAreaSetup === true,
@@ -572,7 +708,12 @@ export function AuthProvider({ children }) {
         loading,
         mfaState,
         setMfaState,
+        biometricsAvailable,
+        biometricsEnrolled,
         login,
+        loginWithBiometrics,
+        enrollBiometrics,
+        disableBiometrics,
         verifyMfa,
         selectArea,
         createArea,

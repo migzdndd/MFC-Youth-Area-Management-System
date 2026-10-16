@@ -122,6 +122,47 @@ export function ReportsView({ modalOpen, onCloseModal }) {
     window.print();
   };
 
+  const handleExportCsv = () => {
+    if (!filtered || filtered.length === 0) return;
+    const headers = ['Date', 'Title', 'Report Type', 'Chapter', 'Attendees', 'Location', 'Preparer', 'Notes'];
+    const rows = filtered.map(r => [
+      r.date || r.activity_date || '',
+      `"${(r.title || r.activity_name || '').replace(/"/g, '""')}"`,
+      r.report_type || r.activity_type || '',
+      `"${(r.chapter_name || r.chapter || '').replace(/"/g, '""')}"`,
+      r.attendees_count || r.attendeesCount || 0,
+      `"${(r.location || r.venue || '').replace(/"/g, '""')}"`,
+      `"${(r.preparer_name || r.prepared_by || '').replace(/"/g, '""')}"`,
+      `"${(r.notes || r.summary || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `MFC_Youth_Activity_Reports_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleShareSummary = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'MFC Youth Activity Reports Summary',
+          text: `Area Reports Summary: ${totalActivities} activities, ${totalParticipants} total attendees across ${chaptersInvolved} chapters.`,
+          url: window.location.href
+        });
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      handleExportCsv();
+    }
+  };
+
   // Chapter scoping
   const userChapterId = user?.chapter_id || user?.chapterId || chapters[0]?.id;
   const currentChapter = chapters.find(c => String(c.id) === String(userChapterId));
@@ -260,12 +301,15 @@ export function ReportsView({ modalOpen, onCloseModal }) {
             <PlusIcon size={16} />
             + Add Report
           </button>
-          <button type="button" className="btn" onClick={handlePrintSummary}>
+          <button type="button" className="btn btn-secondary" onClick={handlePrintSummary} style={{ minHeight: '40px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <PrintIcon size={15} />
-            Print Summary
+            Print / PDF
           </button>
-          <button type="button" className="btn" onClick={handlePrintSummary}>
-            Export PDF
+          <button type="button" className="btn btn-secondary" onClick={handleExportCsv} style={{ minHeight: '40px', display: 'flex', alignItems: 'center', gap: '6px' }} title="Export to Excel (CSV)">
+            📊 Export Excel
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={handleShareSummary} style={{ minHeight: '40px', display: 'flex', alignItems: 'center', gap: '6px' }} title="Share Report via Native Share Sheet">
+            📤 Share
           </button>
         </div>
       </div>

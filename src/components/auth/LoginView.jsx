@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { apiRequest } from '../../services/api';
-import { SunIcon, MoonIcon } from '../icons/Icons';
+import { SunIcon, MoonIcon, FingerprintIcon, ShieldCheckIcon } from '../icons/Icons';
 
 export function LoginView({ onSwitchView }) {
-  const { login } = useAuth();
+  const { login, loginWithBiometrics, biometricsAvailable, biometricsEnrolled } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
   const [email, setEmail] = useState('');
@@ -13,6 +13,7 @@ export function LoginView({ onSwitchView }) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Daily Readings & Changelogs for Left Hero
@@ -59,10 +60,20 @@ export function LoginView({ onSwitchView }) {
     setLoading(false);
   };
 
-  const handleDemoLogin = async () => {
+  const handleBiometricLogin = async () => {
+    setBiometricLoading(true);
+    setError('');
+    const res = await loginWithBiometrics();
+    if (!res.ok) {
+      setError(res.error || 'Biometric authentication was cancelled or failed.');
+    }
+    setBiometricLoading(false);
+  };
+
+  const handleRoleLogin = async (roleEmail) => {
     setLoading(true);
     setError('');
-    await login('admin@mfcyouth.local', 'admin123', true);
+    await login(roleEmail, 'admin123', true);
     setLoading(false);
   };
 
@@ -209,6 +220,39 @@ export function LoginView({ onSwitchView }) {
               </div>
             )}
 
+            {/* Biometric Quick Unlock (if device hardware available) */}
+            {biometricsAvailable && (
+              <div style={{ marginBottom: '16px' }}>
+                <button
+                  type="button"
+                  onClick={handleBiometricLogin}
+                  disabled={biometricLoading || loading}
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    minHeight: '48px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                    color: 'var(--mfc-blue, #0284c7)',
+                    border: '1.5px solid rgba(2, 132, 199, 0.35)',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    fontWeight: 600,
+                    fontSize: '0.92rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <FingerprintIcon size={22} />
+                  <span>
+                    {biometricLoading ? 'Scanning biometrics...' : 'Quick Unlock with Biometrics'}
+                  </span>
+                </button>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" htmlFor="loginEmail">Email Address</label>
@@ -293,21 +337,55 @@ export function LoginView({ onSwitchView }) {
 
               <div style={{ display: 'flex', alignItems: 'center', margin: '8px 0', gap: '10px' }}>
                 <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>or</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Quick Role Switcher</span>
                 <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
               </div>
 
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleDemoLogin}
-                disabled={loading}
-                style={{ minHeight: '44px', width: '100%', fontSize: '0.88rem' }}
-              >
-                Open Demo Dashboard
-              </button>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>
-                Presentation mode only. Demo data is kept separate from live Area records.
+              {/* 4 Role Tiers Quick Switcher */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => handleRoleLogin('admin@mfcyouth.local')}
+                  disabled={loading}
+                  style={{ minHeight: '40px', fontSize: '0.8rem', padding: '6px 8px' }}
+                  title="Full CRUD across chapters, members, and settings"
+                >
+                  👑 Area Admin
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => handleRoleLogin('lit@mfcyouth.local')}
+                  disabled={loading}
+                  style={{ minHeight: '40px', fontSize: '0.8rem', padding: '6px 8px' }}
+                  title="Scoped LIT Creative Ministries management"
+                >
+                  🎨 LIT Moderator
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => handleRoleLogin('chapter@mfcyouth.local')}
+                  disabled={loading}
+                  style={{ minHeight: '40px', fontSize: '0.8rem', padding: '6px 8px' }}
+                  title="Household assignments and chapter events"
+                >
+                  ⛪ Chapter Leader
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => handleRoleLogin('member@mfcyouth.local')}
+                  disabled={loading}
+                  style={{ minHeight: '40px', fontSize: '0.8rem', padding: '6px 8px' }}
+                  title="Profile, attendance and service logs"
+                >
+                  🕊️ Youth Servant
+                </button>
+              </div>
+              <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', textAlign: 'center', margin: '2px 0 0 0' }}>
+                Pre-configured for offline retreat camps and field testing.
               </p>
             </form>
 

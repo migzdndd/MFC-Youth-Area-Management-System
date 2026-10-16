@@ -8,6 +8,7 @@ export function EventDetailModal({
   participants = [],
   members = [],
   isAreaAdmin = true,
+  onOpenScanner,
   onRegisterParticipant,
   onEditParticipant,
   onDeleteParticipant
@@ -123,18 +124,30 @@ export function EventDetailModal({
             <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>
               Participants ({participants.length})
             </h3>
-            {isAreaAdmin ? (
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={onRegisterParticipant}
-              >
-                <PlusIcon size={14} />
-                + Register Participant
-              </button>
-            ) : (
-              <span className="badge badge-info">View Only</span>
-            )}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {onOpenScanner && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => onOpenScanner(event)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  📷 Scan QR Attendance
+                </button>
+              )}
+              {isAreaAdmin ? (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={onRegisterParticipant}
+                >
+                  <PlusIcon size={14} />
+                  + Register Participant
+                </button>
+              ) : (
+                <span className="badge badge-info">View Only</span>
+              )}
+            </div>
           </div>
 
           {/* Participant Roster Table (Desktop) / Cards (Mobile) */}

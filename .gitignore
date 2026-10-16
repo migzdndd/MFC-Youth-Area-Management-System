@@ -14,6 +14,8 @@ out/
 .cache/
 .parcel-cache/
 *.tsbuildinfo
+.gradle/
+**/local.properties
 
 # Environment and secret files
 .env

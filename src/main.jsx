@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import AppContent from './App';
+import { PlatformProvider } from './context/PlatformContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { OfflineProvider } from './context/OfflineContext';
 import { AuthProvider } from './context/AuthContext';
@@ -16,14 +17,16 @@ const rootElement = document.getElementById('root');
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
-      <ErrorBoundary fullScreen title="MFC Youth AMS System Error">
-        <ThemeProvider>
-          <OfflineProvider>
-            <AuthProvider>
-              <AppContent />
-            </AuthProvider>
-          </OfflineProvider>
-        </ThemeProvider>
+      <ErrorBoundary fullScreen title="MFC Youth Area Management System Error">
+        <PlatformProvider>
+          <ThemeProvider>
+            <OfflineProvider>
+              <AuthProvider>
+                <AppContent />
+              </AuthProvider>
+            </OfflineProvider>
+          </ThemeProvider>
+        </PlatformProvider>
       </ErrorBoundary>
     </React.StrictMode>
   );
