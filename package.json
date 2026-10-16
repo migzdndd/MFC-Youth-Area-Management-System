@@ -19,7 +19,7 @@
     "mobile:ios": "cap open ios"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.5.2",
+    "@capacitor/cli": "^8.5.3",
     "@tauri-apps/cli": "^2.12.1",
     "@vitejs/plugin-react": "^6.1.1",
     "electron": "^44.5.1",
