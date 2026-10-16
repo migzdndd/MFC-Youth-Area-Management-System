@@ -48,6 +48,7 @@ export function AppContent() {
 
   // Active workflow action state dispatched across views
   const [activeWorkflowAction, setActiveWorkflowAction] = useState(null);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   React.useEffect(() => {
     const handleOpenCmd = () => setIsCommandPaletteOpen(true);
@@ -114,7 +115,6 @@ export function AppContent() {
   }
 
   const canSwitchArea = role === 'national_coordinator' || role === 'couple_coordinator';
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   return (
     <div className={`app-container ${isDesktop ? 'desktop-layout' : 'mobile-layout'}`}>

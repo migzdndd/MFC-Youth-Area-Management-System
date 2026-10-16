@@ -45,6 +45,8 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(() => getStoredSession());
   const [loading, setLoading] = useState(true);
   const [mfaState, setMfaState] = useState(null); // { tempToken, factorId, email, user, remember }
+  const [biometricsAvailable, setBiometricsAvailable] = useState(false);
+  const [biometricsEnrolled, setBiometricsEnrolled] = useState(false);
 
   useEffect(() => {
     // When session changes, save locally in offline read_cache so offline session is guaranteed
@@ -68,6 +70,11 @@ export function AuthProvider({ children }) {
 
     window.addEventListener('mfc:auth-expired', handleAuthExpired);
     return () => window.removeEventListener('mfc:auth-expired', handleAuthExpired);
+  }, [session]);
+
+  useEffect(() => {
+    biometrics.isAvailable().then(setBiometricsAvailable);
+    biometrics.isEnrolled().then(setBiometricsEnrolled);
   }, [session]);
 
   const login = async (email, password, rememberMe = true) => {
@@ -617,14 +624,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Biometrics hardware state
-  const [biometricsAvailable, setBiometricsAvailable] = useState(false);
-  const [biometricsEnrolled, setBiometricsEnrolled] = useState(false);
-
-  useEffect(() => {
-    biometrics.isAvailable().then(setBiometricsAvailable);
-    biometrics.isEnrolled().then(setBiometricsEnrolled);
-  }, [session]);
 
   const loginWithBiometrics = async () => {
     const res = await biometrics.verify();

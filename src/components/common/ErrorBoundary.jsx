@@ -105,7 +105,7 @@ export class ErrorBoundary extends React.Component {
               </button>
             </div>
 
-            {process.env.NODE_ENV !== 'production' && this.state.error && (
+            {(import.meta.env?.DEV || (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production')) && this.state.error && (
               <details
                 style={{
                   width: '100%',
