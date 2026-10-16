@@ -53,11 +53,23 @@ export function isUuid(value) {
  * If the user's account has no Area assigned, it stops immediately with a 409 error asking them to assign an area first.
  */
 export function requireArea(req, profile) {
-  if (profile?.role === 'national_coordinator') {
-    const override = req.headers['x-mfc-area-id'] || req.headers['X-MFC-Area-ID'];
-    if (override) return override;
+  const headerArea =
+    req.headers['x-mfc-area-id'] ||
+    req.headers['x-area-id'] ||
+    req.headers['X-MFC-Area-ID'] ||
+    req.headers['X-Area-ID'];
+
+  const isGlobalAdmin = profile?.role === 'national_coordinator' || profile?.is_developer === true;
+  if (isGlobalAdmin) {
+    if (headerArea) return headerArea;
+    if (profile?.area_id) return profile.area_id;
+  } else if (headerArea && String(headerArea) === String(profile?.area_id)) {
+    return headerArea;
   }
   if (!profile?.area_id) {
+    if (isGlobalAdmin && headerArea) {
+      return headerArea;
+    }
     const error = new Error('Your account is not assigned to an Area.');
     error.statusCode = 409;
     error.code = 'AREA_REQUIRED';
@@ -76,7 +88,8 @@ export function requireArea(req, profile) {
  * If an unauthorized user or chapter servant attempts an area-admin-only action, it throws a 403 Forbidden error.
  */
 export function requireAreaAdmin(profile, message = 'Only Area-level servant accounts can perform this action.') {
-  if (!isAreaAdminRole(profile?.role)) {
+  const isGlobalAdmin = profile?.role === 'national_coordinator' || profile?.is_developer === true;
+  if (!isAreaAdminRole(profile?.role, profile?.is_developer) && !isGlobalAdmin) {
     const error = new Error(message);
     error.statusCode = 403;
     error.code = 'FORBIDDEN';

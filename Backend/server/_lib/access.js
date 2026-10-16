@@ -1,40 +1,50 @@
-import { createSupabaseAdmin } from './supabase.js';
+/**
+ * Role Access and Authentication Token Validator
+ *
+ * What it Does: Simple non IT Terms
+ * Serves as the security badge scanner and gatekeeper for leadership access.
+ * It reads the user's electronic ID badge (Bearer token or cookie), checks what job role
+ * they hold (like Area Servant, Chapter Servant, or Member), and ensures leaders can only view
+ * and edit data belonging to their own assigned geographic area or chapter.
+ */
+
+import { createSupabaseAdmin, createSupabaseUserClient } from './supabase.js';
 import { readBearerToken } from './http.js';
 
-export const AREA_ADMIN_ROLES = new Set([
+export const FULL_AREA_ADMIN_ROLES = new Set([
   'national_coordinator',
   'couple_coordinator',
-  'area_servant',
+  'area_servant'
+]);
+
+export const DOMAIN_MODERATOR_ROLES = new Set([
   'lit_servant',
   'campus_servant',
   'mfc_high_servant',
   'area_kids_servant'
 ]);
 
-/**
- * Check If Leadership Role Has Area-Wide Authority
- *
- * What it does:
- * Tests whether a leader's role belongs to the high-level Area leadership team (such as National, Area, or Ministry servants).
- *
- * Backup plan if it breaks:
- * If a role name has irregular spacing or uppercase letters, it cleans and trims it first. If the role is missing or not in the authorized list, it safely returns false.
- */
-export function isAreaAdminRole(role) {
-  return AREA_ADMIN_ROLES.has(String(role || '').trim().toLowerCase());
+export const AREA_ADMIN_ROLES = FULL_AREA_ADMIN_ROLES;
+
+export function isAreaAdminRole(role, isDeveloper = false) {
+  if (isDeveloper === true) return true;
+  return FULL_AREA_ADMIN_ROLES.has(String(role || '').trim().toLowerCase());
 }
 
-/**
- * Check If User is a Chapter Servant
- *
- * What it does:
- * Determines if the current user is a local chapter leader rather than an area-wide administrator.
- *
- * Backup plan if it breaks:
- * Cleans the input text and safely returns false if the role is missing or invalid.
- */
+export function isDomainModeratorRole(role) {
+  return DOMAIN_MODERATOR_ROLES.has(String(role || '').trim().toLowerCase());
+}
+
 export function isChapterServantRole(role) {
   return String(role || '').trim().toLowerCase() === 'chapter_servant';
+}
+
+export function isLeaderRole(role, isDeveloper = false) {
+  if (isDeveloper === true) return true;
+  const normalized = String(role || '').trim().toLowerCase();
+  return FULL_AREA_ADMIN_ROLES.has(normalized) ||
+    DOMAIN_MODERATOR_ROLES.has(normalized) ||
+    normalized === 'chapter_servant';
 }
 
 /**
@@ -76,8 +86,8 @@ export async function requireAuthenticatedUser(req, options = {}) {
     throw error;
   }
 
-  const supabase = createSupabaseAdmin();
-  const { data: userData, error: userError } = await supabase.auth.getUser(token);
+  const admin = createSupabaseAdmin();
+  const { data: userData, error: userError } = await admin.auth.getUser(token);
   if (userError || !userData?.user) {
     const error = new Error('Session is invalid or expired.');
     error.statusCode = 401;
@@ -104,7 +114,9 @@ export async function requireAuthenticatedUser(req, options = {}) {
     }
   }
 
-  return { supabase, user: userData.user, token };
+  const userClient = createSupabaseUserClient(token);
+
+  return { supabase: userClient, userClient, admin, user: userData.user, token };
 }
 
 /**
@@ -117,8 +129,8 @@ export async function requireAuthenticatedUser(req, options = {}) {
  * If the profile does not exist or has been disabled, it stops the request and returns an "Account is not active" error.
  */
 export async function requireAuthenticatedProfile(req) {
-  const { supabase, user, token } = await requireAuthenticatedUser(req);
-  const { data: profile, error: profileError } = await supabase
+  const { admin, userClient, user, token } = await requireAuthenticatedUser(req);
+  const { data: profile, error: profileError } = await admin
     .from('profiles')
     .select('*')
     .eq('id', user.id)
@@ -132,5 +144,26 @@ export async function requireAuthenticatedProfile(req) {
     throw error;
   }
 
-  return { supabase, user, profile, token };
+  const isDev = profile.is_developer === true || await isSystemDeveloper(admin, user, profile);
+  profile.is_developer = isDev;
+
+  return { supabase: userClient, userClient, admin, user, profile, token };
+}
+
+/**
+ * Verify whether an authenticated account has designated developer credentials in Supabase
+ */
+export async function isSystemDeveloper(admin, user, profile) {
+  if (profile?.is_developer === true) return true;
+  if (!user?.id) return false;
+  try {
+    const { data } = await admin
+      .from('system_developers')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    return Boolean(data);
+  } catch {
+    return false;
+  }
 }

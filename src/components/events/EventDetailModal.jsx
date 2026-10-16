@@ -161,17 +161,27 @@ export function EventDetailModal({
                   </thead>
                   <tbody>
                     {participants.map(p => {
-                      const member = members.find(m => String(m.id) === String(p.memberId || p.member_id));
-                      const name = member ? `${member.first_name || member.firstName} ${member.last_name || member.lastName}` : (p.name || `${p.first || ''} ${p.last || ''}`.trim() || 'Unknown');
-                      const age = member ? calculateAge(member.birth_date || member.birthDate) : (p.age || '-');
-                      const chapter = member ? (member.chapter_name || member.chapterName) : (p.chapter || '-');
-                      const services = member ? (Array.isArray(member.services) ? member.services.join(', ') : member.services) : (p.service || '-');
+                      const isGuest = Boolean(p.non_member_name || p.nonMemberName) && !p.memberId && !p.member_id;
+                      const member = !isGuest ? members.find(m => String(m.id) === String(p.memberId || p.member_id)) : null;
+                      const name = isGuest
+                        ? (p.non_member_name || p.nonMemberName)
+                        : (member ? `${member.first_name || member.firstName} ${member.last_name || member.lastName}` : (p.name || `${p.first || ''} ${p.last || ''}`.trim() || 'Unknown'));
+                      const age = member ? calculateAge(member.birth_date || member.birthDate) : '-';
+                      const chapter = isGuest ? 'Guest Attendee' : (member ? (member.chapter_name || member.chapterName) : (p.chapter || '-'));
+                      const services = isGuest ? 'Guest' : (member ? (Array.isArray(member.services) ? member.services.join(', ') : member.services) : (p.service || '-'));
                       const isPaid = (p.paymentStatus || p.payment_status) === 'Paid' || p.paid;
                       const isAttended = p.attended || p.status === 'Attended';
 
                       return (
                         <tr key={p.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                          <td style={{ padding: '10px 12px', fontWeight: 600 }}>{name}</td>
+                          <td style={{ padding: '10px 12px', fontWeight: 600 }}>
+                            {name}
+                            {isGuest && (
+                              <span className="badge badge-info" style={{ fontSize: '0.7rem', marginLeft: '6px', verticalAlign: 'middle' }}>
+                                Guest
+                              </span>
+                            )}
+                          </td>
                           <td style={{ padding: '10px 12px', fontSize: '0.85rem' }}>{age}</td>
                           <td style={{ padding: '10px 12px', fontSize: '0.85rem' }}>{chapter || '-'}</td>
                           <td style={{ padding: '10px 12px', fontSize: '0.85rem' }}>{services || '-'}</td>
@@ -217,11 +227,14 @@ export function EventDetailModal({
               {/* Mobile Card List View */}
               <div className="mobile-only mobile-card-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {participants.map(p => {
-                  const member = members.find(m => String(m.id) === String(p.memberId || p.member_id));
-                  const name = member ? `${member.first_name || member.firstName} ${member.last_name || member.lastName}` : (p.name || `${p.first || ''} ${p.last || ''}`.trim() || 'Unknown');
-                  const age = member ? calculateAge(member.birth_date || member.birthDate) : (p.age || '-');
-                  const chapter = member ? (member.chapter_name || member.chapterName) : (p.chapter || '-');
-                  const services = member ? (Array.isArray(member.services) ? member.services.join(', ') : member.services) : (p.service || '-');
+                  const isGuest = Boolean(p.non_member_name || p.nonMemberName) && !p.memberId && !p.member_id;
+                  const member = !isGuest ? members.find(m => String(m.id) === String(p.memberId || p.member_id)) : null;
+                  const name = isGuest
+                    ? (p.non_member_name || p.nonMemberName)
+                    : (member ? `${member.first_name || member.firstName} ${member.last_name || member.lastName}` : (p.name || `${p.first || ''} ${p.last || ''}`.trim() || 'Unknown'));
+                  const age = member ? calculateAge(member.birth_date || member.birthDate) : '-';
+                  const chapter = isGuest ? 'Guest Attendee' : (member ? (member.chapter_name || member.chapterName) : (p.chapter || '-'));
+                  const services = isGuest ? 'Guest' : (member ? (Array.isArray(member.services) ? member.services.join(', ') : member.services) : (p.service || '-'));
                   const isPaid = (p.paymentStatus || p.payment_status) === 'Paid' || p.paid;
                   const isAttended = p.attended || p.status === 'Attended';
 
@@ -229,7 +242,14 @@ export function EventDetailModal({
                     <div key={p.id} className="card" style={{ padding: '14px', border: '1px solid var(--border-subtle)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                         <div>
-                          <strong style={{ fontSize: '0.95rem' }}>{name}</strong>
+                          <strong style={{ fontSize: '0.95rem' }}>
+                            {name}
+                            {isGuest && (
+                              <span className="badge badge-info" style={{ fontSize: '0.68rem', marginLeft: '6px', verticalAlign: 'middle' }}>
+                                Guest
+                              </span>
+                            )}
+                          </strong>
                           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                             {chapter} · Age {age}
                           </div>

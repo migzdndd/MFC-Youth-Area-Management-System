@@ -12,7 +12,9 @@ export function ParticipantModal({
 }) {
   const isEdit = !!participant;
 
+  const [participantType, setParticipantType] = useState('member'); // 'member' | 'guest'
   const [selectedMemberId, setSelectedMemberId] = useState('');
+  const [nonMemberName, setNonMemberName] = useState('');
   const [memberSearch, setMemberSearch] = useState('');
   const [paymentMode, setPaymentMode] = useState('Cash');
   const [paymentStatus, setPaymentStatus] = useState('Unpaid');
@@ -45,12 +47,17 @@ export function ParticipantModal({
 
   useEffect(() => {
     if (participant) {
+      const isGuest = Boolean(participant.non_member_name || participant.nonMemberName) && !participant.memberId && !participant.member_id;
+      setParticipantType(isGuest ? 'guest' : 'member');
+      setNonMemberName(participant.non_member_name || participant.nonMemberName || '');
       setSelectedMemberId(participant.memberId || participant.member_id || '');
       setPaymentMode(participant.paymentMode || participant.mode_of_payment || 'Cash');
       setPaymentStatus(participant.paymentStatus || participant.payment_status || (participant.paid ? 'Paid' : 'Unpaid'));
       setAttended(Boolean(participant.attended));
     } else {
+      setParticipantType('member');
       setSelectedMemberId(availableMembers[0]?.id || '');
+      setNonMemberName('');
       setPaymentMode('Cash');
       setPaymentStatus('Unpaid');
       setAttended(false);
@@ -63,9 +70,16 @@ export function ParticipantModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isEdit && !selectedMemberId) {
-      setError('Please select a registered youth member.');
-      return;
+    if (participantType === 'member') {
+      if (!isEdit && !selectedMemberId) {
+        setError('Please select a registered youth member.');
+        return;
+      }
+    } else {
+      if (!nonMemberName.trim()) {
+        setError('Please enter the guest attendee name.');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -74,7 +88,8 @@ export function ParticipantModal({
       await onSave({
         id: participant?.id,
         eventId,
-        memberId: selectedMemberId || participant?.memberId || participant?.member_id,
+        memberId: participantType === 'member' ? (selectedMemberId || participant?.memberId || participant?.member_id) : null,
+        nonMemberName: participantType === 'guest' ? nonMemberName.trim() : null,
         paymentMode,
         paymentStatus,
         attended
@@ -88,7 +103,7 @@ export function ParticipantModal({
   };
 
   const selectedMember = members.find(m => String(m.id) === String(selectedMemberId)) ||
-    (participant ? {
+    (participant && !participant.non_member_name && !participant.nonMemberName ? {
       firstName: participant.first || participant.first_name || 'Member',
       lastName: participant.last || participant.last_name || '',
       chapterName: participant.chapter || participant.chapter_name || '',
@@ -115,15 +130,64 @@ export function ParticipantModal({
               </div>
             )}
 
+            {!isEdit && (
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${participantType === 'member' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ flex: 1 }}
+                  onClick={() => setParticipantType('member')}
+                >
+                  Registered Member
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${participantType === 'guest' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ flex: 1 }}
+                  onClick={() => setParticipantType('guest')}
+                >
+                  Guest / Non-Member
+                </button>
+              </div>
+            )}
+
             {isEdit ? (
               <div className="form-group">
-                <label className="form-label">Registered Member</label>
-                <div style={{ padding: '12px 14px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-subtle, #f8fafc)', border: '1px solid var(--border-subtle, #e2e8f0)' }}>
-                  <strong>{selectedMember?.firstName || selectedMember?.first_name} {selectedMember?.lastName || selectedMember?.last_name}</strong>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    {selectedMember?.chapterName || selectedMember?.chapter_name || 'No chapter'} · {selectedMember?.contact || selectedMember?.contact_number || 'No contact'}
+                <label className="form-label">{participant?.non_member_name || participant?.nonMemberName ? 'Guest Name' : 'Registered Member'}</label>
+                {participant?.non_member_name || participant?.nonMemberName ? (
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={nonMemberName}
+                    onChange={e => setNonMemberName(e.target.value)}
+                    placeholder="Guest Attendee Name"
+                    required
+                  />
+                ) : (
+                  <div style={{ padding: '12px 14px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-subtle, #f8fafc)', border: '1px solid var(--border-subtle, #e2e8f0)' }}>
+                    <strong>{selectedMember?.firstName || selectedMember?.first_name} {selectedMember?.lastName || selectedMember?.last_name}</strong>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {selectedMember?.chapterName || selectedMember?.chapter_name || 'No chapter'} · {selectedMember?.contact || selectedMember?.contact_number || 'No contact'}
+                    </div>
                   </div>
-                </div>
+                )}
+              </div>
+            ) : participantType === 'guest' ? (
+              <div className="form-group">
+                <label className="form-label" htmlFor="guestNameInput">Guest Full Name *</label>
+                <input
+                  id="guestNameInput"
+                  type="text"
+                  className="form-input"
+                  placeholder="Enter guest or non-member full name..."
+                  value={nonMemberName}
+                  onChange={e => setNonMemberName(e.target.value)}
+                  autoFocus
+                  required
+                />
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                  Guest attendee tracking for walk-ins and visitors.
+                </span>
               </div>
             ) : (
               <div className="form-group">
