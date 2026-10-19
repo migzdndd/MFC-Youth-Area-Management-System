@@ -35,11 +35,13 @@ if (resolvedJavaHome) {
 // 2. Resolve ANDROID_HOME
 const candidateSdks = [
   process.env.ANDROID_HOME,
+  'D:\\Program Files',
   path.join(process.env.LOCALAPPDATA || '', 'Android', 'Sdk'),
-  'C:\\Program Files (x86)\\Android\\android-sdk'
+  'C:\\Program Files (x86)\\Android\\android-sdk',
+  'C:\\Android\\Sdk'
 ].filter(Boolean);
 
-let resolvedAndroidHome = candidateSdks.find(p => fs.existsSync(p));
+let resolvedAndroidHome = candidateSdks.find(p => fs.existsSync(p) && (fs.existsSync(path.join(p, 'platform-tools')) || fs.existsSync(path.join(p, 'platforms'))));
 if (resolvedAndroidHome) {
   process.env.ANDROID_HOME = resolvedAndroidHome;
   console.log(`✅ ANDROID_HOME: ${resolvedAndroidHome}`);
