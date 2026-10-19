@@ -69,6 +69,11 @@ export function OfflineProvider({ children }) {
     return res;
   };
 
+  const triggerFullSync = async () => {
+    const res = await syncManager.pullFullSync();
+    return res;
+  };
+
   return (
     <OfflineContext.Provider
       value={{
@@ -78,6 +83,7 @@ export function OfflineProvider({ children }) {
         isSyncModalOpen,
         setIsSyncModalOpen,
         triggerSync,
+        triggerFullSync,
         lastSyncResult,
         refreshPendingCount
       }}

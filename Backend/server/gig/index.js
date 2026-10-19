@@ -33,19 +33,21 @@ async function listGig(req, res) {
 async function createGig(req, res) {
   const { supabase, profile, user } = await requireAuthenticatedProfile(req);
   const areaId = requireArea(req, profile);
-  const memberId = req.body?.memberId;
+  const memberId = req.body?.memberId ?? req.body?.member_id;
   const member = await canManageMember(supabase, profile, memberId, areaId);
   if (!member) return sendJson(res, 403, { ok: false, error: 'You can only manage GIG records for members you are allowed to manage.' });
   const amount = asNonNegativeNumber(req.body?.amount, -1);
   if (!(amount > 0)) return sendJson(res, 400, { ok: false, error: 'Contribution amount must be greater than zero.' });
-  const date = validateIsoDate(req.body?.date, { required: true });
+  const rawDate = req.body?.contributionDate ?? req.body?.contribution_date ?? req.body?.date;
+  const date = validateIsoDate(rawDate, { required: true });
+  const rawNote = req.body?.notes ?? req.body?.note;
   const { data, error } = await supabase.from('gig_contributions').insert({
     area_id: areaId,
-    chapter_id: member.chapter_id || null,
+    chapter_id: req.body?.chapterId ?? req.body?.chapter_id ?? member.chapter_id ?? null,
     member_id: memberId,
     amount,
     contribution_date: date,
-    notes: cleanText(req.body?.note, 500) || null,
+    notes: cleanText(rawNote, 500) || null,
     recorded_by: user.id
   }).select('*').single();
   if (error) throw error;

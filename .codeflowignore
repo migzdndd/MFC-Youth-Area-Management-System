@@ -4,6 +4,8 @@
 .agent/
 .agents/
 .codex/
+brain/
+design-system/
 Backend/node_modules/
 Frontend/node_modules/
 .vercel/

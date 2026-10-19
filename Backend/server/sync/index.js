@@ -3,8 +3,15 @@ import { sendJson, methodNotAllowed, apiError } from '../_lib/http.js';
 import { requireArea } from '../_lib/cloud-data.js';
 import { ensureStandardServices } from '../_lib/service-catalog.js';
 
+import participantsHandler from '../participants/index.js';
+import gigHandler from '../gig/index.js';
+import reportsHandler from '../reports/index.js';
+
 export default async function handler(req, res) {
-  if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+  if (req.method === 'POST') {
+    return await handleBatchSync(req, res);
+  }
+  if (req.method !== 'GET') return methodNotAllowed(res, ['GET', 'POST']);
   try {
     const { supabase, profile } = await requireAuthenticatedProfile(req);
     const areaId = requireArea(req, profile);
@@ -117,3 +124,87 @@ export default async function handler(req, res) {
     return apiError(res, error);
   }
 }
+
+async function handleBatchSync(req, res) {
+  try {
+    const mutations = Array.isArray(req.body?.mutations) ? req.body.mutations : [];
+    if (!mutations.length) {
+      return sendJson(res, 200, { ok: true, processed: 0, failures: [] });
+    }
+
+    if (mutations.length > 200) {
+      return sendJson(res, 400, { ok: false, error: 'Batch exceeds maximum limit of 200 mutations.' });
+    }
+
+    const failures = [];
+    const successes = [];
+
+    for (const item of mutations) {
+      const { id, endpoint, method = 'POST', payload = {} } = item;
+      const cleanEndpoint = String(endpoint || '').replace(/^\/api\//, '').replace(/^\//, '').toLowerCase();
+
+      try {
+        let statusCode = 200;
+        let responseData = null;
+
+        const mockRes = {
+          statusCode: 200,
+          headersSent: false,
+          status(code) {
+            this.statusCode = code;
+            statusCode = code;
+            return this;
+          },
+          setHeader() { return this; },
+          getHeader() { return null; },
+          hasHeader() { return false; },
+          json(data) {
+            responseData = data;
+          },
+          send(data) {
+            responseData = data;
+          },
+          end() {}
+        };
+
+        const mockReq = {
+          ...req,
+          method: method.toUpperCase(),
+          body: payload,
+          query: req.query || {},
+          headers: req.headers
+        };
+
+        if (cleanEndpoint.startsWith('participants')) {
+          await participantsHandler(mockReq, mockRes);
+        } else if (cleanEndpoint.startsWith('gig')) {
+          await gigHandler(mockReq, mockRes);
+        } else if (cleanEndpoint.startsWith('reports')) {
+          await reportsHandler(mockReq, mockRes);
+        } else {
+          failures.push({ id, error: `Unsupported batch sync endpoint: ${endpoint}` });
+          continue;
+        }
+
+        if (statusCode >= 200 && statusCode < 300) {
+          successes.push({ id, response: responseData });
+        } else {
+          failures.push({ id, error: responseData?.error || `Request failed with status ${statusCode}` });
+        }
+      } catch (err) {
+        failures.push({ id, error: err.message || 'Mutation execution failed.' });
+      }
+    }
+
+    return sendJson(res, 200, {
+      ok: true,
+      processed: mutations.length,
+      successCount: successes.length,
+      failureCount: failures.length,
+      failures
+    });
+  } catch (error) {
+    return apiError(res, error);
+  }
+}
+

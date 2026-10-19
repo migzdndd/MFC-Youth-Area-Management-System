@@ -218,3 +218,7 @@ export const offlineStore = {
     return list.length;
   }
 };
+
+export const enqueueMutation = (endpoint, method, payload, headers) =>
+  offlineStore.enqueueMutation({ endpoint, method, payload, headers });
+

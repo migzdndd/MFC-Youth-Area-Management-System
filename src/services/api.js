@@ -78,10 +78,10 @@ export async function apiRequest(endpoint, options = {}) {
   const token = session?.accessToken || '';
   const areaId = session?.areaId || null;
 
-  // Offline mutation queueing only applies to operational records (participants and reports)
+  // Offline mutation queueing applies to operational records (participants, gig, and reports)
   const isOfflineMutationTarget =
     method !== 'GET' &&
-    ['/api/participants', '/api/reports'].some(prefix => fullPath.startsWith(prefix));
+    ['/api/participants', '/api/gig', '/api/reports'].some(prefix => fullPath.startsWith(prefix));
 
   const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 

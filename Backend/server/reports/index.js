@@ -33,23 +33,23 @@ async function saveReport(req, res, isUpdate) {
     const event = await loadAreaRow(supabase, 'events', input.eventId, areaId, 'id');
     if (!event) return sendJson(res, 400, { ok: false, error: 'The linked event does not belong to your Area.' });
   }
-  const reportType = cleanText(input.type, 100);
-  const date = validateIsoDate(input.date, { required: true });
+  const reportType = cleanText(input.report_type ?? input.type, 100);
+  const date = validateIsoDate(input.activity_date ?? input.activityDate ?? input.date, { required: true });
   if (!reportType) return sendJson(res, 400, { ok: false, error: 'Report type is required.' });
   const payload = {
     area_id: areaId,
     chapter_id: chapterId,
-    prepared_by_member_id: isChapterServantRole(profile.role) ? profile.member_id : (input.preparedByMemberId || profile.member_id || null),
-    prepared_by_name: nullableText(input.preparedBy, 160),
-    chapter_name_snapshot: nullableText(input.chapterName, 160),
+    prepared_by_member_id: isChapterServantRole(profile.role) ? profile.member_id : (input.preparedByMemberId || input.prepared_by_member_id || profile.member_id || null),
+    prepared_by_name: nullableText(input.preparedBy || input.prepared_by_name, 160),
+    chapter_name_snapshot: nullableText(input.chapterName || input.chapter_name_snapshot, 160),
     report_type: reportType,
     activity_date: date,
     title: nullableText(input.title, 160),
     activity: nullableText(input.activity, 160),
-    participant_count: asNonNegativeInteger(input.participants, 0),
+    participant_count: asNonNegativeInteger(input.participant_count ?? input.participants, 0),
     location: nullableText(input.location, 255),
-    event_id: input.eventId || null,
-    notes: nullableText(input.description, 4000),
+    event_id: input.eventId || input.event_id || null,
+    notes: nullableText(input.notes ?? input.description, 4000),
     created_by: user.id
   };
   if (!isUpdate) {

@@ -23,6 +23,13 @@ export function MemberModal({ isOpen, onClose, onSave, member, chapters = [] }) 
     middleName: '',
     lastName: '',
     nickname: '',
+    mfcId: '',
+    bloodType: '',
+    medicalNotes: '',
+    emergencyContactRelationship: '',
+    isBaptized: false,
+    isFirstCommunion: false,
+    isConfirmed: false,
     gender: 'Male',
     category: 'Youth',
     email: '',
@@ -50,6 +57,13 @@ export function MemberModal({ isOpen, onClose, onSave, member, chapters = [] }) 
         middleName: member.middleName || member.middle_name || '',
         lastName: member.lastName || member.last_name || '',
         nickname: member.nickname || '',
+        mfcId: member.mfcId || member.mfc_id || '',
+        bloodType: member.bloodType || member.blood_type || '',
+        medicalNotes: member.medicalNotes || member.medical_notes || '',
+        emergencyContactRelationship: member.emergencyContactRelationship || member.emergency_contact_relationship || '',
+        isBaptized: Boolean(member.isBaptized ?? member.is_baptized),
+        isFirstCommunion: Boolean(member.isFirstCommunion ?? member.is_first_communion),
+        isConfirmed: Boolean(member.isConfirmed ?? member.is_confirmed),
         gender: member.gender || 'Male',
         category: 'Youth',
         email: member.email || '',
@@ -73,6 +87,13 @@ export function MemberModal({ isOpen, onClose, onSave, member, chapters = [] }) 
         middleName: '',
         lastName: '',
         nickname: '',
+        mfcId: '',
+        bloodType: '',
+        medicalNotes: '',
+        emergencyContactRelationship: '',
+        isBaptized: false,
+        isFirstCommunion: false,
+        isConfirmed: false,
         gender: 'Male',
         category: 'Youth',
         email: '',
@@ -350,20 +371,92 @@ export function MemberModal({ isOpen, onClose, onSave, member, chapters = [] }) 
               />
             </div>
 
-            {/* Academic Information */}
+            {/* Identity & Health */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="mfcId">MFC Member ID / Code</label>
+                <input
+                  id="mfcId"
+                  name="mfcId"
+                  type="text"
+                  placeholder="e.g. MFC-2026-001"
+                  className="form-input"
+                  value={formData.mfcId}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="bloodType">Blood Type</label>
+                <select
+                  id="bloodType"
+                  name="bloodType"
+                  className="form-select"
+                  value={formData.bloodType}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Blood Type...</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="medicalNotes">Medical Notes & Allergies</label>
+              <textarea
+                id="medicalNotes"
+                name="medicalNotes"
+                rows="2"
+                placeholder="Allergies, chronic conditions, emergency medical precautions..."
+                className="form-input"
+                value={formData.medicalNotes}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Academic Track & School */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="academicTrack">Pastoral Academic Track</label>
+                <select
+                  id="academicTrack"
+                  name="academicTrack"
+                  className="form-select"
+                  value={formData.academicTrack}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Track...</option>
+                  <option value="Heartchamp">Heartchamp</option>
+                  <option value="Junior High School">Junior High School</option>
+                  <option value="High School">High School</option>
+                  <option value="Senior High School">Senior High School</option>
+                  <option value="College">College</option>
+                  <option value="Working Youth">Working Youth</option>
+                </select>
+              </div>
+
               <div className="form-group">
                 <label className="form-label" htmlFor="school">School / University</label>
                 <input
                   id="school"
                   name="school"
                   type="text"
+                  placeholder="School or Institution Name"
                   className="form-input"
                   value={formData.school}
                   onChange={handleChange}
                 />
               </div>
+            </div>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div className="form-group">
                 <label className="form-label" htmlFor="gradeLevel">Grade / Year Level</label>
                 <input
@@ -375,6 +468,58 @@ export function MemberModal({ isOpen, onClose, onSave, member, chapters = [] }) 
                   value={formData.gradeLevel}
                   onChange={handleChange}
                 />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="emergencyContactRelationship">Emergency Contact Relationship</label>
+                <input
+                  id="emergencyContactRelationship"
+                  name="emergencyContactRelationship"
+                  type="text"
+                  placeholder="Father, Mother, Guardian..."
+                  className="form-input"
+                  value={formData.emergencyContactRelationship}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            {/* Sacramental Milestones */}
+            <div className="form-group" style={{ padding: '12px 14px', backgroundColor: 'var(--bg-subtle, #f8fafc)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e2e8f0)' }}>
+              <label className="form-label" style={{ marginBottom: '8px', fontWeight: 700, color: 'var(--mfc-blue)' }}>
+                Catholic Sacramental Milestones
+              </label>
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem' }}>
+                  <input
+                    type="checkbox"
+                    name="isBaptized"
+                    checked={formData.isBaptized}
+                    onChange={e => setFormData({ ...formData, isBaptized: e.target.checked })}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                  <span>Baptized</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem' }}>
+                  <input
+                    type="checkbox"
+                    name="isFirstCommunion"
+                    checked={formData.isFirstCommunion}
+                    onChange={e => setFormData({ ...formData, isFirstCommunion: e.target.checked })}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                  <span>First Communion</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem' }}>
+                  <input
+                    type="checkbox"
+                    name="isConfirmed"
+                    checked={formData.isConfirmed}
+                    onChange={e => setFormData({ ...formData, isConfirmed: e.target.checked })}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                  <span>Confirmed</span>
+                </label>
               </div>
             </div>
 

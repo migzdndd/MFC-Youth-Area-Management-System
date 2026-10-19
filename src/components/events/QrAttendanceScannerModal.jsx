@@ -5,6 +5,19 @@ import { offlineStore } from '../../services/offlineStore';
 import { useOffline } from '../../context/OfflineContext';
 import { XIcon, CheckIcon, SearchIcon, SyncIcon } from '../icons/Icons';
 
+export function parseAttendeeQr(rawText) {
+  const text = String(rawText || '').trim();
+  if (text.startsWith('mfc_ticket:')) {
+    const parts = text.split(':');
+    return { eventId: parts[1], memberId: parts[2] };
+  }
+  if (text.startsWith('mfc:id:')) {
+    const parts = text.split(':');
+    return { eventId: 'all', memberId: parts[2], checksum: parts[3] };
+  }
+  return null;
+}
+
 /**
  * High-Speed QR Attendance Scanner & Continuous Kiosk Engine
  * Operates with camera scanner, audio feedback, haptics, and instant offline caching.
@@ -39,6 +52,47 @@ export function QrAttendanceScannerModal({
   const qrReaderRef = useRef(null);
   const html5QrCodeRef = useRef(null);
   const isProcessingRef = useRef(false);
+  const barcodeBufferRef = useRef('');
+  const lastKeyTimeRef = useRef(0);
+
+  // Hardware wedge barcode scanner listener
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      // Don't intercept typing in inputs or textareas unless it looks like rapid scanner entry
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      if (activeTag === 'input' || activeTag === 'textarea') {
+        // If it's the Enter key and buffer accumulated
+        if (e.key === 'Enter' && barcodeBufferRef.current.length > 3) {
+          const scanned = barcodeBufferRef.current;
+          barcodeBufferRef.current = '';
+          handleCodeScanned(scanned);
+          return;
+        }
+      }
+
+      const now = Date.now();
+      if (now - lastKeyTimeRef.current > 120) {
+        barcodeBufferRef.current = '';
+      }
+      lastKeyTimeRef.current = now;
+
+      if (e.key === 'Enter') {
+        if (barcodeBufferRef.current.trim().length > 2) {
+          e.preventDefault();
+          const scanned = barcodeBufferRef.current.trim();
+          barcodeBufferRef.current = '';
+          handleCodeScanned(scanned);
+        }
+      } else if (e.key.length === 1) {
+        barcodeBufferRef.current += e.key;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, event, members, checkedInIds]);
 
   // Initialize checked-in list from participants
   useEffect(() => {
@@ -174,8 +228,23 @@ export function QrAttendanceScannerModal({
       const code = String(rawCode || '').trim();
       let memberId = null;
 
+      // 1. Dual-format QR parsing support: mfc_ticket:<eventId>:<memberId> or mfc:id:<memberId>:<checksum>
+      const parsedQr = parseAttendeeQr(code);
+      if (parsedQr) {
+        if (parsedQr.eventId !== 'all' && event?.id && String(parsedQr.eventId) !== String(event.id)) {
+          triggerFeedback('error');
+          setScanStatus({
+            type: 'error',
+            text: `Invalid ticket: this QR pass was issued for a different event.`
+          });
+          resetStatusAfterDelay();
+          return;
+        }
+        memberId = parsedQr.memberId;
+      }
+
       // Check if JSON payload (e.g., { memberId: "...", code: "..." })
-      if (code.startsWith('{')) {
+      if (!memberId && code.startsWith('{')) {
         try {
           const parsed = JSON.parse(code);
           memberId = parsed.memberId || parsed.id || parsed.member_id;
@@ -195,6 +264,7 @@ export function QrAttendanceScannerModal({
       const member = members.find(m => 
         String(m.id) === String(memberId) ||
         String(m.member_id) === String(memberId) ||
+        (m.mfc_id && String(m.mfc_id).toLowerCase() === String(memberId).toLowerCase()) ||
         String(m.barcode) === String(code) ||
         String(m.contact_number || m.contact || '').replace(/\D/g, '') === code.replace(/\D/g, '')
       );

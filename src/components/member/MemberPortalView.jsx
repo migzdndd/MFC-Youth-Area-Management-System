@@ -11,6 +11,8 @@ import {
   SyncIcon
 } from '../icons/Icons';
 
+import { DigitalIdPass } from './DigitalIdPass';
+
 export function MemberPortalView({ previewMode = false, onExitPreview }) {
   const { user, session, logout } = useAuth();
 
@@ -26,6 +28,7 @@ export function MemberPortalView({ previewMode = false, onExitPreview }) {
   // Modals state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isDigitalPassOpen, setIsDigitalPassOpen] = useState(false);
 
   // Edit Profile Form State
   const [editFormData, setEditFormData] = useState({
@@ -402,7 +405,15 @@ export function MemberPortalView({ previewMode = false, onExitPreview }) {
             </div>
           </div>
           <div className="dashboard-hero-actions">
-            <a className="btn btn-primary" href="#events" style={{ minHeight: '44px', display: 'inline-flex', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setIsDigitalPassOpen(true)}
+              style={{ minHeight: '44px', display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
+            >
+              📱 My Digital Pass
+            </button>
+            <a className="btn btn-secondary" href="#events" style={{ minHeight: '44px', display: 'inline-flex', alignItems: 'center' }}>
               View Events &rarr;
             </a>
             <a className="btn btn-secondary" href="#profile" style={{ minHeight: '44px', display: 'inline-flex', alignItems: 'center' }}>
@@ -999,6 +1010,16 @@ export function MemberPortalView({ previewMode = false, onExitPreview }) {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Digital ID Pass Modal */}
+      {isDigitalPassOpen && (
+        <DigitalIdPass
+          isOpen={isDigitalPassOpen}
+          onClose={() => setIsDigitalPassOpen(false)}
+          member={member}
+          events={events}
+        />
       )}
     </div>
   );

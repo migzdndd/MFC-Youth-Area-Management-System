@@ -604,6 +604,36 @@ export function AuthProvider({ children }) {
         method: 'POST',
         body: JSON.stringify(data)
       });
+
+      if (res?.ok && res.session && res.user) {
+        const user = res.user;
+        const serverSession = res.session;
+        const accessToken = serverSession.accessToken || serverSession.access_token || '';
+        const refreshToken = serverSession.refreshToken || serverSession.refresh_token || '';
+        const role = String(user.role || 'member').toLowerCase();
+
+        const newSession = {
+          userId: user.id || null,
+          memberId: user.memberId || user.member_id || res.memberId || null,
+          email: user.email || data.email,
+          name: user.name || user.email || 'Member',
+          role,
+          areaId: user.areaId || user.area_id || null,
+          areaName: user.areaName || '',
+          chapterId: user.chapterId || user.chapter_id || null,
+          mustChangePassword: false,
+          needsAreaSetup: false,
+          accessToken,
+          refreshToken,
+          expiresAt: serverSession.expiresAt || serverSession.expires_at || null,
+          backendAuth: true,
+          demo: false
+        };
+
+        saveStoredSession(newSession, true);
+        setSession(newSession);
+      }
+
       return res;
     } catch (err) {
       return { ok: false, error: err.message || 'Account claim failed.' };

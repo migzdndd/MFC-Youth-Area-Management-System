@@ -28,6 +28,9 @@ export function MembersView({ modalOpen, onCloseModal }) {
   const [selectedService, setSelectedService] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
 
+  const [selectedTrack, setSelectedTrack] = useState('All');
+  const [selectedSacrament, setSelectedSacrament] = useState('All'); // 'All' | 'baptized' | 'communion' | 'confirmed'
+
   const [activeModalMember, setActiveModalMember] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailMember, setDetailMember] = useState(null);
@@ -82,6 +85,13 @@ export function MembersView({ modalOpen, onCloseModal }) {
       middle_name: formData.middleName,
       last_name: formData.lastName,
       nickname: formData.nickname,
+      mfc_id: formData.mfcId,
+      blood_type: formData.bloodType,
+      medical_notes: formData.medicalNotes,
+      emergency_contact_relationship: formData.emergencyContactRelationship,
+      is_baptized: formData.isBaptized,
+      is_first_communion: formData.isFirstCommunion,
+      is_confirmed: formData.isConfirmed,
       gender: formData.gender,
       category: 'Youth',
       ministry_branch: 'Youth',
@@ -157,12 +167,37 @@ export function MembersView({ modalOpen, onCloseModal }) {
     if (isChapterServant && userChapterId) {
       return members.filter(m => String(m.chapter_id || m.chapterId) === String(userChapterId));
     }
+    // 4 MFC Pastoral Domain Roles:
+    // 1. lit_servant: LIT Creative Ministries (Music, Dance, Graphics & Promo, Creative Writing, Photography & Videography)
+    if (role === 'lit_servant') {
+      const litMinistries = new Set(['Music', 'Dance', 'Graphics & Promo', 'Creative Writing', 'Photography & Videography']);
+      return members.filter(m => {
+        const srvs = Array.isArray(m.services) ? m.services : [];
+        return srvs.some(s => litMinistries.has(s));
+      });
+    }
+    // 2. campus_servant: Senior High School and College members
     if (role === 'campus_servant') {
-      return members.filter(m => m.academic_track === 'SHS' || m.academic_track === 'College' || m.academicTrack === 'SHS' || m.academicTrack === 'College');
+      return members.filter(m => {
+        const track = (m.academic_track || m.academicTrack || '').trim().toLowerCase();
+        return track === 'senior high school' || track === 'college' || track === 'shs';
+      });
     }
+    // 3. mfc_high_servant: Junior High School / High School
     if (role === 'mfc_high_servant') {
-      return members.filter(m => m.academic_track === 'HS' || m.academicTrack === 'HS');
+      return members.filter(m => {
+        const track = (m.academic_track || m.academicTrack || '').trim().toLowerCase();
+        return track === 'junior high school' || track === 'high school' || track === 'jhs' || track === 'hs';
+      });
     }
+    // 4. area_kids_servant: Heartchamp track
+    if (role === 'area_kids_servant') {
+      return members.filter(m => {
+        const track = (m.academic_track || m.academicTrack || '').trim().toLowerCase();
+        return track === 'heartchamp' || track === 'kids';
+      });
+    }
+
     return members;
   }, [members, isChapterServant, userChapterId, role]);
 
@@ -175,6 +210,8 @@ export function MembersView({ modalOpen, onCloseModal }) {
       const chName = getChapterName(m.chapter_id || m.chapterId).toLowerCase();
       const mServices = Array.isArray(m.services) ? m.services : [];
       const serviceStr = mServices.join(' ').toLowerCase();
+      const mTrack = (m.academic_track || m.academicTrack || '').toLowerCase();
+      const mfcCode = (m.mfc_id || m.mfcId || '').toLowerCase();
 
       const term = search.toLowerCase().trim();
       const matchesSearch =
@@ -184,6 +221,7 @@ export function MembersView({ modalOpen, onCloseModal }) {
         school.includes(term) ||
         contact.includes(term) ||
         chName.includes(term) ||
+        mfcCode.includes(term) ||
         serviceStr.includes(term);
 
       const mChapterId = String(m.chapter_id || m.chapterId || '');
@@ -194,9 +232,20 @@ export function MembersView({ modalOpen, onCloseModal }) {
       const mStatus = m.status || 'Active';
       const matchesStatus = selectedStatus === 'All' || mStatus === selectedStatus;
 
-      return matchesSearch && matchesChapter && matchesService && matchesStatus;
+      const matchesTrack = selectedTrack === 'All' || mTrack === selectedTrack.toLowerCase();
+
+      let matchesSacrament = true;
+      if (selectedSacrament === 'baptized') {
+        matchesSacrament = Boolean(m.is_baptized ?? m.isBaptized);
+      } else if (selectedSacrament === 'communion') {
+        matchesSacrament = Boolean(m.is_first_communion ?? m.isFirstCommunion);
+      } else if (selectedSacrament === 'confirmed') {
+        matchesSacrament = Boolean(m.is_confirmed ?? m.isConfirmed);
+      }
+
+      return matchesSearch && matchesChapter && matchesService && matchesStatus && matchesTrack && matchesSacrament;
     });
-  }, [visibleMembers, search, selectedChapter, selectedService, selectedStatus, chapters]);
+  }, [visibleMembers, search, selectedChapter, selectedService, selectedStatus, selectedTrack, selectedSacrament, chapters]);
 
   // Unique list of services for filter
   const allAvailableServices = useMemo(() => {
@@ -322,6 +371,39 @@ export function MembersView({ modalOpen, onCloseModal }) {
             {allAvailableServices.map(s => (
               <option key={s} value={s}>{s}</option>
             ))}
+          </select>
+        </div>
+
+        <div style={{ flex: '0 1 170px' }}>
+          <select
+            className="select-input compact-filter"
+            value={selectedTrack}
+            onChange={(e) => setSelectedTrack(e.target.value)}
+            aria-label="Filter by academic track"
+            style={{ width: '100%' }}
+          >
+            <option value="All">Track: All</option>
+            <option value="Heartchamp">Heartchamp</option>
+            <option value="Junior High School">Junior High School</option>
+            <option value="High School">High School</option>
+            <option value="Senior High School">Senior High School</option>
+            <option value="College">College</option>
+            <option value="Working Youth">Working Youth</option>
+          </select>
+        </div>
+
+        <div style={{ flex: '0 1 160px' }}>
+          <select
+            className="select-input compact-filter"
+            value={selectedSacrament}
+            onChange={(e) => setSelectedSacrament(e.target.value)}
+            aria-label="Filter by sacramental milestone"
+            style={{ width: '100%' }}
+          >
+            <option value="All">Sacrament: All</option>
+            <option value="baptized">Baptized</option>
+            <option value="communion">First Communion</option>
+            <option value="confirmed">Confirmed</option>
           </select>
         </div>
 

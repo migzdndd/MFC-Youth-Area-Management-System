@@ -10,6 +10,7 @@ export function EventDetailModal({
   isAreaAdmin = true,
   onOpenScanner,
   onRegisterParticipant,
+  onAddGuest,
   onEditParticipant,
   onDeleteParticipant
 }) {
@@ -136,14 +137,25 @@ export function EventDetailModal({
                 </button>
               )}
               {isAreaAdmin ? (
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  onClick={onRegisterParticipant}
-                >
-                  <PlusIcon size={14} />
-                  + Register Participant
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={onAddGuest}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <PlusIcon size={14} />
+                    + Add Guest
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={onRegisterParticipant}
+                  >
+                    <PlusIcon size={14} />
+                    + Register Participant
+                  </button>
+                </>
               ) : (
                 <span className="badge badge-info">View Only</span>
               )}

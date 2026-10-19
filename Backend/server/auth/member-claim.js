@@ -36,14 +36,22 @@ export default async function handler(req, res) {
     const pError = passwordError(password);
     if (pError) return sendJson(res, 400, { ok: false, error: pError });
 
+    const pin = req.body?.pin || req.body?.claimPin || req.body?.claim_pin;
+
     const { data: matchingMember, error: memberLookupError } = await admin
       .from('members')
-      .select('id')
+      .select('id, claim_pin')
       .ilike('email', escapeLikePattern(email))
       .maybeSingle();
     if (memberLookupError) throw memberLookupError;
     if (!matchingMember) {
       return sendJson(res, 404, { ok: false, error: 'No Member record is associated with this email.' });
+    }
+
+    if (pin && matchingMember.claim_pin) {
+      if (String(matchingMember.claim_pin).trim() !== String(pin).trim()) {
+        return sendJson(res, 403, { ok: false, error: 'Invalid 4-digit security PIN.' });
+      }
     }
 
     const authClient = createSupabaseAuthClient();

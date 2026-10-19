@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { EventModal } from './EventModal';
 import { EventDetailModal } from './EventDetailModal';
 import { ParticipantModal } from './ParticipantModal';
+import { AddGuestModal } from './AddGuestModal';
 import { QrAttendanceScannerModal } from './QrAttendanceScannerModal';
 import { LoadingView, EmptyView, ErrorView, TableSkeleton } from '../common/StateViews';
 import {
@@ -39,6 +40,7 @@ export function EventsView({ modalOpen, onCloseModal }) {
 
   const [activeParticipant, setActiveParticipant] = useState(null);
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
+  const [isAddGuestModalOpen, setIsAddGuestModalOpen] = useState(false);
 
   // QR Attendance Scanner State
   const [scannerEvent, setScannerEvent] = useState(null);
@@ -540,11 +542,30 @@ export function EventsView({ modalOpen, onCloseModal }) {
           setActiveParticipant(null);
           setIsParticipantModalOpen(true);
         }}
+        onAddGuest={() => {
+          setIsAddGuestModalOpen(true);
+        }}
         onEditParticipant={(p) => {
           setActiveParticipant(p);
           setIsParticipantModalOpen(true);
         }}
         onDeleteParticipant={handleDeleteParticipant}
+      />
+
+      {/* Add Walk-in Guest Modal */}
+      <AddGuestModal
+        isOpen={isAddGuestModalOpen}
+        onClose={() => setIsAddGuestModalOpen(false)}
+        event={selectedViewEvent}
+        onGuestAdded={async (guestPayload) => {
+          await handleSaveParticipant({
+            eventId: guestPayload.eventId,
+            nonMemberName: guestPayload.nonMemberName,
+            paymentStatus: guestPayload.paymentStatus,
+            paymentMode: guestPayload.modeOfPayment,
+            attended: guestPayload.attended
+          });
+        }}
       />
 
       {/* Participant Modal */}

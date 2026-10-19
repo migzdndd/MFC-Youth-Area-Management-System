@@ -325,14 +325,24 @@ export function LoginView({ onSwitchView }) {
                 >
                   {loading ? 'Signing in...' : 'Sign In'}
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => onSwitchView?.('register')}
-                  style={{ minHeight: '44px', width: '100%', fontSize: '0.9rem' }}
-                >
-                  First-Time Access / Register
-                </button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => onSwitchView?.('claim')}
+                    style={{ minHeight: '44px', width: '100%', fontSize: '0.85rem' }}
+                  >
+                    Claim Profile (PIN)
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => onSwitchView?.('register')}
+                    style={{ minHeight: '44px', width: '100%', fontSize: '0.85rem' }}
+                  >
+                    Register / Join
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', margin: '8px 0', gap: '10px' }}>

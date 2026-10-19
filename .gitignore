@@ -85,6 +85,8 @@ docs/legal-backup/
 .codex/
 .gemini/
 .claude/
+brain/
+design-system/
 AGENTS.md
 GEMINI.md
 agents.md

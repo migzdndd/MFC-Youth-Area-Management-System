@@ -92,6 +92,14 @@ export function MemberDetailModal({ isOpen, onClose, member, onEdit, gigHistory 
                 <strong>{member.last_name || member.lastName || '-'}</strong>
               </div>
               <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>MFC Member ID</span>
+                <strong style={{ color: 'var(--mfc-blue)' }}>{member.mfc_id || member.mfcId || '-'}</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>Blood Type</span>
+                <strong>{member.blood_type || member.bloodType || 'Not recorded'}</strong>
+              </div>
+              <div>
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>Nickname</span>
                 <strong>{member.nickname ? `"${member.nickname}"` : '-'}</strong>
               </div>
@@ -106,6 +114,12 @@ export function MemberDetailModal({ isOpen, onClose, member, onEdit, gigHistory 
               <div>
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>Birth Date</span>
                 <strong>{formatDate(member.birth_date || member.birthDate)}</strong>
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>Medical Notes / Allergies</span>
+                <div style={{ fontSize: '0.85rem', color: member.medical_notes || member.medicalNotes ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                  {member.medical_notes || member.medicalNotes || 'None on record.'}
+                </div>
               </div>
             </div>
           </div>
@@ -130,7 +144,7 @@ export function MemberDetailModal({ isOpen, onClose, member, onEdit, gigHistory 
               </div>
               <div>
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>Emergency Contact</span>
-                <strong>{member.emergency_contact_person || member.emergencyContactPerson || '-'}</strong>
+                <strong>{member.emergency_contact_person || member.emergencyContactPerson || '-'} {member.emergency_contact_relationship || member.emergencyContactRelationship ? `(${member.emergency_contact_relationship || member.emergencyContactRelationship})` : ''}</strong>
               </div>
               <div>
                 <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>Emergency Number</span>
@@ -139,10 +153,10 @@ export function MemberDetailModal({ isOpen, onClose, member, onEdit, gigHistory 
             </div>
           </div>
 
-          {/* Section 3: Pastoral Information */}
+          {/* Section 3: Pastoral Information & Sacramental Milestones */}
           <div>
             <h3 style={{ fontSize: '0.92rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--mfc-blue)', margin: '0 0 10px 0', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '4px' }}>
-              Pastoral Information
+              Pastoral & Sacramental Milestones
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', fontSize: '0.86rem' }}>
               <div>
@@ -154,12 +168,26 @@ export function MemberDetailModal({ isOpen, onClose, member, onEdit, gigHistory 
                 <strong>{member.household_head || member.householdHead || '-'}</strong>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>System Access Level</span>
-                <strong style={{ textTransform: 'capitalize' }}>{(member.access_level || member.accessLevel || 'member').replace('_', ' ')}</strong>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>Academic Track</span>
+                <strong>{member.academic_track || member.academicTrack || 'Not specified'}</strong>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>Academic Affiliation</span>
-                <strong>{member.school || 'Not specified'} {member.academic_track ? `(${member.academic_track})` : ''}</strong>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem' }}>School & Grade</span>
+                <strong>{member.school || 'Not specified'} {member.grade_level || member.gradeLevel ? `(${member.grade_level || member.gradeLevel})` : ''}</strong>
+              </div>
+              <div style={{ gridColumn: '1 / -1', marginTop: '6px' }}>
+                <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.76rem', marginBottom: '6px' }}>Sacraments Received</span>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <span className={`badge ${(member.is_baptized ?? member.isBaptized) ? 'badge-success' : 'badge-secondary'}`}>
+                    {(member.is_baptized ?? member.isBaptized) ? '✓ Baptized' : '✕ Not Baptized'}
+                  </span>
+                  <span className={`badge ${(member.is_first_communion ?? member.isFirstCommunion) ? 'badge-success' : 'badge-secondary'}`}>
+                    {(member.is_first_communion ?? member.isFirstCommunion) ? '✓ First Communion' : '✕ No First Communion'}
+                  </span>
+                  <span className={`badge ${(member.is_confirmed ?? member.isConfirmed) ? 'badge-success' : 'badge-secondary'}`}>
+                    {(member.is_confirmed ?? member.isConfirmed) ? '✓ Confirmed' : '✕ Not Confirmed'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

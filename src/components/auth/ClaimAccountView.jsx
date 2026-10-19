@@ -6,10 +6,8 @@ export function ClaimAccountView({ onSwitchView }) {
   const { claimAccount } = useAuth();
 
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
     email: '',
-    birthDate: '',
+    pin: '',
     password: '',
     confirmPassword: ''
   });
@@ -25,29 +23,44 @@ export function ClaimAccountView({ onSwitchView }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
+    const cleanEmail = formData.email.trim();
+    const cleanPin = formData.pin.trim();
+
+    if (!cleanEmail) {
+      setError('Please enter your registered email address.');
       return;
     }
+
+    if (!cleanPin || cleanPin.length !== 4) {
+      setError('Please provide your 4-digit security PIN issued by your Chapter Head.');
+      return;
+    }
+
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
 
     setLoading(true);
     setError('');
+
     const res = await claimAccount({
-      firstName: formData.firstName.trim(),
-      lastName: formData.lastName.trim(),
-      email: formData.email.trim(),
-      birthDate: formData.birthDate,
+      email: cleanEmail,
+      pin: cleanPin,
+      claimPin: cleanPin,
+      claim_pin: cleanPin,
       password: formData.password
     });
 
     if (res?.ok) {
       setSuccess(true);
     } else {
-      setError(res?.error || 'Could not verify your youth record. Ensure your name and email match your registration.');
+      setError(res?.error || 'Could not verify your youth record. Ensure your email and 4-digit PIN match your registration.');
     }
     setLoading(false);
   };
@@ -72,29 +85,30 @@ export function ClaimAccountView({ onSwitchView }) {
             style={{ width: '56px', height: '56px', margin: '0 auto 10px', display: 'block', borderRadius: '50%', objectFit: 'contain' }}
           />
           <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)' }}>
-            Claim Your Youth Account
+            Claim Your Youth Profile
           </h1>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Activate login credentials for your pre-registered profile
+            Activate your profile using your Chapter Head-assigned 4-digit PIN
           </p>
         </div>
 
         <div className="card" style={{ padding: '28px' }}>
           {success ? (
             <div style={{ textAlign: 'center', padding: '16px 0' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>✓</div>
-              <h2 style={{ fontSize: '1.2rem', color: 'var(--color-success)', marginBottom: '8px' }}>
-                Account Claimed!
+              <div style={{ fontSize: '2.5rem', marginBottom: '8px', color: '#16a34a' }}>✓</div>
+              <h2 style={{ fontSize: '1.2rem', color: '#16a34a', marginBottom: '8px' }}>
+                Profile Claimed!
               </h2>
               <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
-                Your youth account has been activated with your new password. You can now sign in.
+                Your account has been activated with your new password. You can now access your Digital Member Pass.
               </p>
               <button
                 type="button"
                 className="btn btn-primary"
+                style={{ width: '100%', minHeight: '44px' }}
                 onClick={() => onSwitchView('login')}
               >
-                Sign In
+                Continue to Portal
               </button>
             </div>
           ) : (
@@ -104,9 +118,9 @@ export function ClaimAccountView({ onSwitchView }) {
                   style={{
                     padding: '10px 14px',
                     borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'var(--color-danger-bg)',
-                    color: 'var(--color-danger)',
-                    border: '1px solid var(--color-danger-border)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    color: '#dc2626',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
                     fontSize: '0.85rem'
                   }}
                   role="alert"
@@ -115,84 +129,70 @@ export function ClaimAccountView({ onSwitchView }) {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" htmlFor="claimFirstName">First Name *</label>
-                  <input
-                    id="claimFirstName"
-                    name="firstName"
-                    type="text"
-                    required
-                    className="form-input"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" htmlFor="claimLastName">Last Name *</label>
-                  <input
-                    id="claimLastName"
-                    name="lastName"
-                    type="text"
-                    required
-                    className="form-input"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" htmlFor="claimEmail">Email Address *</label>
+                <label className="form-label" htmlFor="claimEmail">Email Address <span style={{ color: '#dc2626' }}>*</span></label>
                 <input
                   id="claimEmail"
                   name="email"
                   type="email"
                   required
-                  placeholder="The email your servant leader recorded"
+                  placeholder="The email recorded by your Servant Leader"
                   className="form-input"
+                  style={{ minHeight: '44px' }}
                   value={formData.email}
                   onChange={handleChange}
                 />
               </div>
 
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" htmlFor="claimBirthDate">Birth Date (Optional)</label>
+                <label className="form-label" htmlFor="claimPin">4-Digit Security PIN <span style={{ color: '#dc2626' }}>*</span></label>
                 <input
-                  id="claimBirthDate"
-                  name="birthDate"
-                  type="date"
+                  id="claimPin"
+                  name="pin"
+                  type="text"
+                  required
+                  maxLength={4}
+                  pattern="\d{4}"
+                  inputMode="numeric"
+                  placeholder="••••"
                   className="form-input"
-                  value={formData.birthDate}
+                  style={{ minHeight: '44px', textAlign: 'center', letterSpacing: '4px', fontSize: '1.1rem' }}
+                  value={formData.pin}
                   onChange={handleChange}
                 />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                  Enter the 4-digit PIN given to you by your Chapter Head.
+                </span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" htmlFor="claimPassword">New Password *</label>
+                  <label className="form-label" htmlFor="claimPassword">New Password <span style={{ color: '#dc2626' }}>*</span></label>
                   <input
                     id="claimPassword"
                     name="password"
                     type="password"
                     required
                     minLength={8}
+                    placeholder="Min 8 chars"
                     className="form-input"
+                    style={{ minHeight: '44px' }}
                     value={formData.password}
                     onChange={handleChange}
                   />
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" htmlFor="claimConfirmPassword">Confirm Password *</label>
+                  <label className="form-label" htmlFor="claimConfirmPassword">Confirm Password <span style={{ color: '#dc2626' }}>*</span></label>
                   <input
                     id="claimConfirmPassword"
                     name="confirmPassword"
                     type="password"
                     required
                     minLength={8}
+                    placeholder="Repeat password"
                     className="form-input"
+                    style={{ minHeight: '44px' }}
                     value={formData.confirmPassword}
                     onChange={handleChange}
                   />
@@ -202,16 +202,16 @@ export function ClaimAccountView({ onSwitchView }) {
               <button
                 type="submit"
                 className="btn btn-primary"
-                style={{ width: '100%', marginTop: '8px' }}
+                style={{ width: '100%', marginTop: '8px', minHeight: '44px' }}
                 disabled={loading}
               >
                 {loading ? (
                   <>
                     <SyncIcon size={16} spinning />
-                    Verifying Record...
+                    Verifying PIN...
                   </>
                 ) : (
-                  'Claim and Activate Account'
+                  'Claim & Activate Account'
                 )}
               </button>
 
