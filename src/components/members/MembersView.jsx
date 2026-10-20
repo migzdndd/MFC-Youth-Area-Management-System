@@ -33,6 +33,7 @@ export function MembersView({ modalOpen, onCloseModal }) {
 
   const [activeModalMember, setActiveModalMember] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [detailMember, setDetailMember] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -314,113 +315,138 @@ export function MembersView({ modalOpen, onCloseModal }) {
         </div>
       </div>
 
-      {/* Toolbar & Filters */}
-      <div className="toolbar" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-        <div style={{ flex: '1 1 240px', minWidth: '220px' }}>
-          <input
-            type="search"
-            className="search-input"
-            placeholder="Search members, email, contact, chapter, or service..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search members"
-            style={{ width: '100%' }}
-          />
-        </div>
+      {/* Toolbar & Filters (Adaptive Mobile / Desktop) */}
+      <div className="members-toolbar-container">
+        {/* Primary Row: Search Input + Mobile Filter Toggle */}
+        <div className="members-search-row">
+          <div className="search-input-wrapper">
+            <SearchIcon size={18} className="search-icon-inside" />
+            <input
+              type="search"
+              className="search-input"
+              placeholder="Search members, email, contact, chapter..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search members"
+            />
+          </div>
 
-        <div style={{ flex: '0 1 140px' }}>
-          <select
-            className="select-input compact-filter"
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            aria-label="Filter by status"
-            style={{ width: '100%' }}
+          <button
+            type="button"
+            className={`btn btn-secondary mobile-filter-toggle-btn ${showAdvancedFilters ? 'active' : ''}`}
+            onClick={() => {
+              if (navigator.vibrate) navigator.vibrate(10);
+              setShowAdvancedFilters(prev => !prev);
+            }}
+            aria-expanded={showAdvancedFilters}
+            aria-label="Toggle advanced filters"
           >
-            <option value="All">Status: All</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
+            <span>Filters</span>
+            {((selectedChapter ? 1 : 0) + (selectedService ? 1 : 0) + (selectedTrack !== 'All' ? 1 : 0) + (selectedSacrament !== 'All' ? 1 : 0)) > 0 && (
+              <span className="filter-count-badge">
+                {(selectedChapter ? 1 : 0) + (selectedService ? 1 : 0) + (selectedTrack !== 'All' ? 1 : 0) + (selectedSacrament !== 'All' ? 1 : 0)}
+              </span>
+            )}
+          </button>
         </div>
 
-        {!isChapterServant && (
-          <div style={{ flex: '0 1 170px' }}>
+        {/* Quick Status Pill Bar (Thumb Accessible on Mobile) */}
+        <div className="status-pills-bar" role="tablist" aria-label="Filter by member status">
+          {['All', 'Active', 'Inactive'].map((status) => (
+            <button
+              key={status}
+              type="button"
+              className={`status-pill ${selectedStatus === status ? 'active' : ''}`}
+              onClick={() => {
+                if (navigator.vibrate) navigator.vibrate(10);
+                setSelectedStatus(status);
+              }}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+
+        {/* Advanced Filters (Collapsible on Mobile, Expanded on Desktop) */}
+        <div className={`advanced-filters-panel ${showAdvancedFilters ? 'mobile-expanded' : 'mobile-collapsed'}`}>
+          {!isChapterServant && (
+            <div className="filter-select-wrap">
+              <select
+                className="select-input compact-filter"
+                value={selectedChapter}
+                onChange={(e) => setSelectedChapter(e.target.value)}
+                aria-label="Filter by chapter"
+              >
+                <option value="">Chapter: All</option>
+                {chapters.map(c => (
+                  <option key={c.id} value={c.id}>{c.name || c.chapter_name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="filter-select-wrap">
             <select
               className="select-input compact-filter"
-              value={selectedChapter}
-              onChange={(e) => setSelectedChapter(e.target.value)}
-              aria-label="Filter by chapter"
-              style={{ width: '100%' }}
+              value={selectedService}
+              onChange={(e) => setSelectedService(e.target.value)}
+              aria-label="Filter by service"
             >
-              <option value="">Chapter: All</option>
-              {chapters.map(c => (
-                <option key={c.id} value={c.id}>{c.name || c.chapter_name}</option>
+              <option value="">Service: All</option>
+              {allAvailableServices.map(s => (
+                <option key={s} value={s}>{s}</option>
               ))}
             </select>
           </div>
-        )}
 
-        <div style={{ flex: '0 1 170px' }}>
-          <select
-            className="select-input compact-filter"
-            value={selectedService}
-            onChange={(e) => setSelectedService(e.target.value)}
-            aria-label="Filter by service"
-            style={{ width: '100%' }}
-          >
-            <option value="">Service: All</option>
-            {allAvailableServices.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+          <div className="filter-select-wrap">
+            <select
+              className="select-input compact-filter"
+              value={selectedTrack}
+              onChange={(e) => setSelectedTrack(e.target.value)}
+              aria-label="Filter by academic track"
+            >
+              <option value="All">Track: All</option>
+              <option value="Heartchamp">Heartchamp</option>
+              <option value="Junior High School">Junior High School</option>
+              <option value="High School">High School</option>
+              <option value="Senior High School">Senior High School</option>
+              <option value="College">College</option>
+              <option value="Working Youth">Working Youth</option>
+            </select>
+          </div>
+
+          <div className="filter-select-wrap">
+            <select
+              className="select-input compact-filter"
+              value={selectedSacrament}
+              onChange={(e) => setSelectedSacrament(e.target.value)}
+              aria-label="Filter by sacramental milestone"
+            >
+              <option value="All">Sacrament: All</option>
+              <option value="baptized">Baptized</option>
+              <option value="communion">First Communion</option>
+              <option value="confirmed">Confirmed</option>
+            </select>
+          </div>
+
+          {(search || selectedChapter || selectedService || selectedStatus !== 'All' || selectedTrack !== 'All' || selectedSacrament !== 'All') && (
+            <button
+              type="button"
+              className="btn btn-secondary clear-filters-btn"
+              onClick={() => {
+                setSearch('');
+                setSelectedChapter('');
+                setSelectedService('');
+                setSelectedStatus('All');
+                setSelectedTrack('All');
+                setSelectedSacrament('All');
+              }}
+            >
+              Clear All
+            </button>
+          )}
         </div>
-
-        <div style={{ flex: '0 1 170px' }}>
-          <select
-            className="select-input compact-filter"
-            value={selectedTrack}
-            onChange={(e) => setSelectedTrack(e.target.value)}
-            aria-label="Filter by academic track"
-            style={{ width: '100%' }}
-          >
-            <option value="All">Track: All</option>
-            <option value="Heartchamp">Heartchamp</option>
-            <option value="Junior High School">Junior High School</option>
-            <option value="High School">High School</option>
-            <option value="Senior High School">Senior High School</option>
-            <option value="College">College</option>
-            <option value="Working Youth">Working Youth</option>
-          </select>
-        </div>
-
-        <div style={{ flex: '0 1 160px' }}>
-          <select
-            className="select-input compact-filter"
-            value={selectedSacrament}
-            onChange={(e) => setSelectedSacrament(e.target.value)}
-            aria-label="Filter by sacramental milestone"
-            style={{ width: '100%' }}
-          >
-            <option value="All">Sacrament: All</option>
-            <option value="baptized">Baptized</option>
-            <option value="communion">First Communion</option>
-            <option value="confirmed">Confirmed</option>
-          </select>
-        </div>
-
-        {(search || selectedChapter || selectedService || selectedStatus !== 'All') && (
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={() => {
-              setSearch('');
-              setSelectedChapter('');
-              setSelectedService('');
-              setSelectedStatus('All');
-            }}
-          >
-            Clear
-          </button>
-        )}
       </div>
 
       <div className="result-count" style={{ fontSize: '0.86rem', color: 'var(--text-muted)' }}>
@@ -542,19 +568,19 @@ export function MembersView({ modalOpen, onCloseModal }) {
                   key={m.id}
                   className="card"
                   style={{
-                    padding: '16px',
+                    padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '12px',
-                    borderRadius: '14px'
+                    gap: '8px',
+                    borderRadius: '12px'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div
                         style={{
-                          width: '42px',
-                          height: '42px',
+                          width: '36px',
+                          height: '36px',
                           borderRadius: '50%',
                           backgroundColor: 'var(--mfc-navy)',
                           color: '#ffffff',
@@ -562,28 +588,28 @@ export function MembersView({ modalOpen, onCloseModal }) {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 700,
-                          fontSize: '0.95rem',
+                          fontSize: '0.85rem',
                           flexShrink: 0
                         }}
                       >
                         {initials}
                       </div>
                       <div>
-                        <strong style={{ fontSize: '1rem', color: 'var(--text-main)', display: 'block' }}>
+                        <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)', display: 'block' }}>
                           {name}
                         </strong>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                           {chapterLabel} {mServices.length > 0 ? `• ${mServices[0]}` : ''}
                         </span>
                       </div>
                     </div>
 
-                    <span className={`badge ${isActive ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '0.74rem' }}>
+                    <span className={`badge ${isActive ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '0.72rem' }}>
                       {isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
 
-                  <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     {m.email && <div>✉ {m.email}</div>}
                     {(m.contact_number || m.contact) && <div>📞 {m.contact_number || m.contact}</div>}
                   </div>
@@ -598,11 +624,11 @@ export function MembersView({ modalOpen, onCloseModal }) {
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', gap: '8px', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
+                  <div style={{ display: 'flex', gap: '6px', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)' }}>
                     <button
                       type="button"
                       className="btn"
-                      style={{ flex: 1, minHeight: '44px', justifyContent: 'center' }}
+                      style={{ flex: 1, minHeight: '38px', justifyContent: 'center', fontSize: '0.78rem' }}
                       onClick={() => setDetailMember({ ...m, chapterName: chapterLabel })}
                     >
                       View
@@ -610,7 +636,7 @@ export function MembersView({ modalOpen, onCloseModal }) {
                     <button
                       type="button"
                       className="btn"
-                      style={{ flex: 1, minHeight: '44px', justifyContent: 'center' }}
+                      style={{ flex: 1, minHeight: '38px', justifyContent: 'center', fontSize: '0.78rem' }}
                       onClick={() => {
                         setActiveModalMember(m);
                         setIsModalOpen(true);
@@ -621,7 +647,7 @@ export function MembersView({ modalOpen, onCloseModal }) {
                     <button
                       type="button"
                       className="btn red"
-                      style={{ minHeight: '44px', padding: '0 14px' }}
+                      style={{ minHeight: '38px', padding: '0 12px', fontSize: '0.78rem' }}
                       onClick={() => setDeleteTarget(m)}
                       aria-label={`Delete ${name}`}
                     >

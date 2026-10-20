@@ -137,7 +137,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
   };
 
   return (
-    <div className="dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', maxWidth: '100%' }}>
+    <div className="dashboard-page">
       {/* Hero Banner */}
       <section className="dashboard-hero animate-in is-visible">
         <div className="dashboard-hero-copy">
@@ -357,9 +357,37 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
           </div>
         </div>
 
+        {/* Mobile Segmented Control for Events (< 768px) */}
+        <div className="mobile-event-tabs" role="tablist" aria-label="Events timing">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileEventTab === 'upcoming'}
+            className={`event-tab-btn ${mobileEventTab === 'upcoming' ? 'active' : ''}`}
+            onClick={() => {
+              if (navigator.vibrate) navigator.vibrate(10);
+              setMobileEventTab('upcoming');
+            }}
+          >
+            Upcoming ({upcomingEvents.length})
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileEventTab === 'recent'}
+            className={`event-tab-btn ${mobileEventTab === 'recent' ? 'active' : ''}`}
+            onClick={() => {
+              if (navigator.vibrate) navigator.vibrate(10);
+              setMobileEventTab('recent');
+            }}
+          >
+            Recent ({recentEvents.length})
+          </button>
+        </div>
+
         <div className="dashboard-events-split">
           {/* Upcoming Activities Column */}
-          <div className="events-column">
+          <div className={`events-column upcoming-column ${mobileEventTab === 'upcoming' ? 'mobile-visible' : 'mobile-hidden'}`}>
             <div className="events-column-header">
               <span className="badge active">UPCOMING</span>
               <h4>Upcoming Activities</h4>
@@ -384,7 +412,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
                         className="btn"
                         type="button"
                         onClick={() => onNavigate('events')}
-                        style={{ padding: '3px 8px', fontSize: '0.76rem' }}
+                        style={{ padding: '6px 12px', fontSize: '0.78rem', minHeight: '40px' }}
                       >
                         View
                       </button>
@@ -400,7 +428,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
           </div>
 
           {/* Recent Gatherings Column */}
-          <div className="events-column">
+          <div className={`events-column recent-column ${mobileEventTab === 'recent' ? 'mobile-visible' : 'mobile-hidden'}`}>
             <div className="events-column-header">
               <span className="badge" style={{ background: '#e2e8f0', color: '#475569' }}>
                 RECENT
@@ -427,7 +455,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
                         className="btn"
                         type="button"
                         onClick={() => onNavigate('events')}
-                        style={{ padding: '3px 8px', fontSize: '0.76rem' }}
+                        style={{ padding: '6px 12px', fontSize: '0.78rem', minHeight: '40px' }}
                       >
                         View
                       </button>

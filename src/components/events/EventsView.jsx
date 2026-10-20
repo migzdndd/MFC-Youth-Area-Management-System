@@ -269,29 +269,35 @@ export function EventsView({ modalOpen, onCloseModal }) {
       </div>
 
       {/* Toolbar & Filters */}
-      <div className="toolbar" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+      <div className="toolbar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
           <SearchIcon size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
           <input
             type="search"
             className="search-input"
-            style={{ width: '100%', paddingLeft: '36px', minHeight: '44px' }}
+            style={{ width: '100%', paddingLeft: '36px', minHeight: '40px', fontSize: '16px' }}
             placeholder="Search events or venues..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
 
-        <select
-          className="select-input compact-filter"
-          value={timing}
-          onChange={e => setTiming(e.target.value)}
-          style={{ minHeight: '44px', minWidth: '120px' }}
-        >
-          <option value="All">All</option>
-          <option value="Upcoming">Upcoming</option>
-          <option value="Past">Past</option>
-        </select>
+        {/* Mobile-Friendly Timing Segmented Pills */}
+        <div className="timing-pills-bar" role="tablist" aria-label="Filter events by status">
+          {['All', 'Upcoming', 'Past'].map(t => (
+            <button
+              key={t}
+              type="button"
+              className={`timing-pill ${timing === t ? 'active' : ''}`}
+              onClick={() => {
+                if (navigator.vibrate) navigator.vibrate(10);
+                setTiming(t);
+              }}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
 
         {(search || timing !== 'All') && (
           <button
@@ -301,7 +307,7 @@ export function EventsView({ modalOpen, onCloseModal }) {
               setSearch('');
               setTiming('All');
             }}
-            style={{ minHeight: '44px' }}
+            style={{ minHeight: '40px', padding: '0 12px' }}
           >
             Clear
           </button>
@@ -427,7 +433,7 @@ export function EventsView({ modalOpen, onCloseModal }) {
           </div>
 
           {/* Mobile Card List View */}
-          <div className="mobile-only mobile-card-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="mobile-only mobile-card-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {filteredEvents.map(event => {
               const eventParts = getEventParticipants(event.id);
               const isUpcoming = new Date(event.date || event.event_date || 0).getTime() >= now;
@@ -435,36 +441,36 @@ export function EventsView({ modalOpen, onCloseModal }) {
               const eventName = event.name || event.title;
 
               return (
-                <div key={event.id} className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div key={event.id} className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', borderRadius: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <strong style={{ fontSize: '1rem', color: 'var(--text-main)', display: 'block' }}>
+                      <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)', display: 'block' }}>
                         {eventName}
                       </strong>
-                      <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                         📅 {fmtDateTime(event.date || event.event_date)}
                       </div>
                     </div>
-                    <span className={`badge ${isUpcoming ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '0.75rem' }}>
+                    <span className={`badge ${isUpcoming ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '0.72rem' }}>
                       {isUpcoming ? 'Upcoming' : 'Completed'}
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                     <div>📍 {event.venue || event.location || 'No venue specified'}</div>
                     <span className="badge badge-info">{fee > 0 ? `₱${fee}` : 'Free'}</span>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '16px', padding: '8px 12px', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem' }}>
+                  <div style={{ display: 'flex', gap: '14px', padding: '6px 10px', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', fontSize: '0.78rem' }}>
                     <div>Registered: <strong>{eventParts.length}</strong></div>
                     <div>Attended: <strong>{getAttendedCount(event)}</strong></div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
+                  <div style={{ display: 'flex', gap: '6px', borderTop: '1px solid var(--border-subtle)', paddingTop: '8px' }}>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
-                      style={{ minHeight: '44px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      style={{ minHeight: '38px', display: 'flex', alignItems: 'center', gap: '4px', padding: '0 10px', fontSize: '0.78rem' }}
                       onClick={() => {
                         setScannerEvent(event);
                         setIsScannerOpen(true);
@@ -475,7 +481,7 @@ export function EventsView({ modalOpen, onCloseModal }) {
                     <button
                       type="button"
                       className="btn btn-primary btn-sm"
-                      style={{ flex: 1, minHeight: '44px' }}
+                      style={{ flex: 1, minHeight: '38px', justifyContent: 'center', fontSize: '0.78rem' }}
                       onClick={() => setSelectedViewEvent(event)}
                     >
                       View Details
@@ -485,7 +491,7 @@ export function EventsView({ modalOpen, onCloseModal }) {
                         <button
                           type="button"
                           className="btn btn-secondary btn-icon"
-                          style={{ minWidth: '44px', minHeight: '44px' }}
+                          style={{ minWidth: '38px', minHeight: '38px' }}
                           title="Edit Event"
                           aria-label={`Edit ${eventName}`}
                           onClick={() => {
@@ -498,7 +504,7 @@ export function EventsView({ modalOpen, onCloseModal }) {
                         <button
                           type="button"
                           className="btn btn-danger btn-icon"
-                          style={{ minWidth: '44px', minHeight: '44px' }}
+                          style={{ minWidth: '38px', minHeight: '38px' }}
                           title="Delete Event"
                           aria-label={`Delete ${eventName}`}
                           onClick={() => setDeleteTarget(event)}
