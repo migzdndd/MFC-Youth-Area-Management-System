@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { useAuth } from './context/AuthContext';
 import { Navbar } from './components/common/Navbar';
 import { Sidebar } from './components/common/Sidebar';
@@ -10,28 +10,35 @@ import { AreaSelectorModal } from './components/dashboard/AreaSelectorModal';
 import { AreaOnboardingModal } from './components/auth/AreaOnboardingModal';
 
 import { LoginView } from './components/auth/LoginView';
-import { RegisterView } from './components/auth/RegisterView';
-import { ClaimAccountView } from './components/auth/ClaimAccountView';
-
-import { DashboardView } from './components/dashboard/DashboardView';
-import { MembersView } from './components/members/MembersView';
-import { ChaptersView } from './components/chapters/ChaptersView';
-import { EventsView } from './components/events/EventsView';
-import { ReportsView } from './components/reports/ReportsView';
-import { ServicesView } from './components/services/ServicesView';
-import { ReadingsView } from './components/readings/ReadingsView';
-import { SettingsView } from './components/settings/SettingsView';
-import { GigView } from './components/gig/GigView';
-import { ChangelogView } from './components/changelogs/ChangelogView';
-import { MemberPortalView } from './components/member/MemberPortalView';
-import { ForgotPasswordView } from './components/auth/ForgotPasswordView';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { AppLoadingWireframe } from './components/common/StateViews';
+import { AppLoadingWireframe, LoadingView } from './components/common/StateViews';
 import { usePlatform } from './context/PlatformContext';
 import { DesktopTitlebar } from './components/desktop/DesktopTitlebar';
 import { DesktopCommandPalette } from './components/desktop/DesktopCommandPalette';
 import { MobileHeader } from './components/mobile/MobileHeader';
 import { MobileFab } from './components/mobile/MobileFab';
+
+// Universal dynamic import helper for both named and default component exports
+const lazyNamed = (importFn, name) =>
+  lazy(() => importFn().then((mod) => ({ default: mod[name] || mod.default })));
+
+// Code-split route views to optimize initial bundle and accelerate TTI
+const DashboardView = lazyNamed(() => import('./components/dashboard/DashboardView'), 'DashboardView');
+const MembersView = lazyNamed(() => import('./components/members/MembersView'), 'MembersView');
+const ChaptersView = lazyNamed(() => import('./components/chapters/ChaptersView'), 'ChaptersView');
+const EventsView = lazyNamed(() => import('./components/events/EventsView'), 'EventsView');
+const ReportsView = lazyNamed(() => import('./components/reports/ReportsView'), 'ReportsView');
+const ServicesView = lazyNamed(() => import('./components/services/ServicesView'), 'ServicesView');
+const ReadingsView = lazyNamed(() => import('./components/readings/ReadingsView'), 'ReadingsView');
+const SettingsView = lazyNamed(() => import('./components/settings/SettingsView'), 'SettingsView');
+const GigView = lazyNamed(() => import('./components/gig/GigView'), 'GigView');
+const ChangelogView = lazyNamed(() => import('./components/changelogs/ChangelogView'), 'ChangelogView');
+const MemberPortalView = lazyNamed(() => import('./components/member/MemberPortalView'), 'MemberPortalView');
+
+// Lazy-loaded secondary auth flows
+const RegisterView = lazyNamed(() => import('./components/auth/RegisterView'), 'RegisterView');
+const ClaimAccountView = lazyNamed(() => import('./components/auth/ClaimAccountView'), 'ClaimAccountView');
+const ForgotPasswordView = lazyNamed(() => import('./components/auth/ForgotPasswordView'), 'ForgotPasswordView');
 import {
   AUTH_WORKFLOWS,
   getWorkflowTitle,
@@ -98,7 +105,9 @@ export function AppContent() {
 
     return (
       <ErrorBoundary title="Sign In Error" onReset={() => setAuthView(AUTH_WORKFLOWS.LOGIN)}>
-        {authContent}
+        <Suspense fallback={<AppLoadingWireframe />}>
+          {authContent}
+        </Suspense>
         <MfaVerifyModal />
       </ErrorBoundary>
     );
@@ -108,7 +117,9 @@ export function AppContent() {
   if (role === 'member') {
     return (
       <ErrorBoundary title="Member Portal Error" onReset={() => window.location.reload()}>
-        <MemberPortalView />
+        <Suspense fallback={<AppLoadingWireframe />}>
+          <MemberPortalView />
+        </Suspense>
         <MfaVerifyModal />
       </ErrorBoundary>
     );
@@ -180,75 +191,77 @@ export function AppContent() {
             />
           )}
 
-          {/* Page Content View Router wrapped with per-view ErrorBoundary */}
+          {/* Page Content View Router wrapped with per-view ErrorBoundary and Suspense */}
           <ErrorBoundary
             key={currentView}
             title={`Error loading ${getWorkflowTitle(currentView)}`}
             onReset={() => setCurrentView('dashboard')}
           >
-            <main className="page-wrapper" id="main-content">
-              {currentView === 'dashboard' && (
-                <DashboardView
-                  onNavigate={setCurrentView}
-                  onOpenNewMember={() => handleOpenAction('create-member', 'members')}
-                  onOpenNewEvent={() => handleOpenAction('create-event', 'events')}
-                  onOpenNewReport={() => handleOpenAction('create-report', 'reports')}
-                  onOpenNewGig={() => handleOpenAction('create-gig', 'gig')}
-                />
-              )}
+            <Suspense fallback={<LoadingView type={currentView === 'dashboard' ? 'dashboard' : 'table'} message={`Loading ${getWorkflowTitle(currentView)}...`} />}>
+              <main className="page-wrapper" id="main-content">
+                {currentView === 'dashboard' && (
+                  <DashboardView
+                    onNavigate={setCurrentView}
+                    onOpenNewMember={() => handleOpenAction('create-member', 'members')}
+                    onOpenNewEvent={() => handleOpenAction('create-event', 'events')}
+                    onOpenNewReport={() => handleOpenAction('create-report', 'reports')}
+                    onOpenNewGig={() => handleOpenAction('create-gig', 'gig')}
+                  />
+                )}
 
-              {currentView === 'members' && (
-                <MembersView
-                  modalOpen={activeWorkflowAction === 'create-member'}
-                  onCloseModal={handleClearAction}
-                />
-              )}
+                {currentView === 'members' && (
+                  <MembersView
+                    modalOpen={activeWorkflowAction === 'create-member'}
+                    onCloseModal={handleClearAction}
+                  />
+                )}
 
-              {currentView === 'chapters' && (
-                <ChaptersView />
-              )}
+                {currentView === 'chapters' && (
+                  <ChaptersView />
+                )}
 
-              {currentView === 'events' && (
-                <EventsView
-                  modalOpen={activeWorkflowAction === 'create-event'}
-                  onCloseModal={handleClearAction}
-                />
-              )}
+                {currentView === 'events' && (
+                  <EventsView
+                    modalOpen={activeWorkflowAction === 'create-event'}
+                    onCloseModal={handleClearAction}
+                  />
+                )}
 
-              {currentView === 'gig' && (
-                <GigView
-                  modalOpen={activeWorkflowAction === 'create-gig'}
-                  onCloseModal={handleClearAction}
-                />
-              )}
+                {currentView === 'gig' && (
+                  <GigView
+                    modalOpen={activeWorkflowAction === 'create-gig'}
+                    onCloseModal={handleClearAction}
+                  />
+                )}
 
-              {currentView === 'reports' && (
-                <ReportsView
-                  modalOpen={activeWorkflowAction === 'create-report'}
-                  onCloseModal={handleClearAction}
-                />
-              )}
+                {currentView === 'reports' && (
+                  <ReportsView
+                    modalOpen={activeWorkflowAction === 'create-report'}
+                    onCloseModal={handleClearAction}
+                  />
+                )}
 
-              {currentView === 'services' && (
-                <ServicesView />
-              )}
+                {currentView === 'services' && (
+                  <ServicesView />
+                )}
 
-              {currentView === 'readings' && (
-                <ReadingsView />
-              )}
+                {currentView === 'readings' && (
+                  <ReadingsView />
+                )}
 
-              {currentView === 'changelogs' && (
-                <ChangelogView />
-              )}
+                {currentView === 'changelogs' && (
+                  <ChangelogView />
+                )}
 
-              {currentView === 'settings' && (
-                <SettingsView />
-              )}
+                {currentView === 'settings' && (
+                  <SettingsView />
+                )}
 
-              {!isValidLeadershipRoute(currentView) && (
-                <DashboardView onNavigate={setCurrentView} />
-              )}
-            </main>
+                {!isValidLeadershipRoute(currentView) && (
+                  <DashboardView onNavigate={setCurrentView} />
+                )}
+              </main>
+            </Suspense>
           </ErrorBoundary>
 
           {/* Mobile Floating Action Button (Quick Scan / Add) */}

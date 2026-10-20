@@ -66,6 +66,21 @@ export function clearStoredSession() {
 }
 
 const activeRequests = new Map();
+const apiMemoryCache = new Map();
+const DEFAULT_CACHE_TTL_MS = 25000; // 25s fresh memory cache for read endpoints
+
+export function invalidateApiCache(prefix = '') {
+  offlineStore.invalidateReadCache(prefix);
+  if (!prefix) {
+    apiMemoryCache.clear();
+    return;
+  }
+  for (const key of apiMemoryCache.keys()) {
+    if (key.includes(prefix)) {
+      apiMemoryCache.delete(key);
+    }
+  }
+}
 
 export async function apiRequest(endpoint, options = {}) {
   const method = String(options.method || 'GET').toUpperCase();
@@ -84,6 +99,16 @@ export async function apiRequest(endpoint, options = {}) {
     ['/api/participants', '/api/gig', '/api/reports'].some(prefix => fullPath.startsWith(prefix));
 
   const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+
+  // Fast Memory Cache for GET requests (instant 0ms response when warm)
+  const cacheKey = `${fullPath}:${token}:${areaId}`;
+  if (method === 'GET' && !options.forceRefresh) {
+    const cachedEntry = apiMemoryCache.get(cacheKey);
+    const ttl = options.ttlMs || DEFAULT_CACHE_TTL_MS;
+    if (cachedEntry && (Date.now() - cachedEntry.timestamp < ttl)) {
+      return cachedEntry.data;
+    }
+  }
 
   // If known offline and attempting a supported mutation, queue immediately
   if (!isOnline && isOfflineMutationTarget) {
@@ -117,7 +142,7 @@ export async function apiRequest(endpoint, options = {}) {
   }
 
   // Deduplicate concurrent GET requests
-  const dedupeKey = method === 'GET' ? `${fullPath}:${token}:${areaId}` : null;
+  const dedupeKey = method === 'GET' ? cacheKey : null;
   if (dedupeKey && activeRequests.has(dedupeKey)) {
     return activeRequests.get(dedupeKey);
   }
@@ -168,8 +193,24 @@ export async function apiRequest(endpoint, options = {}) {
           throw err;
         }
 
-        if (method === 'GET' && data) {
+        if (method === 'GET' && data?.ok) {
+          apiMemoryCache.set(cacheKey, { data, timestamp: Date.now() });
           offlineStore.setReadCache(fullPath, data);
+        } else if (method !== 'GET' && data?.ok) {
+          if (fullPath.includes('/members')) {
+            invalidateApiCache('/api/members');
+            invalidateApiCache('/api/reports');
+          } else if (fullPath.includes('/events') || fullPath.includes('/participants')) {
+            invalidateApiCache('/api/events');
+            invalidateApiCache('/api/participants');
+            invalidateApiCache('/api/reports');
+          } else if (fullPath.includes('/chapters')) {
+            invalidateApiCache('/api/chapters');
+          } else if (fullPath.includes('/gig')) {
+            invalidateApiCache('/api/gig');
+          } else if (fullPath.includes('/reports')) {
+            invalidateApiCache('/api/reports');
+          }
         }
 
         return data;
@@ -201,9 +242,25 @@ export async function apiRequest(endpoint, options = {}) {
         throw err;
       }
 
-      // If GET was successful, update the offline read cache
-      if (method === 'GET' && data) {
+      // If GET was successful, update in-memory and offline read cache
+      if (method === 'GET' && data?.ok) {
+        apiMemoryCache.set(cacheKey, { data, timestamp: Date.now() });
         offlineStore.setReadCache(fullPath, data);
+      } else if (method !== 'GET' && data?.ok) {
+        if (fullPath.includes('/members')) {
+          invalidateApiCache('/api/members');
+          invalidateApiCache('/api/reports');
+        } else if (fullPath.includes('/events') || fullPath.includes('/participants')) {
+          invalidateApiCache('/api/events');
+          invalidateApiCache('/api/participants');
+          invalidateApiCache('/api/reports');
+        } else if (fullPath.includes('/chapters')) {
+          invalidateApiCache('/api/chapters');
+        } else if (fullPath.includes('/gig')) {
+          invalidateApiCache('/api/gig');
+        } else if (fullPath.includes('/reports')) {
+          invalidateApiCache('/api/reports');
+        }
       }
 
       return data;

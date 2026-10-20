@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../../services/api';
+import { offlineStore } from '../../services/offlineStore';
 import { useAuth } from '../../context/AuthContext';
 import { EventModal } from './EventModal';
 import { EventDetailModal } from './EventDetailModal';
@@ -50,7 +51,27 @@ export function EventsView({ modalOpen, onCloseModal }) {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    async function hydrateCache() {
+      try {
+        const [e, p, m] = await Promise.all([
+          offlineStore.getReadCache('/api/events'),
+          offlineStore.getReadCache('/api/participants'),
+          offlineStore.getReadCache('/api/members')
+        ]);
+        if (isMounted && (e || p || m)) {
+          if (e?.events) setEvents(e.events);
+          if (p?.participants) setParticipants(p.participants);
+          if (m?.members) setMembers(m.members);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.warn('EventsView cache hydrate error:', err);
+      }
+    }
+    hydrateCache();
     loadAllData();
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
@@ -60,14 +81,16 @@ export function EventsView({ modalOpen, onCloseModal }) {
     }
   }, [modalOpen, isAreaAdmin]);
 
-  const loadAllData = async () => {
-    setLoading(true);
+  const loadAllData = async (force = false) => {
+    if (events.length === 0) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const [eventsRes, participantsRes, membersRes] = await Promise.all([
-        apiRequest('/api/events'),
-        apiRequest('/api/participants'),
-        apiRequest('/api/members')
+        apiRequest('/api/events', { forceRefresh: force }),
+        apiRequest('/api/participants', { forceRefresh: force }),
+        apiRequest('/api/members', { forceRefresh: force })
       ]);
 
       if (eventsRes?.ok) {
@@ -243,7 +266,7 @@ export function EventsView({ modalOpen, onCloseModal }) {
           >
             📷 Scan Attendance
           </button>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={loadAllData} style={{ minHeight: '44px' }}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => loadAllData(true)} style={{ minHeight: '44px' }}>
             <SyncIcon size={14} />
             Refresh
           </button>

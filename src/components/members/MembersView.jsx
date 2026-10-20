@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiRequest } from '../../services/api';
+import { offlineStore } from '../../services/offlineStore';
 import { useAuth } from '../../context/AuthContext';
 import { MemberModal } from './MemberModal';
 import { MemberDetailModal } from './MemberDetailModal';
@@ -39,7 +40,23 @@ export function MembersView({ modalOpen, onCloseModal }) {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    async function hydrateCache() {
+      const [m, c, g] = await Promise.all([
+        offlineStore.getReadCache('/api/members'),
+        offlineStore.getReadCache('/api/chapters'),
+        offlineStore.getReadCache('/api/gig')
+      ]);
+      if (isMounted && (m || c || g)) {
+        if (m?.members) setMembers(m.members);
+        if (c?.chapters) setChapters(c.chapters);
+        if (g?.gig) setGigHistory(g.gig);
+        setLoading(false);
+      }
+    }
+    hydrateCache();
     loadData();
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
@@ -49,14 +66,13 @@ export function MembersView({ modalOpen, onCloseModal }) {
     }
   }, [modalOpen]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (force = false) => {
     setError(null);
     try {
       const [membersRes, chaptersRes, gigRes] = await Promise.all([
-        apiRequest('/api/members'),
-        apiRequest('/api/chapters'),
-        apiRequest('/api/gig')
+        apiRequest('/api/members', { forceRefresh: force }),
+        apiRequest('/api/chapters', { forceRefresh: force }),
+        apiRequest('/api/gig', { forceRefresh: force })
       ]);
 
       if (membersRes?.ok) {
@@ -295,7 +311,7 @@ export function MembersView({ modalOpen, onCloseModal }) {
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            onClick={loadData}
+            onClick={() => loadData(true)}
             title="Refresh member roster"
           >
             <SyncIcon size={14} />

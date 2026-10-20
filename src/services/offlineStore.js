@@ -56,8 +56,13 @@ function openDB() {
   });
 }
 
+const l1Cache = new Map();
+
 export const offlineStore = {
   async getReadCache(key) {
+    if (l1Cache.has(key)) {
+      return l1Cache.get(key);
+    }
     try {
       const db = await openDB();
       if (!db) return memoryStore.read.get(key) || null;
@@ -66,7 +71,13 @@ export const offlineStore = {
         const tx = db.transaction(STORE_READ, 'readonly');
         const store = tx.objectStore(STORE_READ);
         const req = store.get(key);
-        req.onsuccess = () => resolve(req.result ? req.result.data : null);
+        req.onsuccess = () => {
+          const result = req.result ? req.result.data : null;
+          if (result) {
+            l1Cache.set(key, result);
+          }
+          resolve(result);
+        };
         req.onerror = () => resolve(null);
       });
     } catch (e) {
@@ -76,6 +87,7 @@ export const offlineStore = {
   },
 
   async setReadCache(key, data) {
+    l1Cache.set(key, data);
     try {
       const db = await openDB();
       const record = { key, data, updated_at: Date.now() };
@@ -85,15 +97,23 @@ export const offlineStore = {
         return;
       }
 
-      return new Promise((resolve) => {
-        const tx = db.transaction(STORE_READ, 'readwrite');
-        const store = tx.objectStore(STORE_READ);
-        store.put(record);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
-      });
+      const tx = db.transaction(STORE_READ, 'readwrite');
+      const store = tx.objectStore(STORE_READ);
+      store.put(record);
     } catch (e) {
       console.warn(`[OfflineStore] Failed saving cache for ${key}:`, e);
+    }
+  },
+
+  invalidateReadCache(prefix) {
+    if (!prefix) {
+      l1Cache.clear();
+      return;
+    }
+    for (const k of l1Cache.keys()) {
+      if (k.startsWith(prefix)) {
+        l1Cache.delete(k);
+      }
     }
   },
 

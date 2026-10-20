@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../../services/api';
+import { offlineStore } from '../../services/offlineStore';
 import { useAuth } from '../../context/AuthContext';
 import { LoadingView, ErrorView, DashboardSkeleton } from '../common/StateViews';
 
@@ -34,11 +35,28 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
   const isChapterServant = role === 'chapter_servant';
 
   useEffect(() => {
+    let isMounted = true;
+    async function hydrateCache() {
+      const [m, c, e, r] = await Promise.all([
+        offlineStore.getReadCache('/api/members'),
+        offlineStore.getReadCache('/api/chapters'),
+        offlineStore.getReadCache('/api/events'),
+        offlineStore.getReadCache('/api/reports')
+      ]);
+      if (isMounted && (m || c || e || r)) {
+        if (m?.members) setMembers(m.members);
+        if (c?.chapters) setChapters(c.chapters);
+        if (e?.events) setEvents(e.events);
+        if (r?.reports) setReports(r.reports);
+        setLoading(false);
+      }
+    }
+    hydrateCache();
     loadDashboardData();
+    return () => { isMounted = false; };
   }, [areaId]);
 
   const loadDashboardData = async () => {
-    setLoading(true);
     setError(null);
     try {
       const [membersRes, chaptersRes, eventsRes, reportsRes, areasRes] = await Promise.allSettled([

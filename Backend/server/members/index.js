@@ -88,7 +88,7 @@ async function listMembers(req, res) {
 
   let query = supabase
     .from('members')
-    .select('id, area_id, chapter_id, first_name, middle_name, last_name, birth_date, contact_number, email, address, status, first_attended_youth_camp, access_level, academic_track, grade_level, school, avatar_url, created_at, updated_at')
+    .select('id, area_id, chapter_id, first_name, middle_name, last_name, nickname, mfc_id, blood_type, medical_notes, emergency_contact_relationship, is_baptized, is_first_communion, is_confirmed, birth_date, contact_number, email, address, status, first_attended_youth_camp, access_level, academic_track, grade_level, school, avatar_url, created_at, updated_at')
     .order('last_name', { ascending: true })
     .order('first_name', { ascending: true });
 
