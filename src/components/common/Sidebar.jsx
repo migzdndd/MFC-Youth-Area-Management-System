@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getAuthorizedWorkflows } from '../../constants/workflows';
+import { X } from 'lucide-react';
 
 export function Sidebar({ currentView, onNavigate, isOpen = false, onClose }) {
   const { user, role, roleTier, areaName, logout } = useAuth();
@@ -37,10 +38,21 @@ export function Sidebar({ currentView, onNavigate, isOpen = false, onClose }) {
     >
       <div className="sidebar-brand">
         <img src="/img/logo-2.png" className="sidebar-logo" alt="MFC Youth Logo" />
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <h2>MFC YOUTH</h2>
           <p>AREA MANAGEMENT SYSTEM</p>
         </div>
+        {onClose && (
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={onClose}
+            aria-label="Close navigation drawer"
+            title="Close navigation"
+          >
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       {/* Servant Profile Quick Badge */}

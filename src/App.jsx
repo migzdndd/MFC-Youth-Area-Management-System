@@ -143,126 +143,130 @@ export function AppContent() {
           onOpenAreaSelector={() => setIsAreaSelectorOpen(true)}
           canSelectArea={canSwitchArea}
           onOpenScanner={() => handleOpenAction('qr-scan', 'events')}
+          onOpenDrawer={() => setIsMobileDrawerOpen(true)}
         />
       )}
 
-      {/* Backdrop Scrim for Mobile Sidebar Drawer */}
-      <div
-        className={`sidebar-scrim ${isMobileDrawerOpen ? 'show' : ''}`}
-        aria-hidden="true"
-        onClick={() => setIsMobileDrawerOpen(false)}
-      />
+      {/* Main Shell Body Layout (Row on Desktop, Column Stack on Mobile) */}
+      <div className="app-body">
+        {/* Backdrop Scrim for Mobile Sidebar Drawer */}
+        <div
+          className={`sidebar-scrim ${isMobileDrawerOpen ? 'show' : ''}`}
+          aria-hidden="true"
+          onClick={() => setIsMobileDrawerOpen(false)}
+        />
 
-      {/* Navigation Sidebar (Persistent on Desktop, Slide-over Drawer on Mobile) */}
-      <Sidebar
-        currentView={currentView}
-        onNavigate={(view) => {
-          setCurrentView(view);
-          setIsMobileDrawerOpen(false);
-        }}
-        isOpen={isMobileDrawerOpen}
-        onClose={() => setIsMobileDrawerOpen(false)}
-      />
+        {/* Navigation Sidebar (Persistent on Desktop, Slide-over Drawer on Mobile) */}
+        <Sidebar
+          currentView={currentView}
+          onNavigate={(view) => {
+            setCurrentView(view);
+            setIsMobileDrawerOpen(false);
+          }}
+          isOpen={isMobileDrawerOpen}
+          onClose={() => setIsMobileDrawerOpen(false)}
+        />
 
-      <div className="main-content">
-        {/* Offline & Sync Status Banner */}
-        <OfflineBanner />
+        <div className="main-content">
+          {/* Offline & Sync Status Banner */}
+          <OfflineBanner />
 
-        {/* Global Top Navbar (Desktop only - mobile uses native MobileHeader) */}
-        {!isMobile && (
-          <Navbar
-            title={getWorkflowTitle(currentView)}
-            onOpenAreaSelector={() => setIsAreaSelectorOpen(true)}
-            canSelectArea={canSwitchArea}
-          />
-        )}
+          {/* Global Top Navbar (Desktop only - mobile uses native MobileHeader) */}
+          {!isMobile && (
+            <Navbar
+              title={getWorkflowTitle(currentView)}
+              onOpenAreaSelector={() => setIsAreaSelectorOpen(true)}
+              canSelectArea={canSwitchArea}
+            />
+          )}
 
-        {/* Page Content View Router wrapped with per-view ErrorBoundary */}
-        <ErrorBoundary
-          key={currentView}
-          title={`Error loading ${getWorkflowTitle(currentView)}`}
-          onReset={() => setCurrentView('dashboard')}
-        >
-          <main className="page-wrapper" id="main-content">
-            {currentView === 'dashboard' && (
-              <DashboardView
-                onNavigate={setCurrentView}
-                onOpenNewMember={() => handleOpenAction('create-member', 'members')}
-                onOpenNewEvent={() => handleOpenAction('create-event', 'events')}
-                onOpenNewReport={() => handleOpenAction('create-report', 'reports')}
-                onOpenNewGig={() => handleOpenAction('create-gig', 'gig')}
-              />
-            )}
+          {/* Page Content View Router wrapped with per-view ErrorBoundary */}
+          <ErrorBoundary
+            key={currentView}
+            title={`Error loading ${getWorkflowTitle(currentView)}`}
+            onReset={() => setCurrentView('dashboard')}
+          >
+            <main className="page-wrapper" id="main-content">
+              {currentView === 'dashboard' && (
+                <DashboardView
+                  onNavigate={setCurrentView}
+                  onOpenNewMember={() => handleOpenAction('create-member', 'members')}
+                  onOpenNewEvent={() => handleOpenAction('create-event', 'events')}
+                  onOpenNewReport={() => handleOpenAction('create-report', 'reports')}
+                  onOpenNewGig={() => handleOpenAction('create-gig', 'gig')}
+                />
+              )}
 
-            {currentView === 'members' && (
-              <MembersView
-                modalOpen={activeWorkflowAction === 'create-member'}
-                onCloseModal={handleClearAction}
-              />
-            )}
+              {currentView === 'members' && (
+                <MembersView
+                  modalOpen={activeWorkflowAction === 'create-member'}
+                  onCloseModal={handleClearAction}
+                />
+              )}
 
-            {currentView === 'chapters' && (
-              <ChaptersView />
-            )}
+              {currentView === 'chapters' && (
+                <ChaptersView />
+              )}
 
-            {currentView === 'events' && (
-              <EventsView
-                modalOpen={activeWorkflowAction === 'create-event'}
-                onCloseModal={handleClearAction}
-              />
-            )}
+              {currentView === 'events' && (
+                <EventsView
+                  modalOpen={activeWorkflowAction === 'create-event'}
+                  onCloseModal={handleClearAction}
+                />
+              )}
 
-            {currentView === 'gig' && (
-              <GigView
-                modalOpen={activeWorkflowAction === 'create-gig'}
-                onCloseModal={handleClearAction}
-              />
-            )}
+              {currentView === 'gig' && (
+                <GigView
+                  modalOpen={activeWorkflowAction === 'create-gig'}
+                  onCloseModal={handleClearAction}
+                />
+              )}
 
-            {currentView === 'reports' && (
-              <ReportsView
-                modalOpen={activeWorkflowAction === 'create-report'}
-                onCloseModal={handleClearAction}
-              />
-            )}
+              {currentView === 'reports' && (
+                <ReportsView
+                  modalOpen={activeWorkflowAction === 'create-report'}
+                  onCloseModal={handleClearAction}
+                />
+              )}
 
-            {currentView === 'services' && (
-              <ServicesView />
-            )}
+              {currentView === 'services' && (
+                <ServicesView />
+              )}
 
-            {currentView === 'readings' && (
-              <ReadingsView />
-            )}
+              {currentView === 'readings' && (
+                <ReadingsView />
+              )}
 
-            {currentView === 'changelogs' && (
-              <ChangelogView />
-            )}
+              {currentView === 'changelogs' && (
+                <ChangelogView />
+              )}
 
-            {currentView === 'settings' && (
-              <SettingsView />
-            )}
+              {currentView === 'settings' && (
+                <SettingsView />
+              )}
 
-            {!isValidLeadershipRoute(currentView) && (
-              <DashboardView onNavigate={setCurrentView} />
-            )}
-          </main>
-        </ErrorBoundary>
+              {!isValidLeadershipRoute(currentView) && (
+                <DashboardView onNavigate={setCurrentView} />
+              )}
+            </main>
+          </ErrorBoundary>
 
-        {/* Mobile Floating Action Button (Quick Scan / Add) */}
-        {isMobile && (
-          <MobileFab onTriggerAction={handleOpenAction} />
-        )}
+          {/* Mobile Floating Action Button (Quick Scan / Add) */}
+          {isMobile && (
+            <MobileFab onTriggerAction={handleOpenAction} />
+          )}
 
-        {/* Mobile View Bottom Navigation Bar */}
-        {isMobile && (
-          <MobileNavBar
-            currentView={currentView}
-            onNavigate={(view) => {
-              setCurrentView(view);
-              setIsMobileDrawerOpen(false);
-            }}
-          />
-        )}
+          {/* Mobile View Bottom Navigation Bar */}
+          {isMobile && (
+            <MobileNavBar
+              currentView={currentView}
+              onNavigate={(view) => {
+                setCurrentView(view);
+                setIsMobileDrawerOpen(false);
+              }}
+            />
+          )}
+        </div>
       </div>
 
       {/* Global Modals */}

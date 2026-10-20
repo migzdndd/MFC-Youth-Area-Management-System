@@ -1,17 +1,28 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useOffline } from '../../context/OfflineContext';
-import { MapPin, Wifi, WifiOff, RefreshCw, QrCode } from 'lucide-react';
+import { MapPin, Wifi, WifiOff, RefreshCw, QrCode, Menu } from 'lucide-react';
 
-export function MobileHeader({ onOpenAreaSelector, canSelectArea, onOpenScanner }) {
+export function MobileHeader({ onOpenAreaSelector, canSelectArea, onOpenScanner, onOpenDrawer }) {
   const { areaName } = useAuth();
   const { isOnline, isSyncing, pendingCount } = useOffline();
 
   return (
     <header className="mobile-native-header" aria-label="Mobile Navigation Header">
       <div className="mobile-header-content">
-        {/* Left: App Identity */}
+        {/* Left: App Identity & Navigation Drawer Trigger */}
         <div className="mobile-header-brand">
+          {onOpenDrawer && (
+            <button
+              type="button"
+              className="mobile-header-menu-btn"
+              onClick={onOpenDrawer}
+              aria-label="Open Navigation Menu"
+              title="Open Navigation Menu"
+            >
+              <Menu size={20} />
+            </button>
+          )}
           <img src="/logo.png" alt="MFC Youth" className="mobile-header-logo" />
           <div className="mobile-brand-meta">
             <span className="mobile-brand-name">MFC Youth</span>

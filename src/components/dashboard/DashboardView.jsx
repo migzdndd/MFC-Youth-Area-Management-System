@@ -137,7 +137,7 @@ export function DashboardView({ onNavigate, onOpenNewMember, onOpenNewEvent, onO
   };
 
   return (
-    <div className="dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="dashboard-page" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', maxWidth: '100%' }}>
       {/* Hero Banner */}
       <section className="dashboard-hero animate-in is-visible">
         <div className="dashboard-hero-copy">
