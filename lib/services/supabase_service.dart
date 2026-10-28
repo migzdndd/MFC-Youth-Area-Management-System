@@ -222,6 +222,25 @@ class SupabaseService {
     }
   }
 
+  /// Direct Supabase query for Event Participants.
+  Future<List<Map<String, dynamic>>> fetchParticipantsDirect({required String eventId, String? token}) async {
+    try {
+      final res = await client
+          .from('event_participants')
+          .select()
+          .eq('event_id', eventId)
+          .order('registered_at', ascending: false);
+      return List<Map<String, dynamic>>.from(res);
+    } on PostgrestException catch (pe) {
+      throw AppDatabaseException('Failed to load event participants: ${pe.message}', code: pe.code, originalError: pe);
+    } on SocketException catch (se) {
+      throw AppNetworkException('Network error loading event participants.', originalError: se);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw AppDatabaseException('Unexpected error loading event participants: $e', originalError: e);
+    }
+  }
+
   /// Sign out current session.
   Future<void> signOut() async {
     try {

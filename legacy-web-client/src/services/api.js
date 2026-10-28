@@ -1,7 +1,7 @@
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { offlineStore } from './offlineStore';
 
-const DEFAULT_SERVER_URL = 'https://mfc-youth-area-management-web.vercel.app';
+const DEFAULT_SERVER_URL = 'https://mfc-youth-area-management-system.vercel.app';
 
 export function getApiBaseUrl() {
   if (typeof window === 'undefined') return '';

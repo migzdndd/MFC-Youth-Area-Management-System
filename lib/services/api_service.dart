@@ -12,6 +12,10 @@ class ApiService {
   Future<String> getBaseUrl() async {
     final custom = await _storage.getCustomApiUrl();
     if (custom != null && custom.trim().isNotEmpty) {
+      if (custom.contains('mfc-youth-area-management-web.vercel.app')) {
+        await _storage.setCustomApiUrl(null);
+        return AppConstants.defaultApiUrl;
+      }
       return custom.trim().replaceAll(RegExp(r'/+$'), '');
     }
     return AppConstants.defaultApiUrl;
@@ -80,8 +84,18 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return data;
       } else {
+        String errorMessage = 'Request failed with status ${response.statusCode}';
+        final err = data['error'];
+        if (err is Map && err['message'] != null) {
+          errorMessage = err['message'].toString();
+        } else if (err != null) {
+          errorMessage = err.toString();
+        } else if (data['message'] != null) {
+          errorMessage = data['message'].toString();
+        }
+
         throw ApiException(
-          data['error']?.toString() ?? 'Request failed with status ${response.statusCode}',
+          errorMessage,
           statusCode: response.statusCode,
           data: data,
         );

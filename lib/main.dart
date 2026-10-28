@@ -11,6 +11,7 @@ import 'providers/members_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/api_service.dart';
 import 'services/storage_service.dart';
+import 'services/supabase_service.dart';
 import 'services/sync_service.dart';
 import 'views/auth/login_view.dart';
 import 'views/home_shell.dart';
@@ -37,6 +38,7 @@ void main() async {
     MultiProvider(
       providers: [
         Provider<StorageService>.value(value: storageService),
+        Provider<SupabaseService>(create: (_) => SupabaseService()),
         ProxyProvider<StorageService, ApiService>(
           update: (_, storage, __) => ApiService(storage),
         ),

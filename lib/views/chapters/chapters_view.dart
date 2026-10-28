@@ -5,6 +5,7 @@ import '../../models/chapter.dart';
 import '../../models/member.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
 import '../../widgets/wireframe_skeleton.dart';
 
@@ -29,19 +30,35 @@ class _ChaptersViewState extends State<ChaptersView> {
     setState(() => _loading = true);
     final auth = context.read<AuthProvider>();
     final api = context.read<ApiService>();
+    final sync = context.read<SyncService>();
+    final supabase = context.read<SupabaseService>();
 
     try {
       final res = await api.request('/chapters', token: auth.session?.accessToken, areaId: auth.areaId);
       if (res['ok'] == true && res['chapters'] is List) {
-        setState(() {
-          _chapters = (res['chapters'] as List).map((c) => Chapter.fromJson(c)).toList();
-          _loading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _chapters = (res['chapters'] as List).map((c) => Chapter.fromJson(c)).toList();
+            _loading = false;
+          });
+        }
         return;
       }
     } catch (_) {
       if (mounted) {
-        final sync = context.read<SyncService>();
+        if (auth.areaId != null && auth.areaId!.isNotEmpty) {
+          try {
+            final direct = await supabase.fetchChaptersDirect(areaId: auth.areaId!, token: auth.session?.accessToken);
+            if (direct.isNotEmpty) {
+              setState(() {
+                _chapters = direct.map((c) => Chapter.fromJson(c)).toList();
+                _loading = false;
+              });
+              return;
+            }
+          } catch (_) {}
+        }
+
         if (sync.chapters.isNotEmpty) {
           setState(() {
             _chapters = sync.chapters;
@@ -52,7 +69,9 @@ class _ChaptersViewState extends State<ChaptersView> {
       }
     }
 
-    setState(() => _loading = false);
+    if (mounted) {
+      setState(() => _loading = false);
+    }
   }
 
   void _showAddChapterDialog() {

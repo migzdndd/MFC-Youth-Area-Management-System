@@ -5,7 +5,7 @@ class AppConstants {
   // Cloud Backend & Supabase Configuration
   static const String supabaseUrl = 'https://desmhxtmnmfybrsdwhwz.supabase.co';
   static const String supabaseAnonKey = 'sb_publishable_rUW_5JS39kngwMT6bY5b4w_Se_Lo3eT';
-  static const String defaultApiUrl = 'https://mfc-youth-area-management-web.vercel.app';
+  static const String defaultApiUrl = 'https://mfc-youth-area-management-system.vercel.app';
 
   // 6-Level Role Hierarchy Definition
   static const Map<String, String> roleLabels = {

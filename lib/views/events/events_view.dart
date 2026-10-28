@@ -6,6 +6,7 @@ import '../../models/participant.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/app_exception.dart';
+import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
 import '../../widgets/wireframe_skeleton.dart';
 import 'fast_check_in_dialog.dart';
@@ -34,24 +35,48 @@ class _EventsViewState extends State<EventsView> {
     setState(() => _loading = true);
     final auth = context.read<AuthProvider>();
     final api = context.read<ApiService>();
+    final sync = context.read<SyncService>();
+    final supabase = context.read<SupabaseService>();
+    final messenger = ScaffoldMessenger.of(context);
 
     try {
       final res = await api.request('/events', token: auth.session?.accessToken, areaId: auth.areaId);
       if (res['ok'] == true && res['events'] is List) {
         final list = (res['events'] as List).map((e) => Event.fromJson(e)).toList();
-        setState(() {
-          _events = list;
-          if (_selectedEvent == null && list.isNotEmpty) {
-            _selectedEvent = list.first;
-            _loadParticipants(list.first.id);
-          }
-          _loading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _events = list;
+            if (_selectedEvent == null && list.isNotEmpty) {
+              _selectedEvent = list.first;
+              _loadParticipants(list.first.id);
+            }
+            _loading = false;
+          });
+        }
         return;
       }
     } catch (e) {
       if (mounted) {
-        final sync = context.read<SyncService>();
+        // Fallback 1: Direct Supabase query
+        if (auth.areaId != null && auth.areaId!.isNotEmpty) {
+          try {
+            final direct = await supabase.fetchEventsDirect(areaId: auth.areaId!, token: auth.session?.accessToken);
+            if (direct.isNotEmpty) {
+              final list = direct.map((e) => Event.fromJson(e)).toList();
+              setState(() {
+                _events = list;
+                if (_selectedEvent == null && list.isNotEmpty) {
+                  _selectedEvent = list.first;
+                  _loadParticipants(list.first.id);
+                }
+                _loading = false;
+              });
+              return;
+            }
+          } catch (_) {}
+        }
+
+        // Fallback 2: SyncService local snapshot cache
         if (sync.events.isNotEmpty) {
           final list = sync.events;
           setState(() {
@@ -65,7 +90,7 @@ class _EventsViewState extends State<EventsView> {
           return;
         } else {
           final errorMsg = e is AppException ? e.message : 'Unable to refresh events.';
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             SnackBar(
               content: Text(errorMsg),
               behavior: SnackBarBehavior.floating,
@@ -75,13 +100,16 @@ class _EventsViewState extends State<EventsView> {
       }
     }
 
-    setState(() => _loading = false);
+    if (mounted) {
+      setState(() => _loading = false);
+    }
   }
 
   Future<void> _loadParticipants(dynamic eventId) async {
     setState(() => _loadingParticipants = true);
     final auth = context.read<AuthProvider>();
     final api = context.read<ApiService>();
+    final supabase = context.read<SupabaseService>();
 
     try {
       final res = await api.request(
@@ -90,15 +118,31 @@ class _EventsViewState extends State<EventsView> {
         areaId: auth.areaId,
       );
       if (res['ok'] == true && res['participants'] is List) {
-        setState(() {
-          _participants = (res['participants'] as List).map((p) => EventParticipant.fromJson(p)).toList();
-          _loadingParticipants = false;
-        });
+        if (mounted) {
+          setState(() {
+            _participants = (res['participants'] as List).map((p) => EventParticipant.fromJson(p)).toList();
+            _loadingParticipants = false;
+          });
+        }
         return;
       }
-    } catch (_) {}
+    } catch (_) {
+      // Fallback: Direct Supabase query for participants
+      try {
+        final direct = await supabase.fetchParticipantsDirect(eventId: eventId.toString(), token: auth.session?.accessToken);
+        if (mounted && direct.isNotEmpty) {
+          setState(() {
+            _participants = direct.map((p) => EventParticipant.fromJson(p)).toList();
+            _loadingParticipants = false;
+          });
+          return;
+        }
+      } catch (_) {}
+    }
 
-    setState(() => _loadingParticipants = false);
+    if (mounted) {
+      setState(() => _loadingParticipants = false);
+    }
   }
 
   void _showCreateEventDialog() {
